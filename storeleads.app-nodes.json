@@ -1,0 +1,1145 @@
+{
+  "title": "NodeDir - storeleads.app",
+  "generatedAt": "2026-09-18T12:40:15.222Z",
+  "nodeCount": 58,
+  "linkCount": 79,
+  "nodes": [
+    {
+      "id": "root:storeleads.app",
+      "name": "storeleads.app",
+      "category": "website",
+      "subtitle": "Store Leads - The platform for ecommerce data.",
+      "description": "The most comprehensive list of ecommerce stores including 13,795,914 active stores across 408 platforms including Shopify, WooCommerce and Square Online. Analyzed across 40 pages, 4 tech stacks, and 4 core features.",
+      "location": "storeleads.app",
+      "year": "2026",
+      "tags": [
+        "storeleads.app",
+        "HTTPS",
+        "Web"
+      ]
+    },
+    {
+      "id": "page:storeleads.app:home",
+      "name": "Home Route (/)",
+      "category": "page",
+      "subtitle": "Root Navigation Landing · Depth 0",
+      "description": "Primary application entry point at https://storeleads.app/. Renders global navigation and mounts section controllers.",
+      "tags": [
+        "landing",
+        "root",
+        "depth-0"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help",
+      "name": "/help",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /help. Dynamic mapping: /help. Full URL: https://storeleads.app/help. Structural route branch controller.",
+      "tags": [
+        "route",
+        "depth-1",
+        "branch-router",
+        "product"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/features",
+      "name": "/features",
+      "category": "page",
+      "subtitle": "Depth 2 · Sub-Branch",
+      "description": "Route: /help/features. Dynamic mapping: /help/features. Full URL: https://storeleads.app/help/features. Structural route branch controller.",
+      "tags": [
+        "route",
+        "depth-2",
+        "branch-router",
+        "product"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/features/chrome_extension",
+      "name": "/chrome_extension",
+      "category": "page",
+      "subtitle": "Depth 3 · Leaf Route",
+      "description": "Route: /help/features/chrome_extension. Dynamic mapping: /help/features/[slug]. Full URL: https://storeleads.app/help/features/chrome_extension. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-3",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/contact",
+      "name": "/contact",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /contact. Dynamic mapping: /contact. Full URL: https://storeleads.app/contact. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "contact"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/dashboard",
+      "name": "/dashboard",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /dashboard. Dynamic mapping: /dashboard. Full URL: https://storeleads.app/dashboard. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "dashboard"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/alternative-data",
+      "name": "/alternative-data",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /alternative-data. Dynamic mapping: /alternative-data. Full URL: https://storeleads.app/alternative-data. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/api",
+      "name": "/api",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /api. Dynamic mapping: /api. Full URL: https://storeleads.app/api. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "docs"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/blog",
+      "name": "/blog",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /blog. Dynamic mapping: /blog. Full URL: https://storeleads.app/blog. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "blog"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/blog/2026",
+      "name": "/2026",
+      "category": "page",
+      "subtitle": "Depth 2 · Sub-Branch",
+      "description": "Route: /blog/2026. Dynamic mapping: /blog/[slug]. Full URL: https://storeleads.app/blog/2026. Structural route branch controller.",
+      "tags": [
+        "route",
+        "depth-2",
+        "branch-router",
+        "blog"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/blog/2026/05",
+      "name": "/05",
+      "category": "page",
+      "subtitle": "Depth 3 · Sub-Branch",
+      "description": "Route: /blog/2026/05. Dynamic mapping: /blog/2026/[slug]. Full URL: https://storeleads.app/blog/2026/05. Structural route branch controller.",
+      "tags": [
+        "route",
+        "depth-3",
+        "branch-router",
+        "blog"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/blog/2026/05/13",
+      "name": "/13",
+      "category": "page",
+      "subtitle": "Depth 4 · Sub-Branch",
+      "description": "Route: /blog/2026/05/13. Dynamic mapping: /blog/2026/05/[slug]. Full URL: https://storeleads.app/blog/2026/05/13. Structural route branch controller.",
+      "tags": [
+        "route",
+        "depth-4",
+        "branch-router",
+        "blog"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/blog/2026/05/13/cohort-retention-analytics",
+      "name": "/cohort-retention-analytics",
+      "category": "page",
+      "subtitle": "Depth 5 · Leaf Route",
+      "description": "Route: /blog/2026/05/13/cohort-retention-analytics. Dynamic mapping: /blog/2026/05/13/[slug]. Full URL: https://storeleads.app/blog/2026/05/13/cohort-retention-analytics. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-5",
+        "leaf-child",
+        "blog"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/faq",
+      "name": "/faq",
+      "category": "page",
+      "subtitle": "Depth 2 · Sub-Branch",
+      "description": "Route: /help/faq. Dynamic mapping: /help/faq. Full URL: https://storeleads.app/help/faq. Structural route branch controller.",
+      "tags": [
+        "route",
+        "depth-2",
+        "branch-router",
+        "dashboard"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/faq/list-of-supported-apps",
+      "name": "/list-of-supported-apps",
+      "category": "page",
+      "subtitle": "Depth 3 · Leaf Route",
+      "description": "Route: /help/faq/list-of-supported-apps. Dynamic mapping: /help/faq/[slug]. Full URL: https://storeleads.app/help/faq/list-of-supported-apps. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-3",
+        "leaf-child",
+        "dashboard"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/faq/list-of-supported-technologies",
+      "name": "/list-of-supported-technologies",
+      "category": "page",
+      "subtitle": "Depth 3 · Leaf Route",
+      "description": "Route: /help/faq/list-of-supported-technologies. Dynamic mapping: /help/faq/[slug]. Full URL: https://storeleads.app/help/faq/list-of-supported-technologies. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-3",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/features/product_search",
+      "name": "/product_search",
+      "category": "page",
+      "subtitle": "Depth 3 · Leaf Route",
+      "description": "Route: /help/features/product_search. Dynamic mapping: /help/features/product_search. Full URL: https://storeleads.app/help/features/product_search. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-3",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/faq/how-often-is-data-updated",
+      "name": "/how-often-is-data-updated",
+      "category": "page",
+      "subtitle": "Depth 3 · Leaf Route",
+      "description": "Route: /help/faq/how-often-is-data-updated. Dynamic mapping: /help/faq/[slug]. Full URL: https://storeleads.app/help/faq/how-often-is-data-updated. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-3",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/demo",
+      "name": "/demo",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /demo. Dynamic mapping: /demo. Full URL: https://storeleads.app/demo. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/features/historical-data",
+      "name": "/historical-data",
+      "category": "page",
+      "subtitle": "Depth 3 · Leaf Route",
+      "description": "Route: /help/features/historical-data. Dynamic mapping: /help/features/[slug]. Full URL: https://storeleads.app/help/features/historical-data. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-3",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/reports",
+      "name": "/reports",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /reports. Dynamic mapping: /reports. Full URL: https://storeleads.app/reports. Structural route branch controller.",
+      "tags": [
+        "route",
+        "depth-1",
+        "branch-router",
+        "other"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/reports/shopify",
+      "name": "/shopify",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /reports/shopify. Dynamic mapping: /reports/shopify. Full URL: https://storeleads.app/reports/shopify. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/faq/what-data-is-available-for-domains",
+      "name": "/what-data-is-available-for-domains",
+      "category": "page",
+      "subtitle": "Depth 3 · Leaf Route",
+      "description": "Route: /help/faq/what-data-is-available-for-domains. Dynamic mapping: /help/faq/[slug]. Full URL: https://storeleads.app/help/faq/what-data-is-available-for-domains. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-3",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/faq/list-of-domain-filters",
+      "name": "/list-of-domain-filters",
+      "category": "page",
+      "subtitle": "Depth 3 · Leaf Route",
+      "description": "Route: /help/faq/list-of-domain-filters. Dynamic mapping: /help/faq/[slug]. Full URL: https://storeleads.app/help/faq/list-of-domain-filters. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-3",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/integrations",
+      "name": "/integrations",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /help/integrations. Dynamic mapping: /help/integrations. Full URL: https://storeleads.app/help/integrations. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/features/workflows",
+      "name": "/workflows",
+      "category": "page",
+      "subtitle": "Depth 3 · Leaf Route",
+      "description": "Route: /help/features/workflows. Dynamic mapping: /help/features/workflows. Full URL: https://storeleads.app/help/features/workflows. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-3",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/features/export",
+      "name": "/export",
+      "category": "page",
+      "subtitle": "Depth 3 · Leaf Route",
+      "description": "Route: /help/features/export. Dynamic mapping: /help/features/export. Full URL: https://storeleads.app/help/features/export. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-3",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/integrations/salesforce",
+      "name": "/salesforce",
+      "category": "page",
+      "subtitle": "Depth 3 · Sub-Branch",
+      "description": "Route: /help/integrations/salesforce. Dynamic mapping: /help/integrations/salesforce. Full URL: https://storeleads.app/help/integrations/salesforce. Structural route branch controller.",
+      "tags": [
+        "route",
+        "depth-3",
+        "branch-router",
+        "other"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/integrations/salesforce#showingdatacustomsearchfilters",
+      "name": "#showingdatacustomsearchfilters",
+      "category": "page",
+      "subtitle": "Depth 4 · Action / View Leaf",
+      "description": "Leaf action fragment view at https://storeleads.app/help/integrations/salesforce#showingdatacustomsearchfilters. Direct anchor target and interactive tab view.",
+      "tags": [
+        "leaf-action",
+        "anchor",
+        "depth-4"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/features/calculated-values",
+      "name": "/calculated-values",
+      "category": "page",
+      "subtitle": "Depth 3 · Leaf Route",
+      "description": "Route: /help/features/calculated-values. Dynamic mapping: /help/features/[slug]. Full URL: https://storeleads.app/help/features/calculated-values. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-3",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/features/custom-matches",
+      "name": "/custom-matches",
+      "category": "page",
+      "subtitle": "Depth 3 · Leaf Route",
+      "description": "Route: /help/features/custom-matches. Dynamic mapping: /help/features/[slug]. Full URL: https://storeleads.app/help/features/custom-matches. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-3",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/integrations/hubspot",
+      "name": "/hubspot",
+      "category": "page",
+      "subtitle": "Depth 3 · Leaf Route",
+      "description": "Route: /help/integrations/hubspot. Dynamic mapping: /help/integrations/hubspot. Full URL: https://storeleads.app/help/integrations/hubspot. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-3",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/integrations/outreach",
+      "name": "/outreach",
+      "category": "page",
+      "subtitle": "Depth 3 · Leaf Route",
+      "description": "Route: /help/integrations/outreach. Dynamic mapping: /help/integrations/outreach. Full URL: https://storeleads.app/help/integrations/outreach. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-3",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/integrations/pipedrive",
+      "name": "/pipedrive",
+      "category": "page",
+      "subtitle": "Depth 3 · Leaf Route",
+      "description": "Route: /help/integrations/pipedrive. Dynamic mapping: /help/integrations/pipedrive. Full URL: https://storeleads.app/help/integrations/pipedrive. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-3",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/integrations/apollo",
+      "name": "/apollo",
+      "category": "page",
+      "subtitle": "Depth 3 · Leaf Route",
+      "description": "Route: /help/integrations/apollo. Dynamic mapping: /help/integrations/apollo. Full URL: https://storeleads.app/help/integrations/apollo. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-3",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/integrations/contactout",
+      "name": "/contactout",
+      "category": "page",
+      "subtitle": "Depth 3 · Leaf Route",
+      "description": "Route: /help/integrations/contactout. Dynamic mapping: /help/integrations/contactout. Full URL: https://storeleads.app/help/integrations/contactout. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-3",
+        "leaf-child",
+        "contact"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/integrations/cognism",
+      "name": "/cognism",
+      "category": "page",
+      "subtitle": "Depth 3 · Leaf Route",
+      "description": "Route: /help/integrations/cognism. Dynamic mapping: /help/integrations/cognism. Full URL: https://storeleads.app/help/integrations/cognism. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-3",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/help/integrations/fullenrich",
+      "name": "/fullenrich",
+      "category": "page",
+      "subtitle": "Depth 3 · Leaf Route",
+      "description": "Route: /help/integrations/fullenrich. Dynamic mapping: /help/integrations/fullenrich. Full URL: https://storeleads.app/help/integrations/fullenrich. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-3",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:storeleads.app:/reports/woocommerce",
+      "name": "/woocommerce",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /reports/woocommerce. Dynamic mapping: /reports/woocommerce. Full URL: https://storeleads.app/reports/woocommerce. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "tech:tailwind-css",
+      "name": "Tailwind CSS",
+      "category": "stack",
+      "subtitle": "CSS · high confidence",
+      "description": "Utility-first CSS framework for rapid modern UI development. Evidence: Tailwind utility patterns and responsive modifiers",
+      "tags": [
+        "css",
+        "high",
+        "tech-stack"
+      ]
+    },
+    {
+      "id": "tech:google-tag-manager",
+      "name": "Google Tag Manager",
+      "category": "stack",
+      "subtitle": "ANALYTICS · high confidence",
+      "description": "Tag management system for marketing & analytics scripts. Evidence: GTM container script loaded",
+      "tags": [
+        "analytics",
+        "high",
+        "tech-stack"
+      ]
+    },
+    {
+      "id": "tech:google-analytics-4",
+      "name": "Google Analytics 4",
+      "category": "stack",
+      "subtitle": "ANALYTICS · high confidence",
+      "description": "Web and app measurement and user event telemetry. Evidence: gtag / GA measurement ID present",
+      "tags": [
+        "analytics",
+        "high",
+        "tech-stack"
+      ]
+    },
+    {
+      "id": "tech:google-fonts",
+      "name": "Google Fonts",
+      "category": "stack",
+      "subtitle": "FONT · high confidence",
+      "description": "Web font delivery platform providing curated typography. Evidence: fonts.googleapis.com stylesheet link",
+      "tags": [
+        "font",
+        "high",
+        "tech-stack"
+      ]
+    },
+    {
+      "id": "tech:tailwind:tokens",
+      "name": "Tailwind Design Tokens",
+      "category": "stack",
+      "subtitle": "CSS Variable & Utility System",
+      "description": "Custom design tokens mapping background colors, card surfaces, border gradients, and responsive breakpoints.",
+      "tags": [
+        "tailwind",
+        "css-tokens",
+        "design-system"
+      ]
+    },
+    {
+      "id": "feature:search",
+      "name": "Global Search / Query Bar",
+      "category": "feature",
+      "subtitle": "search · cmdk · ux · autocomplete",
+      "description": "Interactive search interface with autocomplete or command palette triggers.",
+      "tags": [
+        "search",
+        "cmdk",
+        "ux",
+        "autocomplete"
+      ]
+    },
+    {
+      "id": "feature:nav",
+      "name": "Adaptive Navigation Header",
+      "category": "feature",
+      "subtitle": "navigation · header · responsive · mobile",
+      "description": "Persistent top navigation bar with mobile drawer and quick action links.",
+      "tags": [
+        "navigation",
+        "header",
+        "responsive",
+        "mobile"
+      ]
+    },
+    {
+      "id": "feature:grid",
+      "name": "Interactive Card Matrix",
+      "category": "feature",
+      "subtitle": "grid · cards · ui-layout",
+      "description": "Modern grid system presenting modular content cards with hover transitions.",
+      "tags": [
+        "grid",
+        "cards",
+        "ui-layout"
+      ]
+    },
+    {
+      "id": "feature:forms",
+      "name": "Validated Form Workflows",
+      "category": "feature",
+      "subtitle": "forms · zod · validation",
+      "description": "Interactive data input forms with client/server validation and feedback.",
+      "tags": [
+        "forms",
+        "zod",
+        "validation"
+      ]
+    },
+    {
+      "id": "perf:storeleads.app",
+      "name": "Performance & Vitals Hub",
+      "category": "performance",
+      "subtitle": "988ms TTFB · 292.2 KB",
+      "description": "HTML Size: 292.2 KB. Resources: 9 scripts, 2 stylesheets, 21 images. Compression: zstd. Cache-Control: not specified.",
+      "tags": [
+        "performance",
+        "vitals",
+        "zstd",
+        "9 scripts"
+      ]
+    },
+    {
+      "id": "perf:storeleads.app:ttfb",
+      "name": "TTFB Response Latency",
+      "category": "performance",
+      "subtitle": "988 ms response time",
+      "description": "Time to first byte recorded from client HTTP handshake to first byte of response. Measured at 988ms.",
+      "tags": [
+        "latency",
+        "ttfb",
+        "network"
+      ]
+    },
+    {
+      "id": "perf:storeleads.app:payload",
+      "name": "Asset & Payload Distribution",
+      "category": "performance",
+      "subtitle": "292.2 KB HTML · 9 scripts",
+      "description": "Resource inspection: 9 script bundles, 2 stylesheets, 21 media assets. Compression: zstd.",
+      "tags": [
+        "payload",
+        "assets",
+        "zstd"
+      ]
+    },
+    {
+      "id": "sec:storeleads.app",
+      "name": "Security & DNS Topology",
+      "category": "security",
+      "subtitle": "HTTPS Secure · HSTS",
+      "description": "Protocol: https:. HSTS Preload: Enabled. CSP: Configured. DNS: 35.226.202.80. Server: Edge.",
+      "tags": [
+        "security",
+        "dns",
+        "ssl",
+        "hsts"
+      ]
+    },
+    {
+      "id": "sec:storeleads.app:dns-ips",
+      "name": "Anycast DNS Endpoints",
+      "category": "security",
+      "subtitle": "1 Resolved IP Addresses",
+      "description": "DNS A/AAAA addresses: 35.226.202.80. Provides geo-distributed anycast edge routing.",
+      "tags": [
+        "dns",
+        "ip",
+        "anycast"
+      ]
+    },
+    {
+      "id": "sec:storeleads.app:ssl",
+      "name": "SSL/TLS Edge Termination",
+      "category": "security",
+      "subtitle": "TLS 1.3 Active · HSTS",
+      "description": "Transport Layer Security active on port 443. HSTS Strict Transport Security: Enforced. Server signature: Edge cluster.",
+      "tags": [
+        "ssl",
+        "tls",
+        "https",
+        "hsts"
+      ]
+    },
+    {
+      "id": "idea:0",
+      "name": "Edge Delivery & Hydration Strategy",
+      "category": "idea",
+      "subtitle": "Developer Implementation Pattern",
+      "description": "storeleads.app renders with fast edge-cached responses, keeping TTFB around 988ms. Architecture: Deploy on edge CDN nodes (e.g. Cloudflare / Vercel Edge). Cache static assets with immutable cache-control, revalidate dynamic data with SWR or React Query.",
+      "tags": [
+        "architecture",
+        "pattern",
+        "recipe"
+      ]
+    },
+    {
+      "id": "idea:1",
+      "name": "Design System & Token Architecture",
+      "category": "idea",
+      "subtitle": "Developer Implementation Pattern",
+      "description": "Consistent typography, high-contrast dark theme surfaces, and smooth micro-animations across all interactive surfaces. Architecture: Establish semantic color tokens (--color-background, --color-accent, --color-border) with HSL or P3 color spaces. Keep layouts responsive with clamp() and fluid flexbox/grid.",
+      "tags": [
+        "architecture",
+        "pattern",
+        "recipe"
+      ]
+    },
+    {
+      "id": "idea:2",
+      "name": "Clone Recipe: Global Search / Query Bar",
+      "category": "idea",
+      "subtitle": "Developer Implementation Pattern",
+      "description": "Developers looking to replicate Global Search / Query Bar from storeleads.app can follow this proven pattern. Architecture: Build with Radix Popover or cmdk library. Use debounced inputs (useDebounce 250ms), prefetch results or index with Fuse.js for instant client-side matching.",
+      "tags": [
+        "architecture",
+        "pattern",
+        "recipe"
+      ]
+    }
+  ],
+  "links": [
+    {
+      "source": "root:storeleads.app",
+      "target": "page:storeleads.app:home",
+      "label": "mounts index"
+    },
+    {
+      "source": "page:storeleads.app:home",
+      "target": "route:storeleads.app:/help",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:storeleads.app:/help",
+      "target": "route:storeleads.app:/help/features",
+      "label": "branches to"
+    },
+    {
+      "source": "route:storeleads.app:/help/features",
+      "target": "route:storeleads.app:/help/features/chrome_extension",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "page:storeleads.app:home",
+      "target": "route:storeleads.app:/contact",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:storeleads.app:home",
+      "target": "route:storeleads.app:/dashboard",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:storeleads.app:home",
+      "target": "route:storeleads.app:/alternative-data",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:storeleads.app:home",
+      "target": "route:storeleads.app:/api",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:storeleads.app:home",
+      "target": "route:storeleads.app:/blog",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:storeleads.app:/blog",
+      "target": "route:storeleads.app:/blog/2026",
+      "label": "branches to"
+    },
+    {
+      "source": "route:storeleads.app:/blog/2026",
+      "target": "route:storeleads.app:/blog/2026/05",
+      "label": "branches to"
+    },
+    {
+      "source": "route:storeleads.app:/blog/2026/05",
+      "target": "route:storeleads.app:/blog/2026/05/13",
+      "label": "branches to"
+    },
+    {
+      "source": "route:storeleads.app:/blog/2026/05/13",
+      "target": "route:storeleads.app:/blog/2026/05/13/cohort-retention-analytics",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/help",
+      "target": "route:storeleads.app:/help/faq",
+      "label": "branches to"
+    },
+    {
+      "source": "route:storeleads.app:/help/faq",
+      "target": "route:storeleads.app:/help/faq/list-of-supported-apps",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/help/faq",
+      "target": "route:storeleads.app:/help/faq/list-of-supported-technologies",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/help/features",
+      "target": "route:storeleads.app:/help/features/product_search",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/help/faq",
+      "target": "route:storeleads.app:/help/faq/how-often-is-data-updated",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "page:storeleads.app:home",
+      "target": "route:storeleads.app:/demo",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:storeleads.app:/help/features",
+      "target": "route:storeleads.app:/help/features/historical-data",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "page:storeleads.app:home",
+      "target": "route:storeleads.app:/reports",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:storeleads.app:/reports",
+      "target": "route:storeleads.app:/reports/shopify",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/help/faq",
+      "target": "route:storeleads.app:/help/faq/what-data-is-available-for-domains",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/help/faq",
+      "target": "route:storeleads.app:/help/faq/list-of-domain-filters",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/help",
+      "target": "route:storeleads.app:/help/integrations",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/help/features",
+      "target": "route:storeleads.app:/help/features/workflows",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/help/features",
+      "target": "route:storeleads.app:/help/features/export",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/help/integrations",
+      "target": "route:storeleads.app:/help/integrations/salesforce",
+      "label": "branches to"
+    },
+    {
+      "source": "route:storeleads.app:/help/integrations/salesforce",
+      "target": "route:storeleads.app:/help/integrations/salesforce#showingdatacustomsearchfilters",
+      "label": "renders view"
+    },
+    {
+      "source": "route:storeleads.app:/help/features",
+      "target": "route:storeleads.app:/help/features/calculated-values",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/help/features",
+      "target": "route:storeleads.app:/help/features/custom-matches",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/help/integrations",
+      "target": "route:storeleads.app:/help/integrations/hubspot",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/help/integrations",
+      "target": "route:storeleads.app:/help/integrations/outreach",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/help/integrations",
+      "target": "route:storeleads.app:/help/integrations/pipedrive",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/help/integrations",
+      "target": "route:storeleads.app:/help/integrations/apollo",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/help/integrations",
+      "target": "route:storeleads.app:/help/integrations/contactout",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/help/integrations",
+      "target": "route:storeleads.app:/help/integrations/cognism",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/help/integrations",
+      "target": "route:storeleads.app:/help/integrations/fullenrich",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/reports",
+      "target": "route:storeleads.app:/reports/woocommerce",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:storeleads.app:/help/features/product_search",
+      "target": "route:storeleads.app:/help/features/chrome_extension",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:storeleads.app:/help/features/product_search",
+      "target": "route:storeleads.app:/contact",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:storeleads.app:/help/features/product_search",
+      "target": "route:storeleads.app:/dashboard",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:storeleads.app:/help/features/product_search",
+      "target": "route:storeleads.app:/alternative-data",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:storeleads.app:/help/features/product_search",
+      "target": "route:storeleads.app:/api",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:storeleads.app:/help/features/product_search",
+      "target": "route:storeleads.app:/blog",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:storeleads.app:/help/features/product_search",
+      "target": "route:storeleads.app:/blog/2026/05/13/cohort-retention-analytics",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:storeleads.app:/help/features/product_search",
+      "target": "route:storeleads.app:/help/faq/list-of-supported-apps",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:storeleads.app:/blog",
+      "target": "route:storeleads.app:/help/features/product_search",
+      "label": "highlights"
+    },
+    {
+      "source": "root:storeleads.app",
+      "target": "tech:tailwind-css",
+      "label": "powered by"
+    },
+    {
+      "source": "root:storeleads.app",
+      "target": "tech:google-tag-manager",
+      "label": "powered by"
+    },
+    {
+      "source": "root:storeleads.app",
+      "target": "tech:google-analytics-4",
+      "label": "powered by"
+    },
+    {
+      "source": "root:storeleads.app",
+      "target": "tech:google-fonts",
+      "label": "powered by"
+    },
+    {
+      "source": "tech:tailwind-css",
+      "target": "tech:tailwind:tokens",
+      "label": "configures"
+    },
+    {
+      "source": "tech:google-tag-manager",
+      "target": "page:storeleads.app:home",
+      "label": "measures traffic"
+    },
+    {
+      "source": "tech:google-tag-manager",
+      "target": "route:storeleads.app:/help/features/product_search",
+      "label": "tracks events"
+    },
+    {
+      "source": "root:storeleads.app",
+      "target": "feature:search",
+      "label": "provides feature"
+    },
+    {
+      "source": "feature:search",
+      "target": "route:storeleads.app:/help/features/product_search",
+      "label": "searches catalog"
+    },
+    {
+      "source": "feature:search",
+      "target": "route:storeleads.app:/help/features/chrome_extension",
+      "label": "indexes leaf"
+    },
+    {
+      "source": "root:storeleads.app",
+      "target": "feature:nav",
+      "label": "provides feature"
+    },
+    {
+      "source": "feature:nav",
+      "target": "page:storeleads.app:home",
+      "label": "mounts on"
+    },
+    {
+      "source": "feature:nav",
+      "target": "route:storeleads.app:/help/features/product_search",
+      "label": "navigates to"
+    },
+    {
+      "source": "tech:tailwind-css",
+      "target": "feature:nav",
+      "label": "styles navbar"
+    },
+    {
+      "source": "root:storeleads.app",
+      "target": "feature:grid",
+      "label": "provides feature"
+    },
+    {
+      "source": "feature:grid",
+      "target": "route:storeleads.app:/help/features/product_search",
+      "label": "renders items"
+    },
+    {
+      "source": "feature:grid",
+      "target": "route:storeleads.app:/help/features/chrome_extension",
+      "label": "item card"
+    },
+    {
+      "source": "tech:tailwind-css",
+      "target": "feature:grid",
+      "label": "grid layout"
+    },
+    {
+      "source": "root:storeleads.app",
+      "target": "feature:forms",
+      "label": "provides feature"
+    },
+    {
+      "source": "feature:forms",
+      "target": "page:storeleads.app:home",
+      "label": "interactive form"
+    },
+    {
+      "source": "root:storeleads.app",
+      "target": "perf:storeleads.app",
+      "label": "benchmarked at"
+    },
+    {
+      "source": "perf:storeleads.app",
+      "target": "perf:storeleads.app:ttfb",
+      "label": "measures"
+    },
+    {
+      "source": "perf:storeleads.app",
+      "target": "perf:storeleads.app:payload",
+      "label": "audits"
+    },
+    {
+      "source": "root:storeleads.app",
+      "target": "sec:storeleads.app",
+      "label": "secured by"
+    },
+    {
+      "source": "sec:storeleads.app",
+      "target": "sec:storeleads.app:dns-ips",
+      "label": "resolves via"
+    },
+    {
+      "source": "sec:storeleads.app",
+      "target": "sec:storeleads.app:ssl",
+      "label": "encrypts with"
+    },
+    {
+      "source": "root:storeleads.app",
+      "target": "idea:0",
+      "label": "architecture pattern"
+    },
+    {
+      "source": "root:storeleads.app",
+      "target": "idea:1",
+      "label": "architecture pattern"
+    },
+    {
+      "source": "idea:1",
+      "target": "tech:tailwind-css",
+      "label": "design guide"
+    },
+    {
+      "source": "root:storeleads.app",
+      "target": "idea:2",
+      "label": "architecture pattern"
+    },
+    {
+      "source": "idea:2",
+      "target": "feature:search",
+      "label": "implements recipe"
+    }
+  ]
+}

@@ -1,0 +1,1582 @@
+{
+  "title": "NodeDir - apify.com",
+  "generatedAt": "2026-09-18T12:36:30.673Z",
+  "nodeCount": 78,
+  "linkCount": 117,
+  "nodes": [
+    {
+      "id": "root:apify.com",
+      "name": "apify.com",
+      "category": "website",
+      "subtitle": "Apify: Marketplace of ready-to-run tools for AI",
+      "description": "Thousands of tools to automate your business. Get real-time web data, track competitors, generate leads, and integrate your apps and AI agents. Analyzed across 40 pages, 7 tech stacks, and 6 core features.",
+      "location": "apify.com",
+      "year": "2026",
+      "tags": [
+        "apify.com",
+        "HTTPS",
+        "Web"
+      ]
+    },
+    {
+      "id": "page:apify.com:home",
+      "name": "Home Route (/)",
+      "category": "page",
+      "subtitle": "Root Navigation Landing · Depth 0",
+      "description": "Primary application entry point at https://apify.com/. Renders global navigation and mounts section controllers.",
+      "tags": [
+        "landing",
+        "root",
+        "depth-0"
+      ]
+    },
+    {
+      "id": "route:apify.com:/store",
+      "name": "/store",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /store. Dynamic mapping: /store. Full URL: https://apify.com/store. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/actors",
+      "name": "/actors",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /actors. Dynamic mapping: /actors. Full URL: https://apify.com/actors. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/integrations",
+      "name": "/integrations",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /integrations. Dynamic mapping: /integrations. Full URL: https://apify.com/integrations. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/anti-blocking",
+      "name": "/anti-blocking",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /anti-blocking. Dynamic mapping: /anti-blocking. Full URL: https://apify.com/anti-blocking. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/proxy",
+      "name": "/proxy",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /proxy. Dynamic mapping: /proxy. Full URL: https://apify.com/proxy. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/enterprise",
+      "name": "/enterprise",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /enterprise. Dynamic mapping: /enterprise. Full URL: https://apify.com/enterprise. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/resources",
+      "name": "/resources",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /resources. Dynamic mapping: /resources. Full URL: https://apify.com/resources. Structural route branch controller.",
+      "tags": [
+        "route",
+        "depth-1",
+        "branch-router",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/resources/startups",
+      "name": "/startups",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /resources/startups. Dynamic mapping: /resources/startups. Full URL: https://apify.com/resources/startups. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/resources/universities",
+      "name": "/universities",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /resources/universities. Dynamic mapping: /resources/universities. Full URL: https://apify.com/resources/universities. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/resources/nonprofits",
+      "name": "/nonprofits",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /resources/nonprofits. Dynamic mapping: /resources/nonprofits. Full URL: https://apify.com/resources/nonprofits. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/use-cases",
+      "name": "/use-cases",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /use-cases. Dynamic mapping: /use-cases. Full URL: https://apify.com/use-cases. Structural route branch controller.",
+      "tags": [
+        "route",
+        "depth-1",
+        "branch-router",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/use-cases/data-for-generative-ai",
+      "name": "/data-for-generative-ai",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /use-cases/data-for-generative-ai. Dynamic mapping: /use-cases/[slug]. Full URL: https://apify.com/use-cases/data-for-generative-ai. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/use-cases/data-for-ai-agents",
+      "name": "/data-for-ai-agents",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /use-cases/data-for-ai-agents. Dynamic mapping: /use-cases/[slug]. Full URL: https://apify.com/use-cases/data-for-ai-agents. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/use-cases/lead-generation",
+      "name": "/lead-generation",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /use-cases/lead-generation. Dynamic mapping: /use-cases/[slug]. Full URL: https://apify.com/use-cases/lead-generation. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/use-cases/market-research",
+      "name": "/market-research",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /use-cases/market-research. Dynamic mapping: /use-cases/[slug]. Full URL: https://apify.com/use-cases/market-research. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/professional-services",
+      "name": "/professional-services",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /professional-services. Dynamic mapping: /professional-services. Full URL: https://apify.com/professional-services. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/partners",
+      "name": "/partners",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /partners. Dynamic mapping: /partners. Full URL: https://apify.com/partners. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/templates",
+      "name": "/templates",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /templates. Dynamic mapping: /templates. Full URL: https://apify.com/templates. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/partners/actor-developers",
+      "name": "/actor-developers",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /partners/actor-developers. Dynamic mapping: /partners/[slug]. Full URL: https://apify.com/partners/actor-developers. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/ideas",
+      "name": "/ideas",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /ideas. Dynamic mapping: /ideas. Full URL: https://apify.com/ideas. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/change-log",
+      "name": "/change-log",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /change-log. Dynamic mapping: /change-log. Full URL: https://apify.com/change-log. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/success-stories",
+      "name": "/success-stories",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /success-stories. Dynamic mapping: /success-stories. Full URL: https://apify.com/success-stories. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/about",
+      "name": "/about",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /about. Dynamic mapping: /about. Full URL: https://apify.com/about. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "contact"
+      ]
+    },
+    {
+      "id": "route:apify.com:/contact",
+      "name": "/contact",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /contact. Dynamic mapping: /contact. Full URL: https://apify.com/contact. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "contact"
+      ]
+    },
+    {
+      "id": "route:apify.com:/doing-good",
+      "name": "/doing-good",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /doing-good. Dynamic mapping: /doing-good. Full URL: https://apify.com/doing-good. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/jobs",
+      "name": "/jobs",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /jobs. Dynamic mapping: /jobs. Full URL: https://apify.com/jobs. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/pricing",
+      "name": "/pricing",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /pricing. Dynamic mapping: /pricing. Full URL: https://apify.com/pricing. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "pricing"
+      ]
+    },
+    {
+      "id": "route:apify.com:/contact-sales",
+      "name": "/contact-sales",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /contact-sales. Dynamic mapping: /contact-sales. Full URL: https://apify.com/contact-sales. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "contact"
+      ]
+    },
+    {
+      "id": "route:apify.com:/clockworks",
+      "name": "/clockworks",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /clockworks. Dynamic mapping: /clockworks. Full URL: https://apify.com/clockworks. Structural route branch controller.",
+      "tags": [
+        "route",
+        "depth-1",
+        "branch-router",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/clockworks/tiktok-scraper",
+      "name": "/tiktok-scraper",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /clockworks/tiktok-scraper. Dynamic mapping: /clockworks/[slug]. Full URL: https://apify.com/clockworks/tiktok-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/compass",
+      "name": "/compass",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /compass. Dynamic mapping: /compass. Full URL: https://apify.com/compass. Structural route branch controller.",
+      "tags": [
+        "route",
+        "depth-1",
+        "branch-router",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/compass/crawler-google-places",
+      "name": "/crawler-google-places",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /compass/crawler-google-places. Dynamic mapping: /compass/[slug]. Full URL: https://apify.com/compass/crawler-google-places. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/apify",
+      "name": "/apify",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /apify. Dynamic mapping: /apify. Full URL: https://apify.com/apify. Structural route branch controller.",
+      "tags": [
+        "route",
+        "depth-1",
+        "branch-router",
+        "docs"
+      ]
+    },
+    {
+      "id": "route:apify.com:/apify/instagram-scraper",
+      "name": "/instagram-scraper",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /apify/instagram-scraper. Dynamic mapping: /apify/[slug]. Full URL: https://apify.com/apify/instagram-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "docs"
+      ]
+    },
+    {
+      "id": "route:apify.com:/apify/website-content-crawler",
+      "name": "/website-content-crawler",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /apify/website-content-crawler. Dynamic mapping: /apify/[slug]. Full URL: https://apify.com/apify/website-content-crawler. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "docs"
+      ]
+    },
+    {
+      "id": "route:apify.com:/apify/e-commerce-scraping-tool",
+      "name": "/e-commerce-scraping-tool",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /apify/e-commerce-scraping-tool. Dynamic mapping: /apify/[slug]. Full URL: https://apify.com/apify/e-commerce-scraping-tool. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "docs"
+      ]
+    },
+    {
+      "id": "route:apify.com:/apify/facebook-posts-scraper",
+      "name": "/facebook-posts-scraper",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /apify/facebook-posts-scraper. Dynamic mapping: /apify/[slug]. Full URL: https://apify.com/apify/facebook-posts-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "docs"
+      ]
+    },
+    {
+      "id": "route:apify.com:/agents.md",
+      "name": "/agents.md",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /agents.md. Dynamic mapping: /agents.md. Full URL: https://apify.com/agents.md. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/templates/python-llamaindex-agent",
+      "name": "/python-llamaindex-agent",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /templates/python-llamaindex-agent. Dynamic mapping: /templates/[slug]. Full URL: https://apify.com/templates/python-llamaindex-agent. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/templates/js-langchain",
+      "name": "/js-langchain",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /templates/js-langchain. Dynamic mapping: /templates/[slug]. Full URL: https://apify.com/templates/js-langchain. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/templates/ts-crawlee-playwright-chrome",
+      "name": "/ts-crawlee-playwright-chrome",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /templates/ts-crawlee-playwright-chrome. Dynamic mapping: /templates/[slug]. Full URL: https://apify.com/templates/ts-crawlee-playwright-chrome. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:apify.com:/templates/ts-crawlee-puppeteer-chrome",
+      "name": "/ts-crawlee-puppeteer-chrome",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /templates/ts-crawlee-puppeteer-chrome. Dynamic mapping: /templates/[slug]. Full URL: https://apify.com/templates/ts-crawlee-puppeteer-chrome. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "tech:next-js",
+      "name": "Next.js",
+      "category": "stack",
+      "subtitle": "FRAMEWORK · high confidence",
+      "description": "Full-stack React framework with SSR, SSG, and App Router capabilities. Evidence: Found __NEXT_DATA__ / _next/ static bundles",
+      "tags": [
+        "framework",
+        "high",
+        "tech-stack"
+      ]
+    },
+    {
+      "id": "tech:react",
+      "name": "React",
+      "category": "stack",
+      "subtitle": "FRAMEWORK · high confidence",
+      "description": "Component-based declarative UI library. Evidence: React DOM / hydrate markers detected",
+      "tags": [
+        "framework",
+        "high",
+        "tech-stack"
+      ]
+    },
+    {
+      "id": "tech:tailwind-css",
+      "name": "Tailwind CSS",
+      "category": "stack",
+      "subtitle": "CSS · high confidence",
+      "description": "Utility-first CSS framework for rapid modern UI development. Evidence: Tailwind utility patterns and responsive modifiers",
+      "tags": [
+        "css",
+        "high",
+        "tech-stack"
+      ]
+    },
+    {
+      "id": "tech:bootstrap",
+      "name": "Bootstrap",
+      "category": "stack",
+      "subtitle": "CSS · high confidence",
+      "description": "Component-based CSS library for responsive sites. Evidence: Bootstrap classes / stylesheet links",
+      "tags": [
+        "css",
+        "high",
+        "tech-stack"
+      ]
+    },
+    {
+      "id": "tech:aws-cloudfront",
+      "name": "AWS CloudFront",
+      "category": "stack",
+      "subtitle": "CDN · high confidence",
+      "description": "Amazon Web Services content delivery network. Evidence: Amazon CloudFront edge response headers",
+      "tags": [
+        "cdn",
+        "high",
+        "tech-stack"
+      ]
+    },
+    {
+      "id": "tech:google-tag-manager",
+      "name": "Google Tag Manager",
+      "category": "stack",
+      "subtitle": "ANALYTICS · high confidence",
+      "description": "Tag management system for marketing & analytics scripts. Evidence: GTM container script loaded",
+      "tags": [
+        "analytics",
+        "high",
+        "tech-stack"
+      ]
+    },
+    {
+      "id": "tech:sentry",
+      "name": "Sentry",
+      "category": "stack",
+      "subtitle": "ANALYTICS · high confidence",
+      "description": "Application performance monitoring and crash diagnostics. Evidence: Sentry error reporting SDK snippet",
+      "tags": [
+        "analytics",
+        "high",
+        "tech-stack"
+      ]
+    },
+    {
+      "id": "tech:nextjs:routing",
+      "name": "Next.js App Router & SSR",
+      "category": "stack",
+      "subtitle": "Routing & Streaming Hydration",
+      "description": "File-system layout engine with server-side rendering, streaming hydration, and automatic code-splitting per route.",
+      "tags": [
+        "nextjs",
+        "ssr",
+        "streaming",
+        "app-router"
+      ]
+    },
+    {
+      "id": "tech:tailwind:tokens",
+      "name": "Tailwind Design Tokens",
+      "category": "stack",
+      "subtitle": "CSS Variable & Utility System",
+      "description": "Custom design tokens mapping background colors, card surfaces, border gradients, and responsive breakpoints.",
+      "tags": [
+        "tailwind",
+        "css-tokens",
+        "design-system"
+      ]
+    },
+    {
+      "id": "feature:search",
+      "name": "Global Search / Query Bar",
+      "category": "feature",
+      "subtitle": "search · cmdk · ux · autocomplete",
+      "description": "Interactive search interface with autocomplete or command palette triggers.",
+      "tags": [
+        "search",
+        "cmdk",
+        "ux",
+        "autocomplete"
+      ]
+    },
+    {
+      "id": "feature:auth",
+      "name": "Authentication & Identity Flow",
+      "category": "feature",
+      "subtitle": "auth · security · sso · cookies",
+      "description": "User authentication gateway supporting credentials or third-party SSO.",
+      "tags": [
+        "auth",
+        "security",
+        "sso",
+        "cookies"
+      ]
+    },
+    {
+      "id": "feature:theme",
+      "name": "Theme Mode / Dark Mode Engine",
+      "category": "feature",
+      "subtitle": "dark-mode · css-variables · theming",
+      "description": "Dynamic theme switching with automatic system preference detection.",
+      "tags": [
+        "dark-mode",
+        "css-variables",
+        "theming"
+      ]
+    },
+    {
+      "id": "feature:nav",
+      "name": "Adaptive Navigation Header",
+      "category": "feature",
+      "subtitle": "navigation · header · responsive · mobile",
+      "description": "Persistent top navigation bar with mobile drawer and quick action links.",
+      "tags": [
+        "navigation",
+        "header",
+        "responsive",
+        "mobile"
+      ]
+    },
+    {
+      "id": "feature:grid",
+      "name": "Interactive Card Matrix",
+      "category": "feature",
+      "subtitle": "grid · cards · ui-layout",
+      "description": "Modern grid system presenting modular content cards with hover transitions.",
+      "tags": [
+        "grid",
+        "cards",
+        "ui-layout"
+      ]
+    },
+    {
+      "id": "feature:forms",
+      "name": "Validated Form Workflows",
+      "category": "feature",
+      "subtitle": "forms · zod · validation",
+      "description": "Interactive data input forms with client/server validation and feedback.",
+      "tags": [
+        "forms",
+        "zod",
+        "validation"
+      ]
+    },
+    {
+      "id": "link:docs:0",
+      "name": "Documentation (docs.apify.com)",
+      "category": "connection",
+      "subtitle": "Developer Docs",
+      "description": "Discovered ecosystem link on apify.com: https://docs.apify.com/api/v2",
+      "tags": [
+        "docs",
+        "deep-dive",
+        "ecosystem"
+      ]
+    },
+    {
+      "id": "link:docs:1",
+      "name": "Documentation (docs.apify.com)",
+      "category": "connection",
+      "subtitle": "Developer Docs",
+      "description": "Discovered ecosystem link on apify.com: https://docs.apify.com/",
+      "tags": [
+        "docs",
+        "deep-dive",
+        "ecosystem"
+      ]
+    },
+    {
+      "id": "link:docs:2",
+      "name": "Documentation (docs.apify.com)",
+      "category": "connection",
+      "subtitle": "Developer Docs",
+      "description": "Discovered ecosystem link on apify.com: https://docs.apify.com/academy",
+      "tags": [
+        "docs",
+        "deep-dive",
+        "ecosystem"
+      ]
+    },
+    {
+      "id": "link:docs:3",
+      "name": "Documentation (docs.apify.com)",
+      "category": "connection",
+      "subtitle": "Developer Docs",
+      "description": "Discovered ecosystem link on apify.com: https://docs.apify.com/api",
+      "tags": [
+        "docs",
+        "deep-dive",
+        "ecosystem"
+      ]
+    },
+    {
+      "id": "link:docs:4",
+      "name": "Documentation (docs.apify.com)",
+      "category": "connection",
+      "subtitle": "Developer Docs",
+      "description": "Discovered ecosystem link on apify.com: https://docs.apify.com/cli/",
+      "tags": [
+        "docs",
+        "deep-dive",
+        "ecosystem"
+      ]
+    },
+    {
+      "id": "link:docs:5",
+      "name": "Documentation (docs.apify.com)",
+      "category": "connection",
+      "subtitle": "Developer Docs",
+      "description": "Discovered ecosystem link on apify.com: https://docs.apify.com/sdk",
+      "tags": [
+        "docs",
+        "deep-dive",
+        "ecosystem"
+      ]
+    },
+    {
+      "id": "link:docs:6",
+      "name": "Documentation (docs.apify.com)",
+      "category": "connection",
+      "subtitle": "Developer Docs",
+      "description": "Discovered ecosystem link on apify.com: https://docs.apify.com/platform/integrations/mcp",
+      "tags": [
+        "docs",
+        "deep-dive",
+        "ecosystem"
+      ]
+    },
+    {
+      "id": "link:social:7",
+      "name": "Discord Community",
+      "category": "connection",
+      "subtitle": "Developer Community",
+      "description": "Discovered ecosystem link on apify.com: https://discord.com/invite/jyEM2PRvMU",
+      "tags": [
+        "social",
+        "deep-dive",
+        "ecosystem"
+      ]
+    },
+    {
+      "id": "link:github:8",
+      "name": "GitHub: apify/crawlee",
+      "category": "connection",
+      "subtitle": "Source & Code",
+      "description": "Discovered ecosystem link on apify.com: https://github.com/apify/crawlee",
+      "tags": [
+        "github",
+        "deep-dive",
+        "ecosystem"
+      ]
+    },
+    {
+      "id": "link:social:9",
+      "name": "Discord Community",
+      "category": "connection",
+      "subtitle": "Developer Community",
+      "description": "Discovered ecosystem link on apify.com: https://discord.gg/w3e2v7rWDw",
+      "tags": [
+        "social",
+        "deep-dive",
+        "ecosystem"
+      ]
+    },
+    {
+      "id": "perf:apify.com",
+      "name": "Performance & Vitals Hub",
+      "category": "performance",
+      "subtitle": "1137ms TTFB · 480.3 KB",
+      "description": "HTML Size: 480.3 KB. Resources: 52 scripts, 3 stylesheets, 78 images. Compression: gzip. Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate.",
+      "tags": [
+        "performance",
+        "vitals",
+        "gzip",
+        "52 scripts"
+      ]
+    },
+    {
+      "id": "perf:apify.com:ttfb",
+      "name": "TTFB Response Latency",
+      "category": "performance",
+      "subtitle": "1137 ms response time",
+      "description": "Time to first byte recorded from client HTTP handshake to first byte of response. Measured at 1137ms.",
+      "tags": [
+        "latency",
+        "ttfb",
+        "network"
+      ]
+    },
+    {
+      "id": "perf:apify.com:payload",
+      "name": "Asset & Payload Distribution",
+      "category": "performance",
+      "subtitle": "480.3 KB HTML · 52 scripts",
+      "description": "Resource inspection: 52 script bundles, 3 stylesheets, 78 media assets. Compression: gzip.",
+      "tags": [
+        "payload",
+        "assets",
+        "gzip"
+      ]
+    },
+    {
+      "id": "sec:apify.com",
+      "name": "Security & DNS Topology",
+      "category": "security",
+      "subtitle": "HTTPS Secure · HSTS",
+      "description": "Protocol: https:. HSTS Preload: Enabled. CSP: Configured. DNS: 54.192.151.117, 54.192.151.128, 54.192.151.19. Server: Edge.",
+      "tags": [
+        "security",
+        "dns",
+        "ssl",
+        "hsts"
+      ]
+    },
+    {
+      "id": "sec:apify.com:dns-ips",
+      "name": "Anycast DNS Endpoints",
+      "category": "security",
+      "subtitle": "12 Resolved IP Addresses",
+      "description": "DNS A/AAAA addresses: 54.192.151.117, 54.192.151.128, 54.192.151.19. Provides geo-distributed anycast edge routing.",
+      "tags": [
+        "dns",
+        "ip",
+        "anycast"
+      ]
+    },
+    {
+      "id": "sec:apify.com:ssl",
+      "name": "SSL/TLS Edge Termination",
+      "category": "security",
+      "subtitle": "TLS 1.3 Active · HSTS",
+      "description": "Transport Layer Security active on port 443. HSTS Strict Transport Security: Enforced. Server signature: Edge cluster.",
+      "tags": [
+        "ssl",
+        "tls",
+        "https",
+        "hsts"
+      ]
+    },
+    {
+      "id": "idea:0",
+      "name": "Edge Delivery & Hydration Strategy",
+      "category": "idea",
+      "subtitle": "Developer Implementation Pattern",
+      "description": "apify.com leverages SSR with streaming hydration for rapid First Contentful Paint. Architecture: Deploy on edge CDN nodes (e.g. Cloudflare / Vercel Edge). Cache static assets with immutable cache-control, revalidate dynamic data with SWR or React Query.",
+      "tags": [
+        "architecture",
+        "pattern",
+        "recipe"
+      ]
+    },
+    {
+      "id": "idea:1",
+      "name": "Design System & Token Architecture",
+      "category": "idea",
+      "subtitle": "Developer Implementation Pattern",
+      "description": "Consistent typography, high-contrast dark theme surfaces, and smooth micro-animations across all interactive surfaces. Architecture: Establish semantic color tokens (--color-background, --color-accent, --color-border) with HSL or P3 color spaces. Keep layouts responsive with clamp() and fluid flexbox/grid.",
+      "tags": [
+        "architecture",
+        "pattern",
+        "recipe"
+      ]
+    },
+    {
+      "id": "idea:2",
+      "name": "Clone Recipe: Global Search / Query Bar",
+      "category": "idea",
+      "subtitle": "Developer Implementation Pattern",
+      "description": "Developers looking to replicate Global Search / Query Bar from apify.com can follow this proven pattern. Architecture: Build with Radix Popover or cmdk library. Use debounced inputs (useDebounce 250ms), prefetch results or index with Fuse.js for instant client-side matching.",
+      "tags": [
+        "architecture",
+        "pattern",
+        "recipe"
+      ]
+    }
+  ],
+  "links": [
+    {
+      "source": "root:apify.com",
+      "target": "page:apify.com:home",
+      "label": "mounts index"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/store",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/actors",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/integrations",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/anti-blocking",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/proxy",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/enterprise",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/resources",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:apify.com:/resources",
+      "target": "route:apify.com:/resources/startups",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:apify.com:/resources",
+      "target": "route:apify.com:/resources/universities",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:apify.com:/resources",
+      "target": "route:apify.com:/resources/nonprofits",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/use-cases",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:apify.com:/use-cases",
+      "target": "route:apify.com:/use-cases/data-for-generative-ai",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:apify.com:/use-cases",
+      "target": "route:apify.com:/use-cases/data-for-ai-agents",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:apify.com:/use-cases",
+      "target": "route:apify.com:/use-cases/lead-generation",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:apify.com:/use-cases",
+      "target": "route:apify.com:/use-cases/market-research",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/professional-services",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/partners",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/templates",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:apify.com:/partners",
+      "target": "route:apify.com:/partners/actor-developers",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/ideas",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/change-log",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/success-stories",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/about",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/contact",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/doing-good",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/jobs",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/pricing",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/contact-sales",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/clockworks",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:apify.com:/clockworks",
+      "target": "route:apify.com:/clockworks/tiktok-scraper",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/compass",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:apify.com:/compass",
+      "target": "route:apify.com:/compass/crawler-google-places",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/apify",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:apify.com:/apify",
+      "target": "route:apify.com:/apify/instagram-scraper",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:apify.com:/apify",
+      "target": "route:apify.com:/apify/website-content-crawler",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:apify.com:/apify",
+      "target": "route:apify.com:/apify/e-commerce-scraping-tool",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:apify.com:/apify",
+      "target": "route:apify.com:/apify/facebook-posts-scraper",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "route:apify.com:/agents.md",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:apify.com:/templates",
+      "target": "route:apify.com:/templates/python-llamaindex-agent",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:apify.com:/templates",
+      "target": "route:apify.com:/templates/js-langchain",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:apify.com:/templates",
+      "target": "route:apify.com:/templates/ts-crawlee-playwright-chrome",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:apify.com:/templates",
+      "target": "route:apify.com:/templates/ts-crawlee-puppeteer-chrome",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:apify.com:/use-cases/market-research",
+      "target": "route:apify.com:/store",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:apify.com:/use-cases/market-research",
+      "target": "route:apify.com:/actors",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:apify.com:/use-cases/market-research",
+      "target": "route:apify.com:/integrations",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:apify.com:/use-cases/market-research",
+      "target": "route:apify.com:/anti-blocking",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:apify.com:/use-cases/market-research",
+      "target": "route:apify.com:/proxy",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:apify.com:/use-cases/market-research",
+      "target": "route:apify.com:/enterprise",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:apify.com:/use-cases/market-research",
+      "target": "route:apify.com:/resources/startups",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:apify.com:/use-cases/market-research",
+      "target": "route:apify.com:/resources/universities",
+      "label": "catalogs item"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "tech:next-js",
+      "label": "powered by"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "tech:react",
+      "label": "powered by"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "tech:tailwind-css",
+      "label": "powered by"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "tech:bootstrap",
+      "label": "powered by"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "tech:aws-cloudfront",
+      "label": "powered by"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "tech:google-tag-manager",
+      "label": "powered by"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "tech:sentry",
+      "label": "powered by"
+    },
+    {
+      "source": "tech:next-js",
+      "target": "tech:nextjs:routing",
+      "label": "provides routing"
+    },
+    {
+      "source": "tech:nextjs:routing",
+      "target": "page:apify.com:home",
+      "label": "hydrates"
+    },
+    {
+      "source": "tech:nextjs:routing",
+      "target": "route:apify.com:/use-cases/market-research",
+      "label": "server-renders"
+    },
+    {
+      "source": "tech:next-js",
+      "target": "tech:react",
+      "label": "built on"
+    },
+    {
+      "source": "tech:tailwind-css",
+      "target": "tech:tailwind:tokens",
+      "label": "configures"
+    },
+    {
+      "source": "tech:google-tag-manager",
+      "target": "page:apify.com:home",
+      "label": "measures traffic"
+    },
+    {
+      "source": "tech:google-tag-manager",
+      "target": "route:apify.com:/use-cases/market-research",
+      "label": "tracks events"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "feature:search",
+      "label": "provides feature"
+    },
+    {
+      "source": "feature:search",
+      "target": "route:apify.com:/use-cases/market-research",
+      "label": "searches catalog"
+    },
+    {
+      "source": "feature:search",
+      "target": "route:apify.com:/store",
+      "label": "indexes leaf"
+    },
+    {
+      "source": "feature:search",
+      "target": "tech:react",
+      "label": "client component"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "feature:auth",
+      "label": "provides feature"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "feature:theme",
+      "label": "provides feature"
+    },
+    {
+      "source": "feature:nav",
+      "target": "feature:theme",
+      "label": "theme toggle"
+    },
+    {
+      "source": "feature:theme",
+      "target": "tech:tailwind-css",
+      "label": "toggles dark class"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "feature:nav",
+      "label": "provides feature"
+    },
+    {
+      "source": "feature:nav",
+      "target": "page:apify.com:home",
+      "label": "mounts on"
+    },
+    {
+      "source": "feature:nav",
+      "target": "route:apify.com:/use-cases/market-research",
+      "label": "navigates to"
+    },
+    {
+      "source": "tech:tailwind-css",
+      "target": "feature:nav",
+      "label": "styles navbar"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "feature:grid",
+      "label": "provides feature"
+    },
+    {
+      "source": "feature:grid",
+      "target": "route:apify.com:/use-cases/market-research",
+      "label": "renders items"
+    },
+    {
+      "source": "feature:grid",
+      "target": "route:apify.com:/store",
+      "label": "item card"
+    },
+    {
+      "source": "tech:tailwind-css",
+      "target": "feature:grid",
+      "label": "grid layout"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "feature:forms",
+      "label": "provides feature"
+    },
+    {
+      "source": "feature:forms",
+      "target": "page:apify.com:home",
+      "label": "interactive form"
+    },
+    {
+      "source": "feature:forms",
+      "target": "tech:react",
+      "label": "form state"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "link:docs:0",
+      "label": "developer docs"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "link:docs:0",
+      "label": "external link"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "link:docs:1",
+      "label": "developer docs"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "link:docs:1",
+      "label": "external link"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "link:docs:2",
+      "label": "developer docs"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "link:docs:2",
+      "label": "external link"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "link:docs:3",
+      "label": "developer docs"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "link:docs:3",
+      "label": "external link"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "link:docs:4",
+      "label": "developer docs"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "link:docs:4",
+      "label": "external link"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "link:docs:5",
+      "label": "developer docs"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "link:docs:5",
+      "label": "external link"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "link:docs:6",
+      "label": "developer docs"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "link:docs:6",
+      "label": "external link"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "link:social:7",
+      "label": "developer community"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "link:social:7",
+      "label": "external link"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "link:github:8",
+      "label": "source & code"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "link:github:8",
+      "label": "external link"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "link:social:9",
+      "label": "developer community"
+    },
+    {
+      "source": "page:apify.com:home",
+      "target": "link:social:9",
+      "label": "external link"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "perf:apify.com",
+      "label": "benchmarked at"
+    },
+    {
+      "source": "perf:apify.com",
+      "target": "perf:apify.com:ttfb",
+      "label": "measures"
+    },
+    {
+      "source": "perf:apify.com",
+      "target": "perf:apify.com:payload",
+      "label": "audits"
+    },
+    {
+      "source": "perf:apify.com:payload",
+      "target": "tech:next-js",
+      "label": "bundled by"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "sec:apify.com",
+      "label": "secured by"
+    },
+    {
+      "source": "sec:apify.com",
+      "target": "sec:apify.com:dns-ips",
+      "label": "resolves via"
+    },
+    {
+      "source": "sec:apify.com",
+      "target": "sec:apify.com:ssl",
+      "label": "encrypts with"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "idea:0",
+      "label": "architecture pattern"
+    },
+    {
+      "source": "idea:0",
+      "target": "tech:next-js",
+      "label": "pattern for"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "idea:1",
+      "label": "architecture pattern"
+    },
+    {
+      "source": "idea:1",
+      "target": "tech:tailwind-css",
+      "label": "design guide"
+    },
+    {
+      "source": "root:apify.com",
+      "target": "idea:2",
+      "label": "architecture pattern"
+    },
+    {
+      "source": "idea:2",
+      "target": "feature:search",
+      "label": "implements recipe"
+    }
+  ]
+}

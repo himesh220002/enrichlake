@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "skills": {
+    "business-analyst": {
+      "source": "sickn33/agentic-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/business-analyst/SKILL.md",
+      "computedHash": "71c71920d262730c2dc2ec76474b8ef7b2fa1d552cdf1ce14f9e95c03eb31745"
+    },
+    "data-enrichment": {
+      "source": "hubspot/agent-cli-skills",
+      "sourceType": "github",
+      "skillPath": "data-enrichment/SKILL.md",
+      "computedHash": "96df9ccebb951aa69e6ae601727bf1ef06ee0afb67c45c69c6134f0a44f1ae87"
+    },
+    "data-science-expert": {
+      "source": "personamanagmentlayer/pcl",
+      "sourceType": "github",
+      "skillPath": "stdlib/ai/data-science-expert/SKILL.md",
+      "computedHash": "13544066282ed7ed56c5eeb02923ac6e5e83ebfb3714bdf99ab10775dc13fdfd"
+    },
+    "enrich-lead": {
+      "source": "anthropics/knowledge-work-plugins",
+      "sourceType": "github",
+      "skillPath": "partner-built/apollo/skills/enrich-lead/SKILL.md",
+      "computedHash": "dc68130354a31ecdda7e1510da34c59bcd4a49e1b9cbac7a2dcb2e19300f011c"
+    },
+    "firecrawl-scrape": {
+      "source": "firecrawl/cli",
+      "sourceType": "github",
+      "skillPath": "skills/firecrawl-scrape/SKILL.md",
+      "computedHash": "6c998acccac1ed7ff9d4da62eaac3a15456cd4c4306ef8d1c8d838d335200738"
+    },
+    "parallel-data-enrichment": {
+      "source": "parallel-web/parallel-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/parallel-data-enrichment/SKILL.md",
+      "computedHash": "c41056eefa19af8dae9afab4ae700f4c0f830c5a7364429d0a728061bcb2e85e"
+    },
+    "senior-fullstack": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "skillPath": "engineering-team/skills/senior-fullstack/SKILL.md",
+      "computedHash": "67f1a48a6cd5928baccc73a6fe62e7b86b8cd6bea1c6a84a21206d309cabdf73"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-design-guidelines/SKILL.md",
+      "computedHash": "a6a44d5498f7e8f68289902f3dedfc6f38ae0cee1e96527c80724cf27f727c2a"
+    }
+  }
+}

@@ -1,25 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchProductsAndSpecs } from '@/lib/scraper/productSpecScraper';
+import { getRegionalCoverageMetadata } from '@/lib/types/scraperTypes';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { query, centerLocation = 'India', rangeKm = 500, maxResults = 10 } = body;
+    const {
+      query = '',
+      category = '',
+      product = '',
+      specs = '',
+      structuredSpecs,
+      minPrice,
+      maxPrice,
+      priceRange = '',
+      scope = 'radius',
+      centerLocation = 'India',
+      rangeKm = 500,
+      maxResults = 50,
+    } = body;
 
-    if (!query || typeof query !== 'string') {
-      return NextResponse.json({ error: 'Search query is required' }, { status: 400 });
+    if (!query && !product && !specs && !category) {
+      return NextResponse.json(
+        { error: 'At least an industry category, product name, specifications, or search query is required' },
+        { status: 400 }
+      );
     }
 
     const records = await searchProductsAndSpecs({
       query,
+      category,
+      product,
+      specs,
+      structuredSpecs,
+      minPrice,
+      maxPrice,
+      priceRange,
+      scope,
       centerLocation,
       rangeKm: Number(rangeKm) || 0,
-      maxResults: Number(maxResults) || 10,
+      maxResults: Math.min(Math.max(Number(maxResults) || 50, 1), 50),
     });
+
+    const coverage = getRegionalCoverageMetadata(
+      centerLocation,
+      scope as any,
+      Number(rangeKm) || 0,
+      records.length
+    );
 
     return NextResponse.json({
       success: true,
-      query: { query, centerLocation, rangeKm },
+      coverage,
+      query: { product, specs, priceRange, minPrice, maxPrice, scope, centerLocation, rangeKm },
       count: records.length,
       records,
     });

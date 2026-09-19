@@ -1,15 +1,53 @@
+import { B2BPricingDetails, OperationalHealth } from '../types/scraperTypes';
+
+export type ProfileSourceOrigin =
+  | 'domain_crawler'
+  | 'product_spec_matrix'
+  | 'gmaps_seller'
+  | 'bullmq_queue'
+  | 'manual_entry';
+
 export interface EnrichedProfileRecord {
   id: string;
   domain: string;
   url: string;
   companyName: string;
   category: string;
+  productsServices?: string[];
   description: string;
   rating: number; // 1 to 5 stars
   mark: 'Hot Lead' | 'Target Account' | 'Contacted' | 'Qualified' | 'Nurture' | 'Disqualified';
   remarks: string;
   listName: string;
   tags: string[];
+
+  // Source Origin & Search Provenance
+  sourceOrigin?: ProfileSourceOrigin;
+  searchProvenance?: {
+    searchPerimeter?: string;
+    areasProbedCount?: number;
+    queryKeyword?: string;
+    logistics?: string;
+    remarks?: string;
+  } | null;
+
+  // 3-Tier E-Commerce & Wholesale B2B Pricing Structure
+  pricing?: {
+    sellingPrice?: string;
+    mrp?: string;
+    offerPrice?: string;
+    discountPercent?: number;
+    b2bPricing?: B2BPricingDetails;
+  } | null;
+
+  // Procurement & Operational Terms
+  procurementTerms?: string;
+  tradeCreditTerms?: string;
+  operationalHealth?: OperationalHealth | null;
+
+  // Omnichannel Direct Outreach Links
+  whatsappUrl?: string;
+
   contactInfo: {
     emails: string[];
     phones: string[];
@@ -23,6 +61,26 @@ export interface EnrichedProfileRecord {
       youtube?: string;
     };
   };
+  location?: {
+    formattedAddress: string | null;
+    city: string | null;
+    state: string | null;
+    country: string | null;
+  } | null;
+  geoData?: {
+    latitude: number | null;
+    longitude: number | null;
+  } | null;
+  businessDetails?: {
+    gstin?: string | null;
+    pan?: string | null;
+    cin?: string | null;
+    isoCertified?: boolean;
+    rawDetails: string | null;
+  } | null;
+  verification?: string[];
+  statusTags?: string[];
+  specsData?: Record<string, string> | string;
   technographics: {
     technologies: Array<{ name: string; category: string; confidence: number }>;
     rawDetectionsCount: number;
@@ -63,7 +121,7 @@ export class ProfileStorageService {
     const now = new Date().toISOString();
     
     // Check if profile already exists for this domain
-    const existingIndex = existing.findIndex((p) => p.domain.toLowerCase() === profile.domain.toLowerCase());
+    const existingIndex = existing.findIndex((p) => p.domain && profile.domain && p.domain.toLowerCase() === profile.domain.toLowerCase());
 
     const record: EnrichedProfileRecord = {
       ...profile,
@@ -73,7 +131,17 @@ export class ProfileStorageService {
     };
 
     if (existingIndex >= 0) {
-      existing[existingIndex] = record;
+      // Deep merge with existing record so we don't discard existing metadata
+      existing[existingIndex] = {
+        ...existing[existingIndex],
+        ...record,
+        pricing: record.pricing || existing[existingIndex].pricing,
+        searchProvenance: record.searchProvenance || existing[existingIndex].searchProvenance,
+        operationalHealth: record.operationalHealth || existing[existingIndex].operationalHealth,
+        sourceOrigin: record.sourceOrigin || existing[existingIndex].sourceOrigin,
+        whatsappUrl: record.whatsappUrl || existing[existingIndex].whatsappUrl,
+        updatedAt: now,
+      };
     } else {
       existing.unshift(record);
     }
@@ -81,13 +149,13 @@ export class ProfileStorageService {
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
     }
-    return record;
+    return existingIndex >= 0 ? existing[existingIndex] : record;
   }
 
   static updateProfile(id: string, updates: Partial<EnrichedProfileRecord>): EnrichedProfileRecord | null {
     const existing = this.getProfiles();
     const index = existing.findIndex((p) => p.id === id);
-    if (index === 0 || index > 0) {
+    if (index >= 0) {
       const updated = {
         ...existing[index],
         ...updates,
@@ -113,7 +181,6 @@ export class ProfileStorageService {
 
   /**
    * Merge two or more selected profiles into a single unified record
-   * (Entity resolution & deduplication)
    */
   static mergeProfiles(profileIds: string[], targetName?: string, targetCategory?: string): EnrichedProfileRecord | null {
     const existing = this.getProfiles();
@@ -125,6 +192,9 @@ export class ProfileStorageService {
     const allPhones = Array.from(new Set(toMerge.flatMap((p) => p.contactInfo.phones)));
     const allAddresses = Array.from(new Set(toMerge.flatMap((p) => p.contactInfo.addresses)));
     const allTags = Array.from(new Set(toMerge.flatMap((p) => p.tags)));
+    const allProducts = Array.from(new Set(toMerge.flatMap((p) => p.productsServices || [])));
+    const allVerifications = Array.from(new Set(toMerge.flatMap((p) => p.verification || [])));
+    const allStatusTags = Array.from(new Set(toMerge.flatMap((p) => p.statusTags || [])));
     
     // Merge social links
     const mergedSocials: Record<string, string> = {};
@@ -148,24 +218,41 @@ export class ProfileStorageService {
       .filter(Boolean)
       .join('\n');
 
+    // Find best pricing and provenance across records
+    const bestPricing = toMerge.find((p) => p.pricing)?.pricing || null;
+    const bestProvenance = toMerge.find((p) => p.searchProvenance)?.searchProvenance || null;
+    const bestHealth = toMerge.find((p) => p.operationalHealth)?.operationalHealth || null;
+    const bestWhatsapp = toMerge.find((p) => p.whatsappUrl)?.whatsappUrl || undefined;
+
     const mergedRecord: EnrichedProfileRecord = {
       id: `prof_merged_${Date.now()}`,
       domain: primary.domain,
       url: primary.url,
       companyName: targetName || primary.companyName,
       category: targetCategory || primary.category,
+      productsServices: allProducts,
       description: primary.description,
       rating: Math.max(...toMerge.map((p) => p.rating || 1)),
       mark: primary.mark,
       remarks: combinedRemarks,
       listName: primary.listName || 'Merged Accounts',
       tags: allTags,
+      sourceOrigin: primary.sourceOrigin,
+      pricing: bestPricing,
+      searchProvenance: bestProvenance,
+      operationalHealth: bestHealth,
+      whatsappUrl: bestWhatsapp,
       contactInfo: {
         emails: allEmails,
         phones: allPhones,
         addresses: allAddresses,
         socialLinks: mergedSocials,
       },
+      location: primary.location,
+      geoData: primary.geoData,
+      businessDetails: primary.businessDetails,
+      verification: allVerifications,
+      statusTags: allStatusTags,
       technographics: {
         technologies: Array.from(techMap.values()),
         rawDetectionsCount: techMap.size,
@@ -175,7 +262,6 @@ export class ProfileStorageService {
       updatedAt: new Date().toISOString(),
     };
 
-    // Remove merged originals and append consolidated master record
     const remaining = existing.filter((p) => !profileIds.includes(p.id));
     remaining.unshift(mergedRecord);
 

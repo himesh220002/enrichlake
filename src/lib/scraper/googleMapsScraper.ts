@@ -120,24 +120,65 @@ export async function scrapeGoogleMapsByKeywords(
         const reviewsStr = reviewsEl?.textContent?.replace(/[^\d]/g, '') || '';
         const reviewsCount = reviewsStr ? parseInt(reviewsStr, 10) : undefined;
 
-        // Subtitle / category / address snippet
-        const infoSnippets = Array.from(el.querySelectorAll('.W4Efsd')).map((s) => s.textContent?.trim() || '');
-        const joinedInfo = infoSnippets.join(' • ');
-
         // Website link if available in the card
         const websiteEl = el.querySelector('a[data-value*="Website" i], a[aria-label*="website" i]');
         const websiteUrl = websiteEl?.getAttribute('href') || '';
 
-        // Phone if directly in the text snippet
-        const phoneMatch = joinedInfo.match(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}/);
-        const phone = phoneMatch ? phoneMatch[0].trim() : '';
+        // Phone if directly in class .UsdlK or snippet
+        const phoneEl = el.querySelector('.UsdlK');
+        let phone = phoneEl?.textContent?.trim() || '';
+
+        // Leaf .W4Efsd elements (skip rating container)
+        const leafW4Efsd = Array.from(el.querySelectorAll('.W4Efsd')).filter((w) => {
+          return w.querySelectorAll('.W4Efsd').length === 0 && !w.querySelector('.MW4etd, .ZkP5Je');
+        });
+
+        let cleanCategory = '';
+        const addressParts = [];
+
+        for (const row of leafW4Efsd) {
+          const text = row.textContent?.trim() || '';
+          if (!text) continue;
+          if (/\b(open|closed|opens|closes)\b/i.test(text)) {
+            if (!phone) {
+              const phMatch = text.match(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}/);
+              if (phMatch) phone = phMatch[0].trim();
+            }
+            continue;
+          }
+
+          const spans = Array.from(row.children)
+            .map((s) => s.textContent?.trim().replace(/^·\s*/, '').replace(/\s*·$/, '') || '')
+            .filter((s) => {
+              if (!s || s === '·') return false;
+              if (/^\d+(\.\d+)?(\s*\(\d+[\d,]*\))?$/.test(s)) return false;
+              if (/\b(open|closed|opens|closes)\b/i.test(s)) return false;
+              if (/(?:\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}/.test(s)) return false;
+              return true;
+            });
+
+          if (spans.length >= 1 && !cleanCategory) {
+            cleanCategory = spans[0];
+            if (spans.length > 1) addressParts.push(...spans.slice(1));
+          } else if (spans.length > 0) {
+            addressParts.push(...spans);
+          }
+        }
+
+        const cleanAddress = addressParts
+          .map((seg) => seg.replace(/[^\x20-\x7E]/g, '').trim())
+          .filter((seg) => seg.length > 1 && !/^[.,\s·]+$/.test(seg))
+          .filter((item, idx, self) => self.indexOf(item) === idx)
+          .join(', ');
 
         return {
           name,
           mapUrl,
           rating,
           reviewsCount,
-          snippet: joinedInfo,
+          category: cleanCategory,
+          address: cleanAddress,
+          snippet: cleanCategory ? `${cleanCategory} • ${cleanAddress}` : cleanAddress,
           websiteUrl,
           phone,
         };
@@ -157,6 +198,8 @@ export async function scrapeGoogleMapsByKeywords(
           mapUrl: currentUrl,
           rating: 4.5,
           reviewsCount: 15,
+          category: "",
+          address: "",
           snippet: singleTitle,
           websiteUrl: '',
           phone: '',
@@ -175,7 +218,7 @@ export async function scrapeGoogleMapsByKeywords(
       let cleanWebsite = item.websiteUrl;
       let email = '';
       let directPhone = item.phone;
-      let address = item.snippet.split('•')[1]?.trim() || location || 'Local Business Hub';
+      let address = (item as any).address || item.snippet || location || 'Local Business Hub';
 
       if (cleanWebsite) {
         try {
@@ -241,13 +284,13 @@ export async function scrapeGoogleMapsByKeywords(
         matchedKeywords: matched.length > 0 ? matched : keywords,
         matchScore: Math.max(score, 75), // calibrated match
         buyingLocations: address || location || 'In-Store & Online Dispatch',
-        phone: directPhone || '+1 (800) 456-7890 (Direct Outlet)',
-        email: email || (domain ? `sales@${domain}` : ''),
+        phone: directPhone || '',
+        email: email || '',
         address: address,
         latitude: coords.latitude || (location ? 28.6139 : 37.7749),
         longitude: coords.longitude || (location ? 77.2090 : -122.4194),
         rating: item.rating || 4.6,
-        reviewsCount: item.reviewsCount || Math.floor(Math.random() * 80) + 12,
+        reviewsCount: item.reviewsCount || 0,
         websiteUrl: cleanWebsite || item.mapUrl,
         mapUrl: item.mapUrl || gmapsUrl,
         priceEstimate: keywords.find((k) => k.toLowerCase().includes('lakh') || k.toLowerCase().includes('under') || k.toLowerCase().includes('$')) || 'Best Price In-Stock',

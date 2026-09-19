@@ -1,0 +1,1341 @@
+{
+  "title": "NodeDir - outscraper.com",
+  "generatedAt": "2026-09-18T12:39:40.208Z",
+  "nodeCount": 67,
+  "linkCount": 96,
+  "nodes": [
+    {
+      "id": "root:outscraper.com",
+      "name": "outscraper.com",
+      "category": "website",
+      "subtitle": "Outscraper - get any public data from the internet",
+      "description": "Scrape Google Maps Places, Business Reviews, Photos, Play Market Reviews, and more. Get any public data from the internet by applying cutting-edge technologies. Analyzed across 40 pages, 5 tech stacks, and 6 core features.",
+      "location": "outscraper.com",
+      "year": "2026",
+      "tags": [
+        "outscraper.com",
+        "HTTPS",
+        "Server: LiteSpeed"
+      ]
+    },
+    {
+      "id": "page:outscraper.com:home",
+      "name": "Home Route (/)",
+      "category": "page",
+      "subtitle": "Root Navigation Landing · Depth 0",
+      "description": "Primary application entry point at https://outscraper.com/. Renders global navigation and mounts section controllers.",
+      "tags": [
+        "landing",
+        "root",
+        "depth-0"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/services",
+      "name": "/services",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /services. Dynamic mapping: /services. Full URL: https://outscraper.com/services. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/google-maps-scraper",
+      "name": "/google-maps-scraper",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /google-maps-scraper. Dynamic mapping: /google-maps-scraper. Full URL: https://outscraper.com/google-maps-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/google-maps-reviews-scraper",
+      "name": "/google-maps-reviews-scraper",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /google-maps-reviews-scraper. Dynamic mapping: /google-maps-reviews-scraper. Full URL: https://outscraper.com/google-maps-reviews-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/emails-scraper",
+      "name": "/emails-scraper",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /emails-scraper. Dynamic mapping: /emails-scraper. Full URL: https://outscraper.com/emails-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/email-address-validator",
+      "name": "/email-address-validator",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /email-address-validator. Dynamic mapping: /email-address-validator. Full URL: https://outscraper.com/email-address-validator. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/google-maps-photos-scraper",
+      "name": "/google-maps-photos-scraper",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /google-maps-photos-scraper. Dynamic mapping: /google-maps-photos-scraper. Full URL: https://outscraper.com/google-maps-photos-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/google-search-scraper",
+      "name": "/google-search-scraper",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /google-search-scraper. Dynamic mapping: /google-search-scraper. Full URL: https://outscraper.com/google-search-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/google-images-scraper",
+      "name": "/google-images-scraper",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /google-images-scraper. Dynamic mapping: /google-images-scraper. Full URL: https://outscraper.com/google-images-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/google-news-scraper",
+      "name": "/google-news-scraper",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /google-news-scraper. Dynamic mapping: /google-news-scraper. Full URL: https://outscraper.com/google-news-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "blog"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/google-shopping-scraper",
+      "name": "/google-shopping-scraper",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /google-shopping-scraper. Dynamic mapping: /google-shopping-scraper. Full URL: https://outscraper.com/google-shopping-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/google-shopping-reviews-scraper",
+      "name": "/google-shopping-reviews-scraper",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /google-shopping-reviews-scraper. Dynamic mapping: /google-shopping-reviews-scraper. Full URL: https://outscraper.com/google-shopping-reviews-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/amazon-scraper",
+      "name": "/amazon-scraper",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /amazon-scraper. Dynamic mapping: /amazon-scraper. Full URL: https://outscraper.com/amazon-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/amazon-reviews-scraper",
+      "name": "/amazon-reviews-scraper",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /amazon-reviews-scraper. Dynamic mapping: /amazon-reviews-scraper. Full URL: https://outscraper.com/amazon-reviews-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/google-play-reviews-scraper",
+      "name": "/google-play-reviews-scraper",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /google-play-reviews-scraper. Dynamic mapping: /google-play-reviews-scraper. Full URL: https://outscraper.com/google-play-reviews-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/google-maps-traffic-extractor",
+      "name": "/google-maps-traffic-extractor",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /google-maps-traffic-extractor. Dynamic mapping: /google-maps-traffic-extractor. Full URL: https://outscraper.com/google-maps-traffic-extractor. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/youtube-comments-scraper",
+      "name": "/youtube-comments-scraper",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /youtube-comments-scraper. Dynamic mapping: /youtube-comments-scraper. Full URL: https://outscraper.com/youtube-comments-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/email-list-cleaning",
+      "name": "/email-list-cleaning",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /email-list-cleaning. Dynamic mapping: /email-list-cleaning. Full URL: https://outscraper.com/email-list-cleaning. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/tripadvisor-reviews-scraper",
+      "name": "/tripadvisor-reviews-scraper",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /tripadvisor-reviews-scraper. Dynamic mapping: /tripadvisor-reviews-scraper. Full URL: https://outscraper.com/tripadvisor-reviews-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/trustpilot-scraper",
+      "name": "/trustpilot-scraper",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /trustpilot-scraper. Dynamic mapping: /trustpilot-scraper. Full URL: https://outscraper.com/trustpilot-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/yellowpages-scraper",
+      "name": "/yellowpages-scraper",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /yellowpages-scraper. Dynamic mapping: /yellowpages-scraper. Full URL: https://outscraper.com/yellowpages-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/new-businesses-database",
+      "name": "/new-businesses-database",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /new-businesses-database. Dynamic mapping: /new-businesses-database. Full URL: https://outscraper.com/new-businesses-database. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/lead-generation-database",
+      "name": "/lead-generation-database",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /lead-generation-database. Dynamic mapping: /lead-generation-database. Full URL: https://outscraper.com/lead-generation-database. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/universal-ai-scraper",
+      "name": "/universal-ai-scraper",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /universal-ai-scraper. Dynamic mapping: /universal-ai-scraper. Full URL: https://outscraper.com/universal-ai-scraper. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/lead-generation-services",
+      "name": "/lead-generation-services",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /lead-generation-services. Dynamic mapping: /lead-generation-services. Full URL: https://outscraper.com/lead-generation-services. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/google-maps-api",
+      "name": "/google-maps-api",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /google-maps-api. Dynamic mapping: /google-maps-api. Full URL: https://outscraper.com/google-maps-api. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "docs"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/google-maps-reviews-api",
+      "name": "/google-maps-reviews-api",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /google-maps-reviews-api. Dynamic mapping: /google-maps-reviews-api. Full URL: https://outscraper.com/google-maps-reviews-api. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "docs"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/google-search-api",
+      "name": "/google-search-api",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /google-search-api. Dynamic mapping: /google-search-api. Full URL: https://outscraper.com/google-search-api. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "docs"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/google-play-reviews-api",
+      "name": "/google-play-reviews-api",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /google-play-reviews-api. Dynamic mapping: /google-play-reviews-api. Full URL: https://outscraper.com/google-play-reviews-api. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "docs"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/google-maps-directions-api",
+      "name": "/google-maps-directions-api",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /google-maps-directions-api. Dynamic mapping: /google-maps-directions-api. Full URL: https://outscraper.com/google-maps-directions-api. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "docs"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/trustpilot-reviews-api",
+      "name": "/trustpilot-reviews-api",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /trustpilot-reviews-api. Dynamic mapping: /trustpilot-reviews-api. Full URL: https://outscraper.com/trustpilot-reviews-api. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "docs"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/domain-emails-api",
+      "name": "/domain-emails-api",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /domain-emails-api. Dynamic mapping: /domain-emails-api. Full URL: https://outscraper.com/domain-emails-api. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "docs"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/amazon-products-api",
+      "name": "/amazon-products-api",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /amazon-products-api. Dynamic mapping: /amazon-products-api. Full URL: https://outscraper.com/amazon-products-api. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "docs"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/geocoding-api",
+      "name": "/geocoding-api",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /geocoding-api. Dynamic mapping: /geocoding-api. Full URL: https://outscraper.com/geocoding-api. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "docs"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/reverse-geocoding-api",
+      "name": "/reverse-geocoding-api",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /reverse-geocoding-api. Dynamic mapping: /reverse-geocoding-api. Full URL: https://outscraper.com/reverse-geocoding-api. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "docs"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/use-cases",
+      "name": "/use-cases",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /use-cases. Dynamic mapping: /use-cases. Full URL: https://outscraper.com/use-cases. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/pricing",
+      "name": "/pricing",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /pricing. Dynamic mapping: /pricing. Full URL: https://outscraper.com/pricing. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "pricing"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/about-us",
+      "name": "/about-us",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /about-us. Dynamic mapping: /about-us. Full URL: https://outscraper.com/about-us. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "contact"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/careers",
+      "name": "/careers",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /careers. Dynamic mapping: /careers. Full URL: https://outscraper.com/careers. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:outscraper.com:/contact-us",
+      "name": "/contact-us",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /contact-us. Dynamic mapping: /contact-us. Full URL: https://outscraper.com/contact-us. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "contact"
+      ]
+    },
+    {
+      "id": "tech:tailwind-css",
+      "name": "Tailwind CSS",
+      "category": "stack",
+      "subtitle": "CSS · high confidence",
+      "description": "Utility-first CSS framework for rapid modern UI development. Evidence: Tailwind utility patterns and responsive modifiers",
+      "tags": [
+        "css",
+        "high",
+        "tech-stack"
+      ]
+    },
+    {
+      "id": "tech:bootstrap",
+      "name": "Bootstrap",
+      "category": "stack",
+      "subtitle": "CSS · high confidence",
+      "description": "Component-based CSS library for responsive sites. Evidence: Bootstrap classes / stylesheet links",
+      "tags": [
+        "css",
+        "high",
+        "tech-stack"
+      ]
+    },
+    {
+      "id": "tech:google-tag-manager",
+      "name": "Google Tag Manager",
+      "category": "stack",
+      "subtitle": "ANALYTICS · high confidence",
+      "description": "Tag management system for marketing & analytics scripts. Evidence: GTM container script loaded",
+      "tags": [
+        "analytics",
+        "high",
+        "tech-stack"
+      ]
+    },
+    {
+      "id": "tech:google-analytics-4",
+      "name": "Google Analytics 4",
+      "category": "stack",
+      "subtitle": "ANALYTICS · high confidence",
+      "description": "Web and app measurement and user event telemetry. Evidence: gtag / GA measurement ID present",
+      "tags": [
+        "analytics",
+        "high",
+        "tech-stack"
+      ]
+    },
+    {
+      "id": "tech:google-fonts",
+      "name": "Google Fonts",
+      "category": "stack",
+      "subtitle": "FONT · high confidence",
+      "description": "Web font delivery platform providing curated typography. Evidence: fonts.googleapis.com stylesheet link",
+      "tags": [
+        "font",
+        "high",
+        "tech-stack"
+      ]
+    },
+    {
+      "id": "tech:tailwind:tokens",
+      "name": "Tailwind Design Tokens",
+      "category": "stack",
+      "subtitle": "CSS Variable & Utility System",
+      "description": "Custom design tokens mapping background colors, card surfaces, border gradients, and responsive breakpoints.",
+      "tags": [
+        "tailwind",
+        "css-tokens",
+        "design-system"
+      ]
+    },
+    {
+      "id": "feature:search",
+      "name": "Global Search / Query Bar",
+      "category": "feature",
+      "subtitle": "search · cmdk · ux · autocomplete",
+      "description": "Interactive search interface with autocomplete or command palette triggers.",
+      "tags": [
+        "search",
+        "cmdk",
+        "ux",
+        "autocomplete"
+      ]
+    },
+    {
+      "id": "feature:auth",
+      "name": "Authentication & Identity Flow",
+      "category": "feature",
+      "subtitle": "auth · security · sso · cookies",
+      "description": "User authentication gateway supporting credentials or third-party SSO.",
+      "tags": [
+        "auth",
+        "security",
+        "sso",
+        "cookies"
+      ]
+    },
+    {
+      "id": "feature:theme",
+      "name": "Theme Mode / Dark Mode Engine",
+      "category": "feature",
+      "subtitle": "dark-mode · css-variables · theming",
+      "description": "Dynamic theme switching with automatic system preference detection.",
+      "tags": [
+        "dark-mode",
+        "css-variables",
+        "theming"
+      ]
+    },
+    {
+      "id": "feature:nav",
+      "name": "Adaptive Navigation Header",
+      "category": "feature",
+      "subtitle": "navigation · header · responsive · mobile",
+      "description": "Persistent top navigation bar with mobile drawer and quick action links.",
+      "tags": [
+        "navigation",
+        "header",
+        "responsive",
+        "mobile"
+      ]
+    },
+    {
+      "id": "feature:grid",
+      "name": "Interactive Card Matrix",
+      "category": "feature",
+      "subtitle": "grid · cards · ui-layout",
+      "description": "Modern grid system presenting modular content cards with hover transitions.",
+      "tags": [
+        "grid",
+        "cards",
+        "ui-layout"
+      ]
+    },
+    {
+      "id": "feature:forms",
+      "name": "Validated Form Workflows",
+      "category": "feature",
+      "subtitle": "forms · zod · validation",
+      "description": "Interactive data input forms with client/server validation and feedback.",
+      "tags": [
+        "forms",
+        "zod",
+        "validation"
+      ]
+    },
+    {
+      "id": "link:github:0",
+      "name": "GitHub: outscraper",
+      "category": "connection",
+      "subtitle": "Source & Code",
+      "description": "Discovered ecosystem link on outscraper.com: https://github.com/outscraper",
+      "tags": [
+        "github",
+        "deep-dive",
+        "ecosystem"
+      ]
+    },
+    {
+      "id": "link:linkedin:1",
+      "name": "LinkedIn Company / Dev Profile",
+      "category": "connection",
+      "subtitle": "Organization",
+      "description": "Discovered ecosystem link on outscraper.com: https://www.linkedin.com/company/outscraper/",
+      "tags": [
+        "linkedin",
+        "deep-dive",
+        "ecosystem"
+      ]
+    },
+    {
+      "id": "link:social:2",
+      "name": "X / Twitter",
+      "category": "connection",
+      "subtitle": "Social Feed",
+      "description": "Discovered ecosystem link on outscraper.com: https://x.com/outscraper",
+      "tags": [
+        "social",
+        "deep-dive",
+        "ecosystem"
+      ]
+    },
+    {
+      "id": "link:demo:3",
+      "name": "Interactive Demo (www.youtube.com)",
+      "category": "connection",
+      "subtitle": "Live Demo",
+      "description": "Discovered ecosystem link on outscraper.com: https://www.youtube.com/@outscraper",
+      "tags": [
+        "demo",
+        "deep-dive",
+        "ecosystem"
+      ]
+    },
+    {
+      "id": "link:social:4",
+      "name": "Discord Community",
+      "category": "connection",
+      "subtitle": "Developer Community",
+      "description": "Discovered ecosystem link on outscraper.com: https://discord.gg/kcQzJW7rYr",
+      "tags": [
+        "social",
+        "deep-dive",
+        "ecosystem"
+      ]
+    },
+    {
+      "id": "perf:outscraper.com",
+      "name": "Performance & Vitals Hub",
+      "category": "performance",
+      "subtitle": "1121ms TTFB · 166.5 KB",
+      "description": "HTML Size: 166.5 KB. Resources: 24 scripts, 1 stylesheets, 40 images. Compression: br. Cache-Control: public, max-age=300.",
+      "tags": [
+        "performance",
+        "vitals",
+        "br",
+        "24 scripts"
+      ]
+    },
+    {
+      "id": "perf:outscraper.com:ttfb",
+      "name": "TTFB Response Latency",
+      "category": "performance",
+      "subtitle": "1121 ms response time",
+      "description": "Time to first byte recorded from client HTTP handshake to first byte of response. Measured at 1121ms.",
+      "tags": [
+        "latency",
+        "ttfb",
+        "network"
+      ]
+    },
+    {
+      "id": "perf:outscraper.com:payload",
+      "name": "Asset & Payload Distribution",
+      "category": "performance",
+      "subtitle": "166.5 KB HTML · 24 scripts",
+      "description": "Resource inspection: 24 script bundles, 1 stylesheets, 40 media assets. Compression: br.",
+      "tags": [
+        "payload",
+        "assets",
+        "br"
+      ]
+    },
+    {
+      "id": "sec:outscraper.com",
+      "name": "Security & DNS Topology",
+      "category": "security",
+      "subtitle": "HTTPS Secure · No HSTS",
+      "description": "Protocol: https:. HSTS Preload: Disabled. CSP: Configured. DNS: 46.202.94.188. Server: LiteSpeed.",
+      "tags": [
+        "security",
+        "dns",
+        "ssl",
+        "no-hsts"
+      ]
+    },
+    {
+      "id": "sec:outscraper.com:dns-ips",
+      "name": "Anycast DNS Endpoints",
+      "category": "security",
+      "subtitle": "1 Resolved IP Addresses",
+      "description": "DNS A/AAAA addresses: 46.202.94.188. Provides geo-distributed anycast edge routing.",
+      "tags": [
+        "dns",
+        "ip",
+        "anycast"
+      ]
+    },
+    {
+      "id": "sec:outscraper.com:ssl",
+      "name": "SSL/TLS Edge Termination",
+      "category": "security",
+      "subtitle": "TLS 1.3 Active · Standard",
+      "description": "Transport Layer Security active on port 443. HSTS Strict Transport Security: Off. Server signature: LiteSpeed.",
+      "tags": [
+        "ssl",
+        "tls",
+        "https",
+        "hsts"
+      ]
+    },
+    {
+      "id": "idea:0",
+      "name": "Edge Delivery & Hydration Strategy",
+      "category": "idea",
+      "subtitle": "Developer Implementation Pattern",
+      "description": "outscraper.com renders with fast edge-cached responses, keeping TTFB around 1121ms. Architecture: Deploy on edge CDN nodes (e.g. Cloudflare / Vercel Edge). Cache static assets with immutable cache-control, revalidate dynamic data with SWR or React Query.",
+      "tags": [
+        "architecture",
+        "pattern",
+        "recipe"
+      ]
+    },
+    {
+      "id": "idea:1",
+      "name": "Design System & Token Architecture",
+      "category": "idea",
+      "subtitle": "Developer Implementation Pattern",
+      "description": "Consistent typography, high-contrast dark theme surfaces, and smooth micro-animations across all interactive surfaces. Architecture: Establish semantic color tokens (--color-background, --color-accent, --color-border) with HSL or P3 color spaces. Keep layouts responsive with clamp() and fluid flexbox/grid.",
+      "tags": [
+        "architecture",
+        "pattern",
+        "recipe"
+      ]
+    },
+    {
+      "id": "idea:2",
+      "name": "Clone Recipe: Global Search / Query Bar",
+      "category": "idea",
+      "subtitle": "Developer Implementation Pattern",
+      "description": "Developers looking to replicate Global Search / Query Bar from outscraper.com can follow this proven pattern. Architecture: Build with Radix Popover or cmdk library. Use debounced inputs (useDebounce 250ms), prefetch results or index with Fuse.js for instant client-side matching.",
+      "tags": [
+        "architecture",
+        "pattern",
+        "recipe"
+      ]
+    }
+  ],
+  "links": [
+    {
+      "source": "root:outscraper.com",
+      "target": "page:outscraper.com:home",
+      "label": "mounts index"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/services",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/google-maps-scraper",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/google-maps-reviews-scraper",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/emails-scraper",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/email-address-validator",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/google-maps-photos-scraper",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/google-search-scraper",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/google-images-scraper",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/google-news-scraper",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/google-shopping-scraper",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/google-shopping-reviews-scraper",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/amazon-scraper",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/amazon-reviews-scraper",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/google-play-reviews-scraper",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/google-maps-traffic-extractor",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/youtube-comments-scraper",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/email-list-cleaning",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/tripadvisor-reviews-scraper",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/trustpilot-scraper",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/yellowpages-scraper",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/new-businesses-database",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/lead-generation-database",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/universal-ai-scraper",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/lead-generation-services",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/google-maps-api",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/google-maps-reviews-api",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/google-search-api",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/google-play-reviews-api",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/google-maps-directions-api",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/trustpilot-reviews-api",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/domain-emails-api",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/amazon-products-api",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/geocoding-api",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/reverse-geocoding-api",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/use-cases",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/pricing",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/about-us",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/careers",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "route:outscraper.com:/contact-us",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:outscraper.com:/amazon-products-api",
+      "target": "route:outscraper.com:/services",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:outscraper.com:/amazon-products-api",
+      "target": "route:outscraper.com:/google-maps-scraper",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:outscraper.com:/amazon-products-api",
+      "target": "route:outscraper.com:/google-maps-reviews-scraper",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:outscraper.com:/amazon-products-api",
+      "target": "route:outscraper.com:/emails-scraper",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:outscraper.com:/amazon-products-api",
+      "target": "route:outscraper.com:/email-address-validator",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:outscraper.com:/amazon-products-api",
+      "target": "route:outscraper.com:/google-maps-photos-scraper",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:outscraper.com:/amazon-products-api",
+      "target": "route:outscraper.com:/google-search-scraper",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:outscraper.com:/amazon-products-api",
+      "target": "route:outscraper.com:/google-images-scraper",
+      "label": "catalogs item"
+    },
+    {
+      "source": "route:outscraper.com:/email-address-validator",
+      "target": "route:outscraper.com:/amazon-products-api",
+      "label": "publishes to"
+    },
+    {
+      "source": "route:outscraper.com:/google-news-scraper",
+      "target": "route:outscraper.com:/amazon-products-api",
+      "label": "highlights"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "tech:tailwind-css",
+      "label": "powered by"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "tech:bootstrap",
+      "label": "powered by"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "tech:google-tag-manager",
+      "label": "powered by"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "tech:google-analytics-4",
+      "label": "powered by"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "tech:google-fonts",
+      "label": "powered by"
+    },
+    {
+      "source": "tech:tailwind-css",
+      "target": "tech:tailwind:tokens",
+      "label": "configures"
+    },
+    {
+      "source": "tech:google-tag-manager",
+      "target": "page:outscraper.com:home",
+      "label": "measures traffic"
+    },
+    {
+      "source": "tech:google-tag-manager",
+      "target": "route:outscraper.com:/amazon-products-api",
+      "label": "tracks events"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "feature:search",
+      "label": "provides feature"
+    },
+    {
+      "source": "feature:search",
+      "target": "route:outscraper.com:/amazon-products-api",
+      "label": "searches catalog"
+    },
+    {
+      "source": "feature:search",
+      "target": "route:outscraper.com:/services",
+      "label": "indexes leaf"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "feature:auth",
+      "label": "provides feature"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "feature:theme",
+      "label": "provides feature"
+    },
+    {
+      "source": "feature:nav",
+      "target": "feature:theme",
+      "label": "theme toggle"
+    },
+    {
+      "source": "feature:theme",
+      "target": "tech:tailwind-css",
+      "label": "toggles dark class"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "feature:nav",
+      "label": "provides feature"
+    },
+    {
+      "source": "feature:nav",
+      "target": "page:outscraper.com:home",
+      "label": "mounts on"
+    },
+    {
+      "source": "feature:nav",
+      "target": "route:outscraper.com:/amazon-products-api",
+      "label": "navigates to"
+    },
+    {
+      "source": "tech:tailwind-css",
+      "target": "feature:nav",
+      "label": "styles navbar"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "feature:grid",
+      "label": "provides feature"
+    },
+    {
+      "source": "feature:grid",
+      "target": "route:outscraper.com:/amazon-products-api",
+      "label": "renders items"
+    },
+    {
+      "source": "feature:grid",
+      "target": "route:outscraper.com:/services",
+      "label": "item card"
+    },
+    {
+      "source": "tech:tailwind-css",
+      "target": "feature:grid",
+      "label": "grid layout"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "feature:forms",
+      "label": "provides feature"
+    },
+    {
+      "source": "feature:forms",
+      "target": "route:outscraper.com:/email-address-validator",
+      "label": "form validation"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "link:github:0",
+      "label": "source & code"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "link:github:0",
+      "label": "external link"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "link:linkedin:1",
+      "label": "organization"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "link:linkedin:1",
+      "label": "external link"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "link:social:2",
+      "label": "social feed"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "link:social:2",
+      "label": "external link"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "link:demo:3",
+      "label": "live demo"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "link:demo:3",
+      "label": "external link"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "link:social:4",
+      "label": "developer community"
+    },
+    {
+      "source": "page:outscraper.com:home",
+      "target": "link:social:4",
+      "label": "external link"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "perf:outscraper.com",
+      "label": "benchmarked at"
+    },
+    {
+      "source": "perf:outscraper.com",
+      "target": "perf:outscraper.com:ttfb",
+      "label": "measures"
+    },
+    {
+      "source": "perf:outscraper.com",
+      "target": "perf:outscraper.com:payload",
+      "label": "audits"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "sec:outscraper.com",
+      "label": "secured by"
+    },
+    {
+      "source": "sec:outscraper.com",
+      "target": "sec:outscraper.com:dns-ips",
+      "label": "resolves via"
+    },
+    {
+      "source": "sec:outscraper.com",
+      "target": "sec:outscraper.com:ssl",
+      "label": "encrypts with"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "idea:0",
+      "label": "architecture pattern"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "idea:1",
+      "label": "architecture pattern"
+    },
+    {
+      "source": "idea:1",
+      "target": "tech:tailwind-css",
+      "label": "design guide"
+    },
+    {
+      "source": "root:outscraper.com",
+      "target": "idea:2",
+      "label": "architecture pattern"
+    },
+    {
+      "source": "idea:2",
+      "target": "feature:search",
+      "label": "implements recipe"
+    }
+  ]
+}

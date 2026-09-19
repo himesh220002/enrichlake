@@ -1,0 +1,1244 @@
+{
+  "title": "NodeDir - www.commonroom.io",
+  "generatedAt": "2026-09-18T12:40:54.980Z",
+  "nodeCount": 65,
+  "linkCount": 81,
+  "nodes": [
+    {
+      "id": "root:www.commonroom.io",
+      "name": "www.commonroom.io",
+      "category": "website",
+      "subtitle": "Complete Buyer Intelligence That Turns Intent Into Pipeline",
+      "description": "Technical architecture mind map and developer inspection for www.commonroom.io. Analyzed across 40 pages, 3 tech stacks, and 5 core features.",
+      "location": "www.commonroom.io",
+      "year": "2026",
+      "tags": [
+        "www.commonroom.io",
+        "HTTPS",
+        "Server: Netlify"
+      ]
+    },
+    {
+      "id": "page:www.commonroom.io:home",
+      "name": "Home Route (/)",
+      "category": "page",
+      "subtitle": "Root Navigation Landing · Depth 0",
+      "description": "Primary application entry point at https://www.commonroom.io/. Renders global navigation and mounts section controllers.",
+      "tags": [
+        "landing",
+        "root",
+        "depth-0"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/product",
+      "name": "/product",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /product. Dynamic mapping: /product. Full URL: https://www.commonroom.io/product. Structural route branch controller.",
+      "tags": [
+        "route",
+        "depth-1",
+        "branch-router",
+        "product"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/product/buyer-intelligence",
+      "name": "/buyer-intelligence",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /product/buyer-intelligence. Dynamic mapping: /product/[slug]. Full URL: https://www.commonroom.io/product/buyer-intelligence. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/product/person-360",
+      "name": "/person-360",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /product/person-360. Dynamic mapping: /product/[slug]. Full URL: https://www.commonroom.io/product/person-360. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/product/enrichment",
+      "name": "/enrichment",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /product/enrichment. Dynamic mapping: /product/enrichment. Full URL: https://www.commonroom.io/product/enrichment. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/product/prospector",
+      "name": "/prospector",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /product/prospector. Dynamic mapping: /product/prospector. Full URL: https://www.commonroom.io/product/prospector. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/product/ai-scoring",
+      "name": "/ai-scoring",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /product/ai-scoring. Dynamic mapping: /product/[slug]. Full URL: https://www.commonroom.io/product/ai-scoring. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/product/ads",
+      "name": "/ads",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /product/ads. Dynamic mapping: /product/ads. Full URL: https://www.commonroom.io/product/ads. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/product/buying-committee",
+      "name": "/buying-committee",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /product/buying-committee. Dynamic mapping: /product/[slug]. Full URL: https://www.commonroom.io/product/buying-committee. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/product/roomie-ai",
+      "name": "/roomie-ai",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /product/roomie-ai. Dynamic mapping: /product/[slug]. Full URL: https://www.commonroom.io/product/roomie-ai. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/product/mcp-cli",
+      "name": "/mcp-cli",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /product/mcp-cli. Dynamic mapping: /product/[slug]. Full URL: https://www.commonroom.io/product/mcp-cli. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/integrations",
+      "name": "/integrations",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /integrations. Dynamic mapping: /integrations. Full URL: https://www.commonroom.io/integrations. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/product/zoom-revenue-accelerator",
+      "name": "/zoom-revenue-accelerator",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /product/zoom-revenue-accelerator. Dynamic mapping: /product/[slug]. Full URL: https://www.commonroom.io/product/zoom-revenue-accelerator. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/product/dial",
+      "name": "/dial",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /product/dial. Dynamic mapping: /product/dial. Full URL: https://www.commonroom.io/product/dial. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/product/engage",
+      "name": "/engage",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /product/engage. Dynamic mapping: /product/engage. Full URL: https://www.commonroom.io/product/engage. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/product/coach",
+      "name": "/coach",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /product/coach. Dynamic mapping: /product/coach. Full URL: https://www.commonroom.io/product/coach. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/product/forecast",
+      "name": "/forecast",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /product/forecast. Dynamic mapping: /product/forecast. Full URL: https://www.commonroom.io/product/forecast. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "product"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/blog",
+      "name": "/blog",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /blog. Dynamic mapping: /blog. Full URL: https://www.commonroom.io/blog. Structural route branch controller.",
+      "tags": [
+        "route",
+        "depth-1",
+        "branch-router",
+        "blog"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/blog/revenue-os",
+      "name": "/revenue-os",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /blog/revenue-os. Dynamic mapping: /blog/[slug]. Full URL: https://www.commonroom.io/blog/revenue-os. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "blog"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/solutions",
+      "name": "/solutions",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /solutions. Dynamic mapping: /solutions. Full URL: https://www.commonroom.io/solutions. Structural route branch controller.",
+      "tags": [
+        "route",
+        "depth-1",
+        "branch-router",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/solutions/abm",
+      "name": "/abm",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /solutions/abm. Dynamic mapping: /solutions/abm. Full URL: https://www.commonroom.io/solutions/abm. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/solutions/demand-generation",
+      "name": "/demand-generation",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /solutions/demand-generation. Dynamic mapping: /solutions/[slug]. Full URL: https://www.commonroom.io/solutions/demand-generation. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/solutions/revops",
+      "name": "/revops",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /solutions/revops. Dynamic mapping: /solutions/revops. Full URL: https://www.commonroom.io/solutions/revops. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/solutions/sales",
+      "name": "/sales",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /solutions/sales. Dynamic mapping: /solutions/sales. Full URL: https://www.commonroom.io/solutions/sales. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/solutions/sales-development",
+      "name": "/sales-development",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /solutions/sales-development. Dynamic mapping: /solutions/[slug]. Full URL: https://www.commonroom.io/solutions/sales-development. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/resources",
+      "name": "/resources",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /resources. Dynamic mapping: /resources. Full URL: https://www.commonroom.io/resources. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/docs",
+      "name": "/docs",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /docs. Dynamic mapping: /docs. Full URL: https://www.commonroom.io/docs. Structural route branch controller.",
+      "tags": [
+        "route",
+        "depth-1",
+        "branch-router",
+        "docs"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/docs/get-started",
+      "name": "/get-started",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /docs/get-started. Dynamic mapping: /docs/[slug]. Full URL: https://www.commonroom.io/docs/get-started. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "docs"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/academy",
+      "name": "/academy",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /academy. Dynamic mapping: /academy. Full URL: https://www.commonroom.io/academy. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/events",
+      "name": "/events",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /events. Dynamic mapping: /events. Full URL: https://www.commonroom.io/events. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/resources/playbooks",
+      "name": "/playbooks",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /resources/playbooks. Dynamic mapping: /resources/playbooks. Full URL: https://www.commonroom.io/resources/playbooks. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/resources/signals",
+      "name": "/signals",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /resources/signals. Dynamic mapping: /resources/signals. Full URL: https://www.commonroom.io/resources/signals. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/prompts",
+      "name": "/prompts",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /prompts. Dynamic mapping: /prompts. Full URL: https://www.commonroom.io/prompts. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/community",
+      "name": "/community",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /community. Dynamic mapping: /community. Full URL: https://www.commonroom.io/community. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/podcast",
+      "name": "/podcast",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /podcast. Dynamic mapping: /podcast. Full URL: https://www.commonroom.io/podcast. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/customers",
+      "name": "/customers",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /customers. Dynamic mapping: /customers. Full URL: https://www.commonroom.io/customers. Structural route branch controller.",
+      "tags": [
+        "route",
+        "depth-1",
+        "branch-router",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/customers/atlan",
+      "name": "/atlan",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /customers/atlan. Dynamic mapping: /customers/atlan. Full URL: https://www.commonroom.io/customers/atlan. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/pricing",
+      "name": "/pricing",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /pricing. Dynamic mapping: /pricing. Full URL: https://www.commonroom.io/pricing. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "pricing"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/demo",
+      "name": "/demo",
+      "category": "page",
+      "subtitle": "Depth 1 · Trunk Router",
+      "description": "Route: /demo. Dynamic mapping: /demo. Full URL: https://www.commonroom.io/demo. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-1",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/customers/asana-deepens-ambassador-engagement-and-proves-business-impact",
+      "name": "/asana-deepens-ambassador-engagement-and-proves-business-impact",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /customers/asana-deepens-ambassador-engagement-and-proves-business-impact. Dynamic mapping: /customers/[slug]. Full URL: https://www.commonroom.io/customers/asana-deepens-ambassador-engagement-and-proves-business-impact. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/customers/dbt-labs-buying-signals-speed-to-lead",
+      "name": "/dbt-labs-buying-signals-speed-to-lead",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /customers/dbt-labs-buying-signals-speed-to-lead. Dynamic mapping: /customers/[slug]. Full URL: https://www.commonroom.io/customers/dbt-labs-buying-signals-speed-to-lead. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/customers/airbyte-warm-outbound-2x-pipeline-growth-rate",
+      "name": "/airbyte-warm-outbound-2x-pipeline-growth-rate",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /customers/airbyte-warm-outbound-2x-pipeline-growth-rate. Dynamic mapping: /customers/[slug]. Full URL: https://www.commonroom.io/customers/airbyte-warm-outbound-2x-pipeline-growth-rate. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "route:www.commonroom.io:/customers/notion-customer-intelligence-more-meetings-per-rep",
+      "name": "/notion-customer-intelligence-more-meetings-per-rep",
+      "category": "page",
+      "subtitle": "Depth 2 · Leaf Route",
+      "description": "Route: /customers/notion-customer-intelligence-more-meetings-per-rep. Dynamic mapping: /customers/[slug]. Full URL: https://www.commonroom.io/customers/notion-customer-intelligence-more-meetings-per-rep. Terminal leaf child node.",
+      "tags": [
+        "route",
+        "depth-2",
+        "leaf-child",
+        "other"
+      ]
+    },
+    {
+      "id": "tech:react",
+      "name": "React",
+      "category": "stack",
+      "subtitle": "FRAMEWORK · high confidence",
+      "description": "Component-based declarative UI library. Evidence: React DOM / hydrate markers detected",
+      "tags": [
+        "framework",
+        "high",
+        "tech-stack"
+      ]
+    },
+    {
+      "id": "tech:tailwind-css",
+      "name": "Tailwind CSS",
+      "category": "stack",
+      "subtitle": "CSS · high confidence",
+      "description": "Utility-first CSS framework for rapid modern UI development. Evidence: Tailwind utility patterns and responsive modifiers",
+      "tags": [
+        "css",
+        "high",
+        "tech-stack"
+      ]
+    },
+    {
+      "id": "tech:google-tag-manager",
+      "name": "Google Tag Manager",
+      "category": "stack",
+      "subtitle": "ANALYTICS · high confidence",
+      "description": "Tag management system for marketing & analytics scripts. Evidence: GTM container script loaded",
+      "tags": [
+        "analytics",
+        "high",
+        "tech-stack"
+      ]
+    },
+    {
+      "id": "tech:tailwind:tokens",
+      "name": "Tailwind Design Tokens",
+      "category": "stack",
+      "subtitle": "CSS Variable & Utility System",
+      "description": "Custom design tokens mapping background colors, card surfaces, border gradients, and responsive breakpoints.",
+      "tags": [
+        "tailwind",
+        "css-tokens",
+        "design-system"
+      ]
+    },
+    {
+      "id": "feature:search",
+      "name": "Global Search / Query Bar",
+      "category": "feature",
+      "subtitle": "search · cmdk · ux · autocomplete",
+      "description": "Interactive search interface with autocomplete or command palette triggers.",
+      "tags": [
+        "search",
+        "cmdk",
+        "ux",
+        "autocomplete"
+      ]
+    },
+    {
+      "id": "feature:auth",
+      "name": "Authentication & Identity Flow",
+      "category": "feature",
+      "subtitle": "auth · security · sso · cookies",
+      "description": "User authentication gateway supporting credentials or third-party SSO.",
+      "tags": [
+        "auth",
+        "security",
+        "sso",
+        "cookies"
+      ]
+    },
+    {
+      "id": "feature:theme",
+      "name": "Theme Mode / Dark Mode Engine",
+      "category": "feature",
+      "subtitle": "dark-mode · css-variables · theming",
+      "description": "Dynamic theme switching with automatic system preference detection.",
+      "tags": [
+        "dark-mode",
+        "css-variables",
+        "theming"
+      ]
+    },
+    {
+      "id": "feature:grid",
+      "name": "Interactive Card Matrix",
+      "category": "feature",
+      "subtitle": "grid · cards · ui-layout",
+      "description": "Modern grid system presenting modular content cards with hover transitions.",
+      "tags": [
+        "grid",
+        "cards",
+        "ui-layout"
+      ]
+    },
+    {
+      "id": "feature:forms",
+      "name": "Validated Form Workflows",
+      "category": "feature",
+      "subtitle": "forms · zod · validation",
+      "description": "Interactive data input forms with client/server validation and feedback.",
+      "tags": [
+        "forms",
+        "zod",
+        "validation"
+      ]
+    },
+    {
+      "id": "link:docs:0",
+      "name": "Documentation (api.commonroom.io)",
+      "category": "connection",
+      "subtitle": "Developer Docs",
+      "description": "Discovered ecosystem link on www.commonroom.io: https://api.commonroom.io/docs/api-v2.html",
+      "tags": [
+        "docs",
+        "deep-dive",
+        "ecosystem"
+      ]
+    },
+    {
+      "id": "link:linkedin:1",
+      "name": "LinkedIn Company / Dev Profile",
+      "category": "connection",
+      "subtitle": "Organization",
+      "description": "Discovered ecosystem link on www.commonroom.io: https://www.linkedin.com/company/common-room-hq",
+      "tags": [
+        "linkedin",
+        "deep-dive",
+        "ecosystem"
+      ]
+    },
+    {
+      "id": "link:demo:2",
+      "name": "Interactive Demo (www.youtube.com)",
+      "category": "connection",
+      "subtitle": "Live Demo",
+      "description": "Discovered ecosystem link on www.commonroom.io: https://www.youtube.com/@CommonRoomHQ",
+      "tags": [
+        "demo",
+        "deep-dive",
+        "ecosystem"
+      ]
+    },
+    {
+      "id": "perf:www.commonroom.io",
+      "name": "Performance & Vitals Hub",
+      "category": "performance",
+      "subtitle": "930ms TTFB · 358.2 KB",
+      "description": "HTML Size: 358.2 KB. Resources: 22 scripts, 0 stylesheets, 132 images. Compression: br. Cache-Control: public,max-age=0,must-revalidate.",
+      "tags": [
+        "performance",
+        "vitals",
+        "br",
+        "22 scripts"
+      ]
+    },
+    {
+      "id": "perf:www.commonroom.io:ttfb",
+      "name": "TTFB Response Latency",
+      "category": "performance",
+      "subtitle": "930 ms response time",
+      "description": "Time to first byte recorded from client HTTP handshake to first byte of response. Measured at 930ms.",
+      "tags": [
+        "latency",
+        "ttfb",
+        "network"
+      ]
+    },
+    {
+      "id": "perf:www.commonroom.io:payload",
+      "name": "Asset & Payload Distribution",
+      "category": "performance",
+      "subtitle": "358.2 KB HTML · 22 scripts",
+      "description": "Resource inspection: 22 script bundles, 0 stylesheets, 132 media assets. Compression: br.",
+      "tags": [
+        "payload",
+        "assets",
+        "br"
+      ]
+    },
+    {
+      "id": "sec:www.commonroom.io",
+      "name": "Security & DNS Topology",
+      "category": "security",
+      "subtitle": "HTTPS Secure · HSTS",
+      "description": "Protocol: https:. HSTS Preload: Enabled. CSP: Configured. DNS: 13.215.239.219, 52.74.6.109, 2406:da18:b3d:e201::259. Server: Netlify.",
+      "tags": [
+        "security",
+        "dns",
+        "ssl",
+        "hsts"
+      ]
+    },
+    {
+      "id": "sec:www.commonroom.io:dns-ips",
+      "name": "Anycast DNS Endpoints",
+      "category": "security",
+      "subtitle": "4 Resolved IP Addresses",
+      "description": "DNS A/AAAA addresses: 13.215.239.219, 52.74.6.109, 2406:da18:b3d:e201::259. Provides geo-distributed anycast edge routing.",
+      "tags": [
+        "dns",
+        "ip",
+        "anycast"
+      ]
+    },
+    {
+      "id": "sec:www.commonroom.io:ssl",
+      "name": "SSL/TLS Edge Termination",
+      "category": "security",
+      "subtitle": "TLS 1.3 Active · HSTS",
+      "description": "Transport Layer Security active on port 443. HSTS Strict Transport Security: Enforced. Server signature: Netlify.",
+      "tags": [
+        "ssl",
+        "tls",
+        "https",
+        "hsts"
+      ]
+    },
+    {
+      "id": "idea:0",
+      "name": "Edge Delivery & Hydration Strategy",
+      "category": "idea",
+      "subtitle": "Developer Implementation Pattern",
+      "description": "www.commonroom.io renders with fast edge-cached responses, keeping TTFB around 930ms. Architecture: Deploy on edge CDN nodes (e.g. Cloudflare / Vercel Edge). Cache static assets with immutable cache-control, revalidate dynamic data with SWR or React Query.",
+      "tags": [
+        "architecture",
+        "pattern",
+        "recipe"
+      ]
+    },
+    {
+      "id": "idea:1",
+      "name": "Design System & Token Architecture",
+      "category": "idea",
+      "subtitle": "Developer Implementation Pattern",
+      "description": "Consistent typography, high-contrast dark theme surfaces, and smooth micro-animations across all interactive surfaces. Architecture: Establish semantic color tokens (--color-background, --color-accent, --color-border) with HSL or P3 color spaces. Keep layouts responsive with clamp() and fluid flexbox/grid.",
+      "tags": [
+        "architecture",
+        "pattern",
+        "recipe"
+      ]
+    },
+    {
+      "id": "idea:2",
+      "name": "Clone Recipe: Global Search / Query Bar",
+      "category": "idea",
+      "subtitle": "Developer Implementation Pattern",
+      "description": "Developers looking to replicate Global Search / Query Bar from www.commonroom.io can follow this proven pattern. Architecture: Build with Radix Popover or cmdk library. Use debounced inputs (useDebounce 250ms), prefetch results or index with Fuse.js for instant client-side matching.",
+      "tags": [
+        "architecture",
+        "pattern",
+        "recipe"
+      ]
+    }
+  ],
+  "links": [
+    {
+      "source": "root:www.commonroom.io",
+      "target": "page:www.commonroom.io:home",
+      "label": "mounts index"
+    },
+    {
+      "source": "page:www.commonroom.io:home",
+      "target": "route:www.commonroom.io:/product",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:www.commonroom.io:/product",
+      "target": "route:www.commonroom.io:/product/buyer-intelligence",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/product",
+      "target": "route:www.commonroom.io:/product/person-360",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/product",
+      "target": "route:www.commonroom.io:/product/enrichment",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/product",
+      "target": "route:www.commonroom.io:/product/prospector",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/product",
+      "target": "route:www.commonroom.io:/product/ai-scoring",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/product",
+      "target": "route:www.commonroom.io:/product/ads",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/product",
+      "target": "route:www.commonroom.io:/product/buying-committee",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/product",
+      "target": "route:www.commonroom.io:/product/roomie-ai",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/product",
+      "target": "route:www.commonroom.io:/product/mcp-cli",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "page:www.commonroom.io:home",
+      "target": "route:www.commonroom.io:/integrations",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:www.commonroom.io:/product",
+      "target": "route:www.commonroom.io:/product/zoom-revenue-accelerator",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/product",
+      "target": "route:www.commonroom.io:/product/dial",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/product",
+      "target": "route:www.commonroom.io:/product/engage",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/product",
+      "target": "route:www.commonroom.io:/product/coach",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/product",
+      "target": "route:www.commonroom.io:/product/forecast",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "page:www.commonroom.io:home",
+      "target": "route:www.commonroom.io:/blog",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:www.commonroom.io:/blog",
+      "target": "route:www.commonroom.io:/blog/revenue-os",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "page:www.commonroom.io:home",
+      "target": "route:www.commonroom.io:/solutions",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:www.commonroom.io:/solutions",
+      "target": "route:www.commonroom.io:/solutions/abm",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/solutions",
+      "target": "route:www.commonroom.io:/solutions/demand-generation",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/solutions",
+      "target": "route:www.commonroom.io:/solutions/revops",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/solutions",
+      "target": "route:www.commonroom.io:/solutions/sales",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/solutions",
+      "target": "route:www.commonroom.io:/solutions/sales-development",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "page:www.commonroom.io:home",
+      "target": "route:www.commonroom.io:/resources",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:www.commonroom.io:home",
+      "target": "route:www.commonroom.io:/docs",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:www.commonroom.io:/docs",
+      "target": "route:www.commonroom.io:/docs/get-started",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "page:www.commonroom.io:home",
+      "target": "route:www.commonroom.io:/academy",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:www.commonroom.io:home",
+      "target": "route:www.commonroom.io:/events",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:www.commonroom.io:/resources",
+      "target": "route:www.commonroom.io:/resources/playbooks",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/resources",
+      "target": "route:www.commonroom.io:/resources/signals",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "page:www.commonroom.io:home",
+      "target": "route:www.commonroom.io:/prompts",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:www.commonroom.io:home",
+      "target": "route:www.commonroom.io:/community",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:www.commonroom.io:home",
+      "target": "route:www.commonroom.io:/podcast",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:www.commonroom.io:home",
+      "target": "route:www.commonroom.io:/customers",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:www.commonroom.io:/customers",
+      "target": "route:www.commonroom.io:/customers/atlan",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "page:www.commonroom.io:home",
+      "target": "route:www.commonroom.io:/pricing",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "page:www.commonroom.io:home",
+      "target": "route:www.commonroom.io:/demo",
+      "label": "routes to trunk"
+    },
+    {
+      "source": "route:www.commonroom.io:/customers",
+      "target": "route:www.commonroom.io:/customers/asana-deepens-ambassador-engagement-and-proves-business-impact",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/customers",
+      "target": "route:www.commonroom.io:/customers/dbt-labs-buying-signals-speed-to-lead",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/customers",
+      "target": "route:www.commonroom.io:/customers/airbyte-warm-outbound-2x-pipeline-growth-rate",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/customers",
+      "target": "route:www.commonroom.io:/customers/notion-customer-intelligence-more-meetings-per-rep",
+      "label": "catalogs leaf"
+    },
+    {
+      "source": "route:www.commonroom.io:/blog",
+      "target": "route:www.commonroom.io:/product",
+      "label": "highlights"
+    },
+    {
+      "source": "root:www.commonroom.io",
+      "target": "tech:react",
+      "label": "powered by"
+    },
+    {
+      "source": "root:www.commonroom.io",
+      "target": "tech:tailwind-css",
+      "label": "powered by"
+    },
+    {
+      "source": "root:www.commonroom.io",
+      "target": "tech:google-tag-manager",
+      "label": "powered by"
+    },
+    {
+      "source": "tech:tailwind-css",
+      "target": "tech:tailwind:tokens",
+      "label": "configures"
+    },
+    {
+      "source": "tech:google-tag-manager",
+      "target": "page:www.commonroom.io:home",
+      "label": "measures traffic"
+    },
+    {
+      "source": "tech:google-tag-manager",
+      "target": "route:www.commonroom.io:/product",
+      "label": "tracks events"
+    },
+    {
+      "source": "root:www.commonroom.io",
+      "target": "feature:search",
+      "label": "provides feature"
+    },
+    {
+      "source": "feature:search",
+      "target": "route:www.commonroom.io:/product",
+      "label": "searches catalog"
+    },
+    {
+      "source": "feature:search",
+      "target": "route:www.commonroom.io:/product/buyer-intelligence",
+      "label": "indexes leaf"
+    },
+    {
+      "source": "feature:search",
+      "target": "tech:react",
+      "label": "client component"
+    },
+    {
+      "source": "root:www.commonroom.io",
+      "target": "feature:auth",
+      "label": "provides feature"
+    },
+    {
+      "source": "root:www.commonroom.io",
+      "target": "feature:theme",
+      "label": "provides feature"
+    },
+    {
+      "source": "feature:theme",
+      "target": "tech:tailwind-css",
+      "label": "toggles dark class"
+    },
+    {
+      "source": "root:www.commonroom.io",
+      "target": "feature:grid",
+      "label": "provides feature"
+    },
+    {
+      "source": "feature:grid",
+      "target": "route:www.commonroom.io:/product",
+      "label": "renders items"
+    },
+    {
+      "source": "feature:grid",
+      "target": "route:www.commonroom.io:/product/buyer-intelligence",
+      "label": "item card"
+    },
+    {
+      "source": "tech:tailwind-css",
+      "target": "feature:grid",
+      "label": "grid layout"
+    },
+    {
+      "source": "root:www.commonroom.io",
+      "target": "feature:forms",
+      "label": "provides feature"
+    },
+    {
+      "source": "feature:forms",
+      "target": "page:www.commonroom.io:home",
+      "label": "interactive form"
+    },
+    {
+      "source": "feature:forms",
+      "target": "tech:react",
+      "label": "form state"
+    },
+    {
+      "source": "root:www.commonroom.io",
+      "target": "link:docs:0",
+      "label": "developer docs"
+    },
+    {
+      "source": "page:www.commonroom.io:home",
+      "target": "link:docs:0",
+      "label": "external link"
+    },
+    {
+      "source": "root:www.commonroom.io",
+      "target": "link:linkedin:1",
+      "label": "organization"
+    },
+    {
+      "source": "page:www.commonroom.io:home",
+      "target": "link:linkedin:1",
+      "label": "external link"
+    },
+    {
+      "source": "root:www.commonroom.io",
+      "target": "link:demo:2",
+      "label": "live demo"
+    },
+    {
+      "source": "page:www.commonroom.io:home",
+      "target": "link:demo:2",
+      "label": "external link"
+    },
+    {
+      "source": "root:www.commonroom.io",
+      "target": "perf:www.commonroom.io",
+      "label": "benchmarked at"
+    },
+    {
+      "source": "perf:www.commonroom.io",
+      "target": "perf:www.commonroom.io:ttfb",
+      "label": "measures"
+    },
+    {
+      "source": "perf:www.commonroom.io",
+      "target": "perf:www.commonroom.io:payload",
+      "label": "audits"
+    },
+    {
+      "source": "root:www.commonroom.io",
+      "target": "sec:www.commonroom.io",
+      "label": "secured by"
+    },
+    {
+      "source": "sec:www.commonroom.io",
+      "target": "sec:www.commonroom.io:dns-ips",
+      "label": "resolves via"
+    },
+    {
+      "source": "sec:www.commonroom.io",
+      "target": "sec:www.commonroom.io:ssl",
+      "label": "encrypts with"
+    },
+    {
+      "source": "root:www.commonroom.io",
+      "target": "idea:0",
+      "label": "architecture pattern"
+    },
+    {
+      "source": "root:www.commonroom.io",
+      "target": "idea:1",
+      "label": "architecture pattern"
+    },
+    {
+      "source": "idea:1",
+      "target": "tech:tailwind-css",
+      "label": "design guide"
+    },
+    {
+      "source": "root:www.commonroom.io",
+      "target": "idea:2",
+      "label": "architecture pattern"
+    },
+    {
+      "source": "idea:2",
+      "target": "feature:search",
+      "label": "implements recipe"
+    }
+  ]
+}

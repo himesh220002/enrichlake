@@ -1,45 +1,103 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { enqueueBulkDomains, enqueueDomainEnrichment, getQueueMetrics, scrapingQueue } from '@/lib/queue/scrapingQueue';
+import {
+  enqueueBulkDomains,
+  enqueueDomainEnrichment,
+  getQueueMetrics,
+  getDetailedJobs,
+  clearQueue,
+} from '@/lib/queue/scrapingQueue';
+import { getOrCreateScrapingWorker, queueActivityLogs, addQueueLog } from '@/lib/queue/worker';
 
 export async function GET() {
   try {
-    const metrics = await getQueueMetrics();
-    const jobs = await scrapingQueue.getJobs(['active', 'waiting', 'completed', 'failed'], 0, 15);
+    // Ensure worker singleton is running
+    getOrCreateScrapingWorker(3);
 
-    const formattedJobs = jobs.map((job) => ({
-      id: job.id,
-      name: job.name,
-      domain: job.data.domain,
-      timestamp: job.timestamp,
-      processedOn: job.processedOn,
-      finishedOn: job.finishedOn,
-      state: job.finishedOn ? (job.failedReason ? 'failed' : 'completed') : (job.processedOn ? 'active' : 'waiting'),
-      returnvalue: job.returnvalue,
-      failedReason: job.failedReason,
-    }));
+    const [metrics, recentJobs] = await Promise.all([
+      getQueueMetrics(),
+      getDetailedJobs(25),
+    ]);
 
-    return NextResponse.json({ metrics, recentJobs: formattedJobs });
+    return NextResponse.json({
+      success: true,
+      metrics,
+      recentJobs,
+      activityLogs: queueActivityLogs.slice(0, 40),
+      workerStatus: 'active',
+    });
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'Failed to fetch queue metrics' }, { status: 500 });
+    return NextResponse.json(
+      { error: error?.message || 'Failed to fetch queue data' },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { domains } = body;
+    // Ensure worker singleton is running
+    getOrCreateScrapingWorker(3);
 
-    if (!Array.isArray(domains) || domains.length === 0) {
-      return NextResponse.json({ error: 'Provide an array of domains' }, { status: 400 });
+    const body = await req.json();
+    const { action, domains, domain } = body;
+
+    // 1. Clear Queue Action
+    if (action === 'clear') {
+      await clearQueue();
+      addQueueLog({
+        domain: 'system',
+        type: 'info',
+        message: '🧹 Queue cleared by user action.',
+      });
+      return NextResponse.json({ success: true, message: 'Queue successfully cleared' });
     }
 
-    const enqueued = await enqueueBulkDomains(domains);
-    return NextResponse.json({
-      success: true,
-      enqueuedCount: enqueued.length,
-      jobIds: enqueued.map((j) => j.id),
-    });
+    // 2. Start Worker / Trigger Processing Action
+    if (action === 'start_worker') {
+      addQueueLog({
+        domain: 'system',
+        type: 'info',
+        message: '⚡ BullMQ Scraping Worker active and listening for background jobs (concurrency: 3).',
+      });
+      const metrics = await getQueueMetrics();
+      const recentJobs = await getDetailedJobs(25);
+      return NextResponse.json({ success: true, metrics, recentJobs, workerStatus: 'active' });
+    }
+
+    // 3. Single Domain Enqueue
+    if (domain && typeof domain === 'string') {
+      const job = await enqueueDomainEnrichment({ domain: domain.trim(), depth: 'deep' });
+      addQueueLog({
+        domain: domain.trim(),
+        type: 'info',
+        message: `📥 Enqueued single domain ${domain.trim()} (Job #${job.id})`,
+      });
+      return NextResponse.json({ success: true, jobId: job.id, domain });
+    }
+
+    // 4. Bulk Domains Enqueue
+    if (Array.isArray(domains) && domains.length > 0) {
+      const cleanDomains = domains
+        .map((d: any) => String(d).trim().replace(/^https?:\/\//i, '').replace(/\/.*$/, ''))
+        .filter(Boolean);
+
+      const enqueued = await enqueueBulkDomains(cleanDomains);
+      addQueueLog({
+        domain: cleanDomains[0],
+        type: 'info',
+        message: `📥 Bulk dispatched ${enqueued.length} domains into BullMQ queue pipeline: ${cleanDomains.slice(0, 3).join(', ')}${cleanDomains.length > 3 ? ` (+${cleanDomains.length - 3} more)` : ''}`,
+      });
+
+      return NextResponse.json({
+        success: true,
+        enqueuedCount: enqueued.length,
+        jobIds: enqueued.map((j) => j.id),
+      });
+    }
+
+    return NextResponse.json({ error: 'Invalid request. Provide domains array or action.' }, { status: 400 });
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'Failed to enqueue jobs' }, { status: 500 });
+    console.error('[API /api/queue] Error:', error.message);
+    return NextResponse.json({ error: error?.message || 'Failed to execute queue operation' }, { status: 500 });
   }
 }

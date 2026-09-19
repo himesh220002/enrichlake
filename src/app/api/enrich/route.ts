@@ -11,10 +11,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Domain is required' }, { status: 400 });
     }
 
-    // Run zero-cost stealth scraper
-    const profile = await enrichDomain(domain);
+    // Run stealth scraper with optional AI domain analysis
+    const profile = await enrichDomain(domain, byokConfig);
 
-    // If BYOK AI is configured, execute the AI agent
+    // If BYOK AI is configured, execute the AI revenue intelligence agent
     let aiSynthesis = null;
     if (byokConfig && byokConfig.apiKey && byokConfig.provider) {
       try {

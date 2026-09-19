@@ -3,10 +3,31 @@ import { Page } from 'playwright';
 export interface ExtractedContactInfo {
   domain: string;
   companyName: string;
+  category: string;
+  productsServices: string[];
   description: string;
   emails: string[];
   phones: string[];
   addresses: string[];
+  location: {
+    formattedAddress: string | null;
+    city: string | null;
+    state: string | null;
+    country: string | null;
+  } | null;
+  geoData: {
+    latitude: number | null;
+    longitude: number | null;
+  } | null;
+  businessDetails: {
+    gstin?: string | null;
+    pan?: string | null;
+    cin?: string | null;
+    isoCertified?: boolean;
+    rawDetails: string | null;
+  } | null;
+  verification: string[];
+  statusTags: string[];
   socialLinks: {
     linkedin?: string;
     twitter?: string;
@@ -16,14 +37,22 @@ export interface ExtractedContactInfo {
     youtube?: string;
   };
   schemaOrgData: any[];
+  // Raw scraped signals for AI synthesis
+  rawScraped?: {
+    title: string;
+    metaDescription: string;
+    metaKeywords: string;
+    headings: string[];
+    visibleText: string;
+  };
 }
 
 // Strict email regex with boundary and standard TLD length (2-6 chars)
-const STRICT_EMAIL_REGEX = /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(?:com|org|net|io|co|ai|app|tech|dev|biz|info|us|uk|de|ca|eu|in|gov|edu|me|so|agency|design|global)\b/gi;
+const STRICT_EMAIL_REGEX = /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(?:com|org|net|io|co|ai|app|tech|dev|biz|info|us|uk|de|ca|eu|in|gov|edu|me|so|agency|design|global|online)\b/gi;
 
 const COMMON_TLDS = new Set([
   'com', 'org', 'net', 'io', 'co', 'ai', 'app', 'tech', 'dev', 'biz', 'info',
-  'us', 'uk', 'de', 'ca', 'eu', 'in', 'gov', 'edu', 'me', 'so', 'agency', 'design', 'global'
+  'us', 'uk', 'de', 'ca', 'eu', 'in', 'gov', 'edu', 'me', 'so', 'agency', 'design', 'global', 'online'
 ]);
 
 const IGNORED_EMAIL_EXTENSIONS = [
@@ -31,61 +60,44 @@ const IGNORED_EMAIL_EXTENSIONS = [
   '.css', '.js', '.woff', '.woff2', '.ttf'
 ];
 
-/**
- * Validates whether a candidate string is a plausible international or domestic phone number.
- * Strictly eliminates CSS values, ratio numbers, float coordinates, and internal bundle IDs.
- */
 function isValidPhoneNumber(candidate: string): boolean {
   if (!candidate) return false;
   const cleaned = candidate.trim();
 
-  // Reject decimals or aspect ratios like "30.476190476190" or "0.15238"
   if (/\d+\.\d{2,}/.test(cleaned) || cleaned.includes('.0') || cleaned.includes('0.')) {
     return false;
   }
 
-  // Count total digits
   const digits = cleaned.replace(/\D/g, '');
   if (digits.length < 8 || digits.length > 15) {
     return false;
   }
 
-  // Reject repeated single digits like "999999999" or "00000000"
   if (/^(.)\1+$/.test(digits)) {
     return false;
   }
 
-  // Reject sequential runs like "12345678"
   if ('0123456789012345'.includes(digits) || '987654321098765'.includes(digits)) {
     return false;
   }
 
-  // Must have standard phone structure (leading +, parentheses, or standard delimiters)
-  // or come from an explicit tel: href
-  const hasInternationalPrefix = cleaned.startsWith('+') && /^\+?[1-9]/.test(cleaned);
-  const hasParens = /\(\d{2,4}\)/.test(cleaned);
-  const hasDelimiters = /[-.\s]/.test(cleaned);
-
-  return hasInternationalPrefix || hasParens || (hasDelimiters && digits.length >= 10);
+  return true;
 }
 
-/**
- * Standardize phone number formatting
- */
 function formatPhoneNumber(raw: string): string {
-  const cleaned = raw.replace(/[^\d+]/g, '').trim();
-  if (cleaned.startsWith('+1') && cleaned.length === 12) {
-    return `+1 (${cleaned.slice(2, 5)}) ${cleaned.slice(5, 8)}-${cleaned.slice(8)}`;
+  let cleaned = raw.replace(/[^\d+]/g, '').trim();
+  if (cleaned.length === 10 && !cleaned.startsWith('+')) {
+    return `+91-${cleaned.slice(0, 5)} ${cleaned.slice(5)}`;
   }
-  if (cleaned.length === 10) {
-    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+  if (cleaned.startsWith('91') && cleaned.length === 12) {
+    return `+91-${cleaned.slice(2, 7)} ${cleaned.slice(7)}`;
+  }
+  if (cleaned.startsWith('+91') && cleaned.length === 13) {
+    return `+91-${cleaned.slice(3, 8)} ${cleaned.slice(8)}`;
   }
   return raw.trim();
 }
 
-/**
- * Clean up email prefix if accidentally prefixed with "email" or "contact"
- */
 function cleanEmail(rawEmail: string): string {
   let email = rawEmail.toLowerCase().trim();
   if (email.startsWith('email') && email.length > 8) {
@@ -97,10 +109,14 @@ function cleanEmail(rawEmail: string): string {
 }
 
 export async function extractLocalBusinessData(page: Page, targetDomain: string): Promise<ExtractedContactInfo> {
-  // 1. Company Name & Meta Description
+  // 1. Company Name, Meta Description & Meta Keywords
   const title = await page.title().catch(() => '');
   const metaDescription = await page
     .$eval('meta[name="description"]', (el) => el.getAttribute('content') || '')
+    .catch(() => '');
+
+  const metaKeywords = await page
+    .$eval('meta[name="keywords"]', (el) => el.getAttribute('content') || '')
     .catch(() => '');
 
   const ogSiteName = await page
@@ -109,23 +125,26 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
 
   const companyName = ogSiteName || title.split(/[-|–:·•]/)[0]?.trim() || targetDomain;
 
-  // 2. Extract Explicit `mailto:` links
+  // 2. Visible text and headings
+  const { visibleText, headings } = await page.evaluate(() => {
+    const hEls = Array.from(document.querySelectorAll('h1, h2, h3'));
+    const hTexts = hEls
+      .map((el) => (el.textContent || '').trim())
+      .filter((t) => t.length > 2 && t.length < 80);
+
+    return {
+      visibleText: document.body ? (document.body.innerText || document.body.textContent || '') : '',
+      headings: hTexts,
+    };
+  }).catch(() => ({ visibleText: '', headings: [] }));
+
+  // 3. Emails extraction
   const mailtoHrefs = await page.$$eval('a[href^="mailto:"]', (els) =>
     els.map((el) => el.getAttribute('href')?.replace(/^mailto:/i, '').split('?')[0].toLowerCase().trim() || '')
   ).catch(() => [] as string[]);
 
-  // Extract visible body text (excluding script, style, svg, noscript, canvas)
-  const visibleText = await page.evaluate(() => {
-    const clone = document.body.cloneNode(true) as HTMLElement;
-    if (!clone) return '';
-    const nonContentSelectors = ['script', 'style', 'svg', 'noscript', 'iframe', 'canvas'];
-    nonContentSelectors.forEach((sel) => {
-      clone.querySelectorAll(sel).forEach((el) => el.remove());
-    });
-    return clone.innerText || clone.textContent || '';
-  }).catch(() => '');
-
-  const textEmails = Array.from(visibleText.matchAll(STRICT_EMAIL_REGEX)).map((m) => m[0].toLowerCase());
+  const emailRegex = /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(?:com|org|net|io|co|ai|app|tech|dev|biz|info|us|uk|de|ca|eu|in|gov|edu|me|so|agency|design|global|online)\b/gi;
+  const textEmails = Array.from(visibleText.matchAll(emailRegex)).map((m) => m[0].toLowerCase());
 
   const allEmails = Array.from(new Set([...mailtoHrefs, ...textEmails]))
     .map(cleanEmail)
@@ -149,22 +168,23 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
       );
     });
 
-  // 3. Schema.org / JSON-LD structured data
+  // 4. Schema.org data
   const schemaOrgData = await page.$$eval('script[type="application/ld+json"]', (els) => {
     const results: any[] = [];
     for (const el of els) {
       try {
         const json = JSON.parse(el.textContent || '{}');
         results.push(json);
-      } catch {
-        // ignore invalid json
-      }
+      } catch {}
     }
     return results;
   }).catch(() => [] as any[]);
 
   const schemaPhones: string[] = [];
   const addresses: string[] = [];
+  let schemaLat: number | null = null;
+  let schemaLng: number | null = null;
+  const schemaProducts: string[] = [];
 
   for (const schema of schemaOrgData) {
     const items = Array.isArray(schema) ? schema : (schema['@graph'] ? schema['@graph'] : [schema]);
@@ -196,10 +216,22 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
           if (formatted) addresses.push(formatted);
         }
       }
+
+      if (item.geo) {
+        const gLat = parseFloat(item.geo.latitude);
+        const gLng = parseFloat(item.geo.longitude);
+        if (!isNaN(gLat) && !isNaN(gLng)) {
+          schemaLat = gLat;
+          schemaLng = gLng;
+        }
+      }
+
+      if (item['@type'] === 'Product' && item.name) schemaProducts.push(item.name);
+      if (item['@type'] === 'Service' && item.name) schemaProducts.push(item.name);
     }
   }
 
-  // 4. Meta tags for telephone
+  // 5. Meta tags for telephone & geo
   const metaPhones = await page.evaluate(() => {
     const metas = document.querySelectorAll(
       'meta[property="business:contact_data:phone_number"], meta[name="telephone"], meta[property="og:phone_number"]'
@@ -207,44 +239,41 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
     return Array.from(metas).map((m) => m.getAttribute('content') || '');
   }).catch(() => [] as string[]);
 
-  // 5. Explicit `tel:` links
+  const metaGeo = await page.evaluate(() => {
+    const geoPos = document.querySelector('meta[name="geo.position"]')?.getAttribute('content');
+    const icbm = document.querySelector('meta[name="ICBM"]')?.getAttribute('content');
+    return geoPos || icbm || null;
+  }).catch(() => null);
+
+  if (schemaLat === null && metaGeo) {
+    const parts = metaGeo.split(/[;,]/);
+    if (parts.length >= 2) {
+      const pLat = parseFloat(parts[0].trim());
+      const pLng = parseFloat(parts[1].trim());
+      if (!isNaN(pLat) && !isNaN(pLng)) {
+        schemaLat = pLat;
+        schemaLng = pLng;
+      }
+    }
+  }
+
+  // 6. Explicit `tel:` links
   const telHrefs = await page.$$eval('a[href^="tel:"]', (els) =>
     els.map((el) => el.getAttribute('href')?.replace(/^tel:/i, '').split('?')[0].trim() || '')
   ).catch(() => [] as string[]);
 
-  // 6. Targeted Contact & Footer Elements
-  const targetedPhoneText = await page.evaluate(() => {
-    const selectors = [
-      'footer',
-      '[class*="footer" i]',
-      '[id*="footer" i]',
-      'address',
-      '[class*="contact" i]',
-      '[id*="contact" i]',
-      '[itemprop="telephone"]',
-      '.header-contact',
-      '.top-bar',
-    ];
-    const elements = document.querySelectorAll(selectors.join(','));
-    let text = '';
-    elements.forEach((el) => {
-      text += ' ' + ((el as HTMLElement).innerText || el.textContent || '');
-    });
-    return text;
-  }).catch(() => '');
+  // 7. Footer / Contact Text & Full Page Phone Regex
+  const targetedPhoneText = visibleText;
 
-  // Strict Phone Regex
   const STRICT_PHONE_PATTERNS = [
-    // Standard international format e.g. +1 (800) 555-0199 or +44 20 7946 0958 or +91 98765 43210
+    /(?:\+91[-.\s]?)?[6-9]\d{9}\b/g,
+    /\+\d{1,3}[-.\s]\d{3,12}\b/g,
     /\+?[1-9]\d{0,2}[ -.]\(?\d{2,4}\)?[ -.]\d{3,4}[ -.]\d{3,4}/g,
-    // North American standard e.g. (800) 555-0199 or 800-555-0199 or 800.555.0199
     /(?:\+?1[-.\s]?)?\(?[2-9]\d{2}\)?[-.\s][2-9]\d{2}[-.\s]\d{4}/g,
-    // Labeled numbers e.g. "Phone: 123-456-7890", "Tel: +1-800-123-4567", "Call: 800-123-4567"
-    /(?:tel|phone|call|toll[- ]free|mobile|direct|hotline)[:\s]+([\+\d\(\)\s\.\-]{8,20})/gi,
+    /(?:tel|phone|call|toll[- ]free|mobile|direct|hotline|comms)[:\s]+([\+\d\(\)\s\.\-]{8,20})/gi,
   ];
 
   const matchedRawPhones: string[] = [];
-
   for (const regex of STRICT_PHONE_PATTERNS) {
     const matches = Array.from(targetedPhoneText.matchAll(regex));
     for (const m of matches) {
@@ -255,7 +284,6 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
     }
   }
 
-  // Combine and validate
   const combinedPhones = [...telHrefs, ...schemaPhones, ...metaPhones, ...matchedRawPhones];
   const validPhones = Array.from(new Set(
     combinedPhones
@@ -263,7 +291,7 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
       .map(formatPhoneNumber)
   ));
 
-  // 7. Extract Social Links
+  // 8. Social links
   const links = await page.$$eval('a[href]', (els) => els.map((el) => el.getAttribute('href') || '')).catch(() => [] as string[]);
   const socialLinks: ExtractedContactInfo['socialLinks'] = {};
 
@@ -283,14 +311,130 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
     }
   }
 
+  // 9. Products / Services from DOM & Meta
+  const keywordItems = metaKeywords
+    .split(',')
+    .map((k) => k.trim())
+    .filter((k) => k.length > 2 && k.length < 35 && k.toLowerCase() !== targetDomain.toLowerCase());
+
+  const domOfferings = await page.evaluate(() => {
+    const results: string[] = [];
+    const els = document.querySelectorAll('nav a, header a, [class*="service" i] h3, [class*="product" i] h3');
+    const stopWords = new Set(['home', 'about', 'contact', 'login', 'signup', 'terms', 'privacy', 'blog', 'careers']);
+    els.forEach((el) => {
+      const txt = (el.textContent || '').trim();
+      if (txt.length > 3 && txt.length < 35 && !stopWords.has(txt.toLowerCase())) {
+        results.push(txt);
+      }
+    });
+    return results;
+  }).catch(() => [] as string[]);
+
+  const productsServices = Array.from(new Set([...keywordItems, ...schemaProducts, ...domOfferings])).slice(0, 6);
+
+  // 10. Accurate Category Classification
+  const fullText = (title + ' ' + metaDescription + ' ' + metaKeywords + ' ' + visibleText.slice(0, 5000)).toLowerCase();
+  let category = 'Commercial Enterprise';
+
+  if (/\b(agency|digital agency|software|web development|engineering|ui\/ux|design studio|cloud services|saas|developer tools|it solutions)\b/i.test(fullText)) {
+    category = 'Digital Agency & Software Engineering';
+  } else if (/\b(laptops?|desktops?|computers?|electronics? store|hardware store|gadgets)\b/i.test(fullText)) {
+    category = 'Electronics Retail';
+  } else if (/\b(agriculture|fertilizers?|farming|pesticides?|agrochemicals?|grain merchant|rice mill|wheat wholesale)\b/i.test(fullText)) {
+    category = 'Agriculture Supply';
+  } else if (/\b(textiles?|fabrics?|cotton rolls?|polyester|yarns?|weaving|garment wholesale)\b/i.test(fullText)) {
+    category = 'Textile Wholesale';
+  } else if (/\b(construction|cement supply|tmt steel|building materials|iron & steel)\b/i.test(fullText)) {
+    category = 'Construction & Building Supply';
+  } else if (/\b(pharmaceuticals?|medicines?|healthcare|medical store|diagnostics)\b/i.test(fullText)) {
+    category = 'Healthcare & Pharmaceuticals';
+  } else if (/\b(logistics|freight forwarding|cargo shipping|warehousing services)\b/i.test(fullText)) {
+    category = 'Logistics & Supply Chain';
+  } else if (/\b(payment gateway|fintech|banking api|financial infrastructure)\b/i.test(fullText)) {
+    category = 'Financial Technology & Payments';
+  }
+
+  // 11. Location & Address — STRICT: NO FAKE MALDA OR FAKE ADDRESS
+  let formattedAddress: string | null = addresses[0] || null;
+  let city: string | null = null;
+  let state: string | null = null;
+  let country: string | null = null;
+
+  if (!formattedAddress) {
+    // Check if footer explicitly says "Remote Worldwide" or similar
+    if (/\b(remote worldwide|fully remote|remote-first)\b/i.test(fullText)) {
+      formattedAddress = 'Remote Worldwide';
+    }
+  }
+
+  const location = formattedAddress
+    ? { formattedAddress, city, state, country }
+    : null;
+
+  // 12. Geo Data — STRICT: NO FAKE COORDINATES
+  const geoData = schemaLat !== null && schemaLng !== null
+    ? { latitude: schemaLat, longitude: schemaLng }
+    : null;
+
+  // 13. Business Details — STRICT: NO FAKE "Registered Commercial Enterprise" OR FAKE GSTIN
+  const GSTIN_REGEX = /\b\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}[Z]{1}[A-Z\d]{1}\b/g;
+  const PAN_REGEX = /\b[A-Z]{5}\d{4}[A-Z]{1}\b/g;
+  const CIN_REGEX = /\b[UL]\d{5}[A-Z]{2}\d{4}[A-Z]{3}\d{6}\b/g;
+
+  const gstinMatches = Array.from(visibleText.matchAll(GSTIN_REGEX)).map((m) => m[0]);
+  const panMatches = Array.from(visibleText.matchAll(PAN_REGEX)).map((m) => m[0]);
+  const cinMatches = Array.from(visibleText.matchAll(CIN_REGEX)).map((m) => m[0]);
+  const hasIso = /ISO\s*(?:9001|14001|27001|22000|45001)|ISO\s*Certified/i.test(visibleText);
+
+  const gstin = gstinMatches[0] || null;
+  const pan = panMatches[0] || null;
+  const cin = cinMatches[0] || null;
+
+  const detailsParts: string[] = [];
+  if (gstin) detailsParts.push(`GSTIN: ${gstin}`);
+  if (pan && !gstin) detailsParts.push(`PAN: ${pan}`);
+  if (hasIso) detailsParts.push('ISO Certified');
+  if (cin) detailsParts.push(`CIN: ${cin}`);
+
+  const businessDetails = detailsParts.length > 0
+    ? { gstin, pan, cin, isoCertified: hasIso, rawDetails: detailsParts.join(', ') }
+    : null;
+
+  // 14. Verification — STRICT: NO FAKE "Verified Partner"
+  const verification: string[] = [];
+  if (gstin) verification.push('GSTIN Verified');
+  if (pan) verification.push('PAN Verified');
+  if (hasIso) verification.push('ISO Certified');
+  if (/\bchamber of commerce\b/i.test(visibleText)) verification.push('Chamber Registered');
+
+  // 15. Status Tags
+  const statusTags: string[] = ['Active'];
+  if (/\b(we're hiring|careers|expanding|open positions)\b/i.test(visibleText)) {
+    statusTags.push('Expanding');
+  }
+
   return {
     domain: targetDomain,
     companyName,
-    description: metaDescription,
+    category,
+    productsServices,
+    description: metaDescription || `${companyName} is an active digital enterprise in ${category}.`,
     emails: allEmails.slice(0, 10),
     phones: validPhones.slice(0, 5),
     addresses: Array.from(new Set(addresses)),
+    location,
+    geoData,
+    businessDetails,
+    verification,
+    statusTags,
     socialLinks,
     schemaOrgData,
+    rawScraped: {
+      title,
+      metaDescription,
+      metaKeywords,
+      headings,
+      visibleText,
+    },
   };
 }
