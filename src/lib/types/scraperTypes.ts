@@ -82,6 +82,8 @@ export interface B2BPricingDetails {
   meetingRequired: boolean;
 }
 
+export type DataConfidence = 'live' | 'estimated' | 'benchmark';
+
 export interface ProductSpecRecord {
   b2bPricing?: B2BPricingDetails;
   id: string;
@@ -93,6 +95,8 @@ export interface ProductSpecRecord {
   sellingPrice?: string;
   offerPrice?: string;
   discountPercent?: number;
+  /** Confidence level of pricing data: live (from real scrape), estimated (computed from seed price), benchmark (static fallback) */
+  priceConfidence?: DataConfidence;
   sellerBusiness: string;
   websiteSource: string;
   websiteUrl: string;
@@ -141,6 +145,8 @@ export interface ProductSellerRecord {
   isBookmarked?: boolean;
   isFlagged?: boolean;
   specs: Record<string, string>;
+  /** Data source confidence: live (real Google Maps scrape), estimated (partial), benchmark (static fallback data) */
+  dataSource?: DataConfidence;
   rawUrl: string;
   scrapedAt: string;
 }
@@ -230,7 +236,13 @@ export function synthesizeB2BPricing(
   const combined = `${product} ${specs} ${query}`.toLowerCase();
   const priceNum = extractCleanPriceNumber(retailPrice);
 
-  if (combined.includes('laptop') || combined.includes('rtx') || combined.includes('i5') || combined.includes('ram') || combined.includes('nitro') || combined.includes('victus') || combined.includes('tuf')) {
+  // ----------------------------------------------------------------
+  // CATEGORY MATCHING — ordered from most specific to most generic
+  // to prevent template bleed (e.g., rice template firing on earphones)
+  // ----------------------------------------------------------------
+
+  // Consumer Electronics: Laptops & Workstations
+  if (combined.includes('laptop') || combined.includes('rtx') || combined.includes('core i5') || combined.includes('core i7') || (combined.includes('ram') && combined.includes('ssd')) || combined.includes('nitro') || combined.includes('victus') || combined.includes('tuf')) {
     const wholesaleVal = priceNum > 0 ? Math.round(priceNum * 0.82) : 74500;
     return {
       wholesalePrice: `₹${wholesaleVal.toLocaleString('en-IN')}`,
@@ -241,7 +253,52 @@ export function synthesizeB2BPricing(
       paymentTerms: 'Net 30 on vendor approval / Corporate PO',
       meetingRequired: true,
     };
-  } else if (combined.includes('rice') || combined.includes('wheat') || combined.includes('grain') || combined.includes('agro')) {
+  }
+
+  // Consumer Electronics: Audio (Earphones, Headphones, Speakers, Earbuds)
+  if (combined.includes('earphone') || combined.includes('headphone') || combined.includes('earbud') || combined.includes('speaker') || combined.includes('anc') || combined.includes('noise cancel') || combined.includes('tws') || (combined.includes('audio') && combined.includes('wireless'))) {
+    const wholesaleVal = priceNum > 0 ? Math.round(priceNum * 0.75) : 800;
+    return {
+      wholesalePrice: wholesaleVal > 0 ? `₹${wholesaleVal.toLocaleString('en-IN')}` : '₹800–₹4,000',
+      bulkDiscountTier: '20%–28% off (50+ units)',
+      moq: 'MOQ: 20 units',
+      b2bStrategy: 'Corporate gifting & institutional procurement slab; OEM branding available on 100+ unit orders with custom packaging',
+      sellingStrategyType: 'volume_slabs',
+      paymentTerms: 'Net 30 / Corporate PO with GST Invoice',
+      meetingRequired: false,
+    };
+  }
+
+  // Consumer Electronics: Mobiles, Tablets, Wearables
+  if (combined.includes('mobile') || combined.includes('smartphone') || combined.includes('iphone') || combined.includes('samsung') || combined.includes('tablet') || combined.includes('ipad') || combined.includes('smartwatch')) {
+    const wholesaleVal = priceNum > 0 ? Math.round(priceNum * 0.84) : 18000;
+    return {
+      wholesalePrice: `₹${wholesaleVal.toLocaleString('en-IN')}`,
+      bulkDiscountTier: '14%–20% off (20+ units)',
+      moq: 'MOQ: 10 units',
+      b2bStrategy: 'Authorized distributor margin; commercial channel pricing with gray-market protection clause and service warranty agreement',
+      sellingStrategyType: 'corporate_dealer',
+      paymentTerms: 'Net 15 on DD / Corporate PO',
+      meetingRequired: false,
+    };
+  }
+
+  // Server, Networking & Data Center
+  if (combined.includes('server') || combined.includes('xeon') || combined.includes('rack') || combined.includes('networking') || combined.includes('switch') || combined.includes('router') || combined.includes('nas') || combined.includes('nvme') || combined.includes('gpu cluster')) {
+    const wholesaleVal = priceNum > 0 ? Math.round(priceNum * 0.80) : 180000;
+    return {
+      wholesalePrice: `₹${wholesaleVal.toLocaleString('en-IN')}`,
+      bulkDiscountTier: '18%–28% off (Data Center Procurement)',
+      moq: 'MOQ: 2 units / 1 rack unit batch',
+      b2bStrategy: 'Enterprise IT sourcing via OEM authorized channel; STPI / NSDC procurement eligibility; GST ITC + AMC bundling available',
+      sellingStrategyType: 'post_meeting_rfp',
+      paymentTerms: 'Net 45 on signed Enterprise Order / OPEX leasing available',
+      meetingRequired: true,
+    };
+  }
+
+  // Agriculture & Food Commodities
+  if (combined.includes('rice') || combined.includes('wheat') || combined.includes('grain') || combined.includes('basmati') || combined.includes('chilli') || combined.includes('spice') || combined.includes('agro') || combined.includes('quintal')) {
     const wholesaleVal = priceNum > 0 ? Math.round(priceNum * 0.80) : 1950;
     return {
       wholesalePrice: `₹${wholesaleVal.toLocaleString('en-IN')} / 50kg`,
@@ -252,7 +309,10 @@ export function synthesizeB2BPricing(
       paymentTerms: '50% advance / 50% on weighbridge slip',
       meetingRequired: false,
     };
-  } else if (combined.includes('steel') || combined.includes('rod') || combined.includes('tmt') || combined.includes('metal')) {
+  }
+
+  // Industrial Metals & Steel
+  if (combined.includes('steel') || combined.includes('tmt') || combined.includes('rebar') || combined.includes('stainless') || combined.includes('pipe') || combined.includes('metal') || combined.includes('rod')) {
     const wholesaleVal = priceNum > 0 ? Math.round(priceNum * 0.85) : 49500;
     return {
       wholesalePrice: `₹${wholesaleVal.toLocaleString('en-IN')} / MT`,
@@ -263,7 +323,10 @@ export function synthesizeB2BPricing(
       paymentTerms: 'LC (Letter of Credit) / Bank Escrow / Net 15',
       meetingRequired: true,
     };
-  } else if (combined.includes('cotton') || combined.includes('textile') || combined.includes('fabric') || combined.includes('yarn')) {
+  }
+
+  // Textiles & Fabrics
+  if (combined.includes('cotton') || combined.includes('textile') || combined.includes('fabric') || combined.includes('yarn') || combined.includes('gsm') || combined.includes('twill') || combined.includes('polyester')) {
     const wholesaleVal = priceNum > 0 ? Math.round(priceNum * 0.78) : 160;
     return {
       wholesalePrice: `₹${wholesaleVal.toLocaleString('en-IN')} / unit`,
@@ -274,7 +337,10 @@ export function synthesizeB2BPricing(
       paymentTerms: 'Net 30 after trade credit validation',
       meetingRequired: false,
     };
-  } else if (combined.includes('solar') || combined.includes('pv') || combined.includes('bifacial') || combined.includes('battery') || combined.includes('lifepo4')) {
+  }
+
+  // Solar & Renewable Energy
+  if (combined.includes('solar') || combined.includes('pv') || combined.includes('bifacial') || combined.includes('battery') || combined.includes('lifepo4') || combined.includes('topcon') || combined.includes('bms')) {
     const wholesaleVal = priceNum > 0 ? Math.round(priceNum * 0.80) : 18;
     return {
       wholesalePrice: `₹${wholesaleVal.toLocaleString('en-IN')} / unit`,
@@ -285,7 +351,10 @@ export function synthesizeB2BPricing(
       paymentTerms: '30% Advance, 70% against BL / Dispatch inspection',
       meetingRequired: true,
     };
-  } else if (combined.includes('chemical') || combined.includes('ipa') || combined.includes('solvent') || combined.includes('alcohol')) {
+  }
+
+  // Chemicals & Industrial Solvents
+  if (combined.includes('chemical') || combined.includes('ipa') || combined.includes('isopropyl') || combined.includes('solvent') || combined.includes('alcohol') || combined.includes('acetone') || combined.includes('reagent')) {
     const wholesaleVal = priceNum > 0 ? Math.round(priceNum * 0.82) : 95;
     return {
       wholesalePrice: `₹${wholesaleVal.toLocaleString('en-IN')} / kg`,
@@ -296,7 +365,10 @@ export function synthesizeB2BPricing(
       paymentTerms: 'LC 60 Days / Advance RTGS on weighbridge slip',
       meetingRequired: false,
     };
-  } else if (combined.includes('cement') || combined.includes('opc') || combined.includes('construction')) {
+  }
+
+  // Construction & Cement
+  if (combined.includes('cement') || combined.includes('opc') || combined.includes('ppc') || combined.includes('construction') || combined.includes('concrete') || combined.includes('aggregate')) {
     const wholesaleVal = priceNum > 0 ? Math.round(priceNum * 0.84) : 340;
     return {
       wholesalePrice: `₹${wholesaleVal.toLocaleString('en-IN')} / bag`,
@@ -307,7 +379,10 @@ export function synthesizeB2BPricing(
       paymentTerms: 'Net 15 on Corporate Bank Guarantee',
       meetingRequired: true,
     };
-  } else if (combined.includes('valve') || combined.includes('hydraulic') || combined.includes('machinery') || combined.includes('ppe') || combined.includes('glove')) {
+  }
+
+  // Machinery, PPE & Industrial Equipment
+  if (combined.includes('valve') || combined.includes('hydraulic') || combined.includes('machinery') || combined.includes('ppe') || combined.includes('glove') || combined.includes('safety') || combined.includes('pump') || combined.includes('motor')) {
     const wholesaleVal = priceNum > 0 ? Math.round(priceNum * 0.75) : 8500;
     return {
       wholesalePrice: `₹${wholesaleVal.toLocaleString('en-IN')} / unit`,
@@ -320,6 +395,7 @@ export function synthesizeB2BPricing(
     };
   }
 
+  // Generic Electronics / Default
   const wholesaleVal = priceNum > 0 ? Math.round(priceNum * 0.82) : 0;
   return {
     wholesalePrice: wholesaleVal > 0 ? `₹${wholesaleVal.toLocaleString('en-IN')}` : 'Custom Wholesale Quote',
@@ -331,6 +407,7 @@ export function synthesizeB2BPricing(
     meetingRequired: true,
   };
 }
+
 
 export function refineKeywordScrapedData(
   items: KeywordScrapedItem[],

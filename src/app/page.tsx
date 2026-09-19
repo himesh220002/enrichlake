@@ -3768,39 +3768,66 @@ export default function EnrichmentDashboard() {
 
                             {/* 3-Tier E-Commerce Pricing (Selling Price, MRP Launch Price, Card Offer) */}
                             <td className="p-3.5 whitespace-nowrap">
-                              <div className="space-y-1">
-                                {/* Selling Price + MRP + Discount % */}
-                                <div className="flex items-baseline space-x-2">
-                                  <span className="text-sm font-black text-white tracking-tight">
-                                    {item.sellingPrice || item.price}
+                              {item.priceConfidence === 'live' && item.sellingPrice ? (
+                                <div className="space-y-1">
+                                  {/* LIVE confidence badge */}
+                                  <span className="inline-flex items-center space-x-0.5 text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded border border-emerald-500/20 mb-0.5" title="Real price scraped from product page">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />
+                                    <span>LIVE</span>
                                   </span>
-                                  {item.mrp && (
-                                    <span className="text-[11px] line-through text-slate-400 font-mono" title="Launched MRP">
-                                      {item.mrp}
-                                    </span>
-                                  )}
-                                  {item.discountPercent !== undefined && (
-                                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded border border-emerald-500/20">
-                                      {item.discountPercent}% off
-                                    </span>
-                                  )}
-                                </div>
 
-                                {/* Offer Price (Card discounted price average) */}
-                                <div className="flex items-center space-x-1.5">
-                                  <span
-                                    className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded bg-gradient-to-r from-amber-500/15 to-emerald-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-medium"
-                                    title="Card / Bank Discounted Average Offer Price"
-                                  >
-                                    <CreditCard className="w-2.5 h-2.5 text-amber-400" />
-                                    <span>Card Offer:</span>
-                                    <span className="font-bold text-emerald-300 font-mono">
-                                      {item.offerPrice || item.sellingPrice || item.price}
+                                  {/* Selling Price + MRP + Discount % */}
+                                  <div className="flex items-baseline space-x-2">
+                                    <span className="text-sm font-black text-white tracking-tight">
+                                      {item.sellingPrice}
                                     </span>
-                                  </span>
+                                    {item.mrp && (
+                                      <span className="text-[11px] line-through text-slate-400 font-mono" title="Launched MRP">
+                                        {item.mrp}
+                                      </span>
+                                    )}
+                                    {item.discountPercent !== undefined && (
+                                      <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded border border-emerald-500/20">
+                                        {item.discountPercent}% off
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Offer Price (Card discounted price average) */}
+                                  {item.offerPrice && (
+                                    <div className="flex items-center space-x-1.5">
+                                      <span
+                                        className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded bg-gradient-to-r from-amber-500/15 to-emerald-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-medium"
+                                        title="Card / Bank Discounted Average Offer Price"
+                                      >
+                                        <CreditCard className="w-2.5 h-2.5 text-amber-400" />
+                                        <span>Card Offer:</span>
+                                        <span className="font-bold text-emerald-300 font-mono">
+                                          {item.offerPrice}
+                                        </span>
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
+                              ) : (
+                                /* No real price found — direct the user to the source */
+                                <div className="flex flex-col space-y-1.5">
+                                  <span className="text-[10px] text-slate-500 italic">Price not in snippet</span>
+                                  {item.rawUrl && (
+                                    <a
+                                      href={item.rawUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex items-center space-x-1 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white text-[10px] font-semibold transition"
+                                    >
+                                      <ExternalLink className="w-2.5 h-2.5" />
+                                      <span>View on Site →</span>
+                                    </a>
+                                  )}
+                                </div>
+                              )}
                             </td>
+
 
                             {/* B2B Volume Pricing & Discounts */}
                             <td className="p-3.5 whitespace-nowrap">
@@ -3981,6 +4008,28 @@ export default function EnrichmentDashboard() {
                       <span>Export CSV ({filteredProductSellerResults.length})</span>
                     </button>
                   </div>
+
+                  {/* Benchmark Fallback Banner — shown when live scrape failed */}
+                  {productSellerResults.some((s) => (s as any).dataSource === 'benchmark') && (
+                    <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-amber-500/8 border border-amber-500/30 text-amber-300 text-xs">
+                      <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold">Benchmark Data Active</span>
+                        <span className="text-amber-400/70 ml-1.5">Live B2B scrape was rate-limited or blocked. Showing verified benchmark records from our curated supplier database. Try a new search to attempt a fresh live scrape.</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* IndiaMART / DuckDuckGo B2B Source Banner for pan-India scope */}
+                  {productSellerResults.some((s) => (s as any).dataSource === 'live' && ((s as any).id || '').startsWith('seller_b2b_')) && (
+                    <div className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-teal-500/8 border border-teal-500/30 text-teal-300 text-xs">
+                      <Globe className="w-4 h-4 text-teal-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold">Pan-India B2B Directory Search Active</span>
+                        <span className="text-teal-400/70 ml-1.5">Results sourced from IndiaMART, TradeIndia, ExportersIndia and JustDial — real nationwide B2B wholesale directories, not Google Maps local results.</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Instant Real-Time Search & Sort Filter Toolbar for Sellers */}
@@ -4178,6 +4227,20 @@ export default function EnrichmentDashboard() {
                             <td className="p-3.5 whitespace-nowrap">
                               <div className="flex items-center space-x-2">
                                 <span className="font-bold text-white text-sm">{seller.businessName}</span>
+                                {/* Data source confidence pill */}
+                                {(seller as any).dataSource === 'benchmark' ? (
+                                  <span className="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/30 text-[9px] font-bold" title="Benchmark fallback data — not a real live scrape">
+                                    📊 BENCHMARK
+                                  </span>
+                                ) : ((seller as any).id || '').startsWith('seller_b2b_') ? (
+                                  <span className="px-1.5 py-0.5 rounded bg-teal-500/15 text-teal-400 border border-teal-500/30 text-[9px] font-bold" title="Sourced from IndiaMART / TradeIndia pan-India directory">
+                                    🌐 B2B DIR
+                                  </span>
+                                ) : (seller as any).dataSource === 'live' ? (
+                                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[9px] font-bold" title="Live scraped from Google Maps">
+                                    🗺️ LIVE
+                                  </span>
+                                ) : null}
                                 {flaggedSellerIds.includes(seller.id) && (
                                   <span className="px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[9px] font-bold">
                                     🚩 Revisit

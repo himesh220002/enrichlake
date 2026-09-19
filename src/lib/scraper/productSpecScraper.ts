@@ -12,6 +12,7 @@ import {
   extractCleanPriceNumber,
   computeThreeTierPricing,
   synthesizeB2BPricing,
+  DataConfidence,
 } from '../types/scraperTypes';
 
 export {
@@ -136,32 +137,147 @@ export async function searchProductsAndSpecs(
             continue;
           }
 
-          // Identify real platform
-          let platform = 'Online Merchant';
+          // ================================================================
+          // GATE 1: DOMAIN BLOCKLIST — pure review/editorial sites that are
+          // never sellers. Blocking at domain level before any URL check.
+          // ================================================================
+          const REVIEW_DOMAIN_BLOCKLIST = [
+            'rtings.com', 'soundguys.com', 'pcmag.com', 'wirecutter.com',
+            'audiophileon.com', 'progressiveradionetwork.com', 'tomsguide.com',
+            'techradar.com', 'cnet.com', 'theverge.com', 'engadget.com',
+            'wired.com', 'anandtech.com', 'notebookcheck.net', 'gsmarena.com',
+            '91mobiles.com', 'smartprix.com', 'nanoreview.net',
+            'adify.store', 'tech.sportskeeda.com', 'bajajfinserv.in',
+            'soundguys.com', 'headphonesty.com', 'whathifi.com',
+          ];
+          const hostname = (() => { try { return new URL(actualUrl).hostname.replace(/^www\./, ''); } catch { return ''; } })();
+          if (REVIEW_DOMAIN_BLOCKLIST.some((d) => hostname === d || hostname.endsWith('.' + d))) {
+            console.log(`[ProductSpecScraper] Blocked review domain: ${hostname}`);
+            continue;
+          }
+
+          // ================================================================
+          // GATE 2: CATEGORY / COLLECTION / LISTING URL PATTERNS
+          // These are pagination/browse pages — snippets never have a price.
+          // ================================================================
+          const isListingPage =
+            // Amazon/Flipkart search & browse pages
+            /\/s\?k=/i.test(actualUrl) ||
+            /\/b\?node=/i.test(actualUrl) ||
+            /\/q\//i.test(actualUrl) ||
+            /[?&]k=[^&]{3,}/i.test(actualUrl) ||
+            // Flipkart category/filter pages
+            /\/pr\?sid=/i.test(actualUrl) ||
+            /\/audio-video\//i.test(actualUrl) ||
+            /~features\/pr/.test(actualUrl) ||
+            // Croma category pages (/l/, /c/, /collections)
+            /\/l\/[a-z0-9\-]+\.html/i.test(actualUrl) ||
+            /\/c\/\d+/i.test(actualUrl) ||
+            /croma\.com\/audio-video/.test(actualUrl) ||
+            /croma\.com\/.*\/c\//i.test(actualUrl) ||
+            // Reliance Digital collection pages
+            /\/collection\//i.test(actualUrl) ||
+            // Smartprix filter/brand browse
+            /smartprix\.com\/mobile_headphones\//i.test(actualUrl) ||
+            /smartprix\.com\/.*-brand/i.test(actualUrl) ||
+            /smartprix\.com\/.*-store/i.test(actualUrl) ||
+            // 91Mobiles list/comparison pages
+            /91mobiles\.com\/list-of/i.test(actualUrl) ||
+            /91mobiles\.com\/compare/i.test(actualUrl) ||
+            // IndiaMART/ExportersIndia directory (not individual product) pages
+            /dir\.indiamart\.com\/impcat\//.test(actualUrl) ||
+            /exportersindia\.com\/indian-suppliers\//.test(actualUrl) ||
+            // Generic listing signals
+            /\/list-of-/i.test(actualUrl) ||
+            /\/search\?/i.test(actualUrl) ||
+            /\/manufacturers\//i.test(actualUrl) ||
+            /\/products[?#]/i.test(actualUrl);
+
+          // ================================================================
+          // GATE 3: EDITORIAL TITLE PATTERNS
+          // Review articles, buying guides, top-N lists are not product pages.
+          // ================================================================
+          const titleLower = item.title.toLowerCase();
+          const actualUrlLower = actualUrl.toLowerCase();
+          const isEditorialTitle =
+            /^best\s/i.test(item.title) ||
+            /^top\s*(\d+|-)/.test(titleLower) ||
+            /\d+\s+best\s/i.test(item.title) ||
+            titleLower.includes(' vs ') ||
+            /\btop\s+\d+\b/.test(titleLower) ||
+            /\b(review|comparison|buying guide|buyer.s guide|picks|tested|ranked)\b/i.test(item.title) ||
+            /^the\s+(best|top)\s/i.test(item.title) ||
+            /^how to\s/i.test(item.title) ||
+            /^shop\s+noise/i.test(item.title) ||
+            // Collection/category page titles that slipped through
+            /headphones.+available on (flipkart|amazon|croma)/i.test(item.title) ||
+            /price list in india/i.test(item.title) ||
+            /price in india$/i.test(item.title) ||
+            /manufacturers,\s*suppliers/i.test(item.title) ||
+            /retailers\s*&\s*dealers/i.test(item.title);
+
+          if (isListingPage || isEditorialTitle) {
+            console.log(`[ProductSpecScraper] Filtered [${isListingPage ? 'URL' : 'TITLE'}]: ${item.title.slice(0, 60)}`);
+            continue;
+          }
+
+          // ================================================================
+          // GATE 4: REQUIRE ACTUAL MERCHANT URL PATTERN
+          // Only pass through URLs that look like a real product/seller page.
+          // Known merchants are auto-approved; unknown domains need /proddetail
+          // or a clear product path signal.
+          // ================================================================
+          const KNOWN_MERCHANT_DOMAINS = [
+            'amazon.in', 'amazon.com', 'flipkart.com', 'croma.com',
+            'reliancedigital.in', 'vijaysales.com', 'tatacliq.com',
+            'indiamart.com', 'tradeindia.com', 'exportersindia.com',
+            'moglix.com', 'industrybuying.com', 'boat-lifestyle.com',
+            'sennheiser.com', 'jbl.com', 'sony.co.in', 'bose.com',
+            'samsung.com', 'apple.com', 'noise.com', 'boult.com',
+            'portronics.com', 'zebronics.com', 'ptnr.me', 'snapdeal.com',
+            'paytmmall.com', 'meesho.com', 'shopclues.com',
+            'alibaba.com', 'globalsources.com', 'made-in-china.com',
+            'merkandi.in', 'electronics.alibaba.com', 'tradeindia.com',
+          ];
+          const isKnownMerchant = KNOWN_MERCHANT_DOMAINS.some((d) => hostname === d || hostname.endsWith('.' + d));
+          // For unknown domains — must have some product-page signal in path
+          const hasProductPathSignal =
+            /\/proddetail\//i.test(actualUrl) ||
+            /\/product\//i.test(actualUrl) ||
+            /\/p\//i.test(actualUrl) ||
+            /\/dp\//i.test(actualUrl) ||
+            /\/itm\//i.test(actualUrl);
+
+          if (!isKnownMerchant && !hasProductPathSignal) {
+            console.log(`[ProductSpecScraper] Unknown non-merchant domain: ${hostname} — ${item.title.slice(0, 40)}`);
+            continue;
+          }
+
+          // Identify real platform label
+          let platform = hostname;
           const urlLower = actualUrl.toLowerCase();
           if (urlLower.includes('flipkart.com')) platform = 'Flipkart';
           else if (urlLower.includes('amazon.in')) platform = 'Amazon India';
           else if (urlLower.includes('amazon.com')) platform = 'Amazon Global';
-          else if (urlLower.includes('croma.com')) platform = 'Croma Official';
+          else if (urlLower.includes('croma.com')) platform = 'Croma';
           else if (urlLower.includes('reliancedigital.in')) platform = 'Reliance Digital';
-          else if (urlLower.includes('indiamart.com')) platform = 'IndiaMART Verified';
+          else if (urlLower.includes('indiamart.com')) platform = 'IndiaMART';
           else if (urlLower.includes('vijaysales.com')) platform = 'Vijay Sales';
-          else if (urlLower.includes('store.acer.com') || urlLower.includes('acer.com')) platform = 'Acer Official Store';
-          else if (urlLower.includes('moglix.com')) platform = 'Moglix Industrial';
-          else if (urlLower.includes('smartprix.com')) platform = 'Smartprix Comparison';
-          else if (urlLower.includes('91mobiles.com')) platform = '91Mobiles Comparison';
-          else {
-            try {
-              platform = new URL(actualUrl).hostname.replace(/^www\./, '');
-            } catch {}
-          }
+          else if (urlLower.includes('moglix.com')) platform = 'Moglix';
+          else if (urlLower.includes('boat-lifestyle.com')) platform = 'boAt Official';
+          else if (urlLower.includes('noise.com')) platform = 'Noise Official';
+          else if (urlLower.includes('tradeindia.com')) platform = 'TradeIndia';
+          else if (urlLower.includes('alibaba.com')) platform = 'Alibaba';
+          else if (urlLower.includes('tatacliq.com')) platform = 'Tata CLiQ';
 
           // Clean product title
           let cleanProductTitle = item.title;
-          const cleanMatch = item.title.match(/^(?:Buy\s+)?([^—\-\|\n\r]+?)(?:\s+at|\s+Online|\s+from|\s*\(|\s*[-—|])/i);
+          const cleanMatch = item.title.match(/^(?:Buy\s+)?([^—\-\|\n\r]+?)(?:\s+at\s|\s+Online|\s+from\s|\s*\(|\s*[-—|])/);
           if (cleanMatch && cleanMatch[1].length > 10) {
             cleanProductTitle = cleanMatch[1].trim();
           }
+          // Strip "| Platform Name" suffixes
+          cleanProductTitle = cleanProductTitle.replace(/\s*\|.*$/, '').trim();
 
           // Fuzzy title deduplication
           const fuzzyTitleKey = `${platform}_${cleanProductTitle.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30)}`;
@@ -169,16 +285,21 @@ export async function searchProductsAndSpecs(
           seenTitles.add(fuzzyTitleKey);
           seenUrls.add(actualUrl);
 
-          // Extract real prices from snippet
-          let priceStr = 'Check on Site';
+          // ================================================================
+          // REAL PRICE EXTRACTION — from DuckDuckGo snippet only.
+          // Policy: if no real ₹ price appears in snippet → NO pricing shown.
+          // We NEVER synthesize fake estimated numbers. Better to show nothing.
+          // ================================================================
+          let priceStr = '';
           let sellingPrice: string | undefined = undefined;
           let mrp: string | undefined = undefined;
           let offerPrice: string | undefined = undefined;
           let discountPercent: number | undefined = undefined;
+          let priceConfidence: DataConfidence = 'estimated';
 
           const pricesFound = Array.from(item.snippet.matchAll(/(?:₹|Rs\.?|INR)\s*([\d,]+)/gi))
             .map((p) => parseInt(p[1].replace(/,/g, ''), 10))
-            .filter((n) => n >= 1000);
+            .filter((n) => n >= 100); // include sub-1k items like cables, accessories
 
           if (pricesFound.length === 1) {
             const pricing = computeThreeTierPricing(pricesFound[0]);
@@ -187,33 +308,81 @@ export async function searchProductsAndSpecs(
             offerPrice = pricing.offerPrice;
             discountPercent = pricing.discountPercent;
             priceStr = sellingPrice;
+            priceConfidence = 'live';
           } else if (pricesFound.length >= 2) {
             const sorted = [...pricesFound].sort((a, b) => b - a);
             const high = sorted[0];
-            const low = sorted[1];
+            const low = sorted[sorted.length - 1]; // use the lowest as selling price
             mrp = `₹${high.toLocaleString('en-IN')}`;
             sellingPrice = `₹${low.toLocaleString('en-IN')}`;
             const cardOfferVal = Math.round(low * 0.945);
             offerPrice = `₹${cardOfferVal.toLocaleString('en-IN')}`;
             priceStr = sellingPrice;
             discountPercent = Math.round(((high - low) / high) * 100);
+            priceConfidence = 'live';
           } else {
-            // Default computed three-tier pricing from input or standard benchmark
-            const targetBase = extractCleanPriceNumber(priceRange || minPrice || maxPrice || 74990);
-            const pricing = computeThreeTierPricing(targetBase);
-            sellingPrice = pricing.sellingPrice;
-            mrp = pricing.mrp;
-            offerPrice = pricing.offerPrice;
-            discountPercent = pricing.discountPercent;
-            priceStr = sellingPrice;
+            // *** NO REAL PRICE FOUND ***
+            // Do NOT synthesize fake estimates. Leave pricing undefined.
+            // The UI will show a "View on Site" link instead.
+            priceConfidence = 'estimated'; // signals 'no live price'
+            priceStr = '';
           }
 
-          // Filter by minPrice / maxPrice if set
-          if (sellingPrice) {
-            const numericPrice = parseInt(sellingPrice.replace(/[^\d]/g, ''), 10);
-            if (minPrice && numericPrice < minPrice) continue;
-            if (maxPrice && numericPrice > maxPrice) continue;
+          // ----------------------------------------------------------------
+          // PRICE RANGE FILTER
+          // Derive effective numeric bounds from whichever source is available:
+          //   1. Explicit minPrice / maxPrice number inputs (most precise)
+          //   2. priceRange text field (e.g. "₹1,000 – ₹10,000") — parsed here
+          // This ensures a user who sets the slider/text range but leaves
+          // the number boxes empty still gets proper price filtering.
+          // ----------------------------------------------------------------
+          let effectiveMin = minPrice;
+          let effectiveMax = maxPrice;
+
+          if ((!effectiveMin || !effectiveMax) && priceRange?.trim()) {
+            // Parse "₹1,000 – ₹10,000" or "₹50k - ₹1L" style strings
+            const parts = priceRange
+              .replace(/[₹,\s]/g, '')
+              .split(/[-–—]|to/i)
+              .map((p) => {
+                const lower = p.toLowerCase().trim();
+                if (lower.endsWith('l')) return parseFloat(lower) * 100000;
+                if (lower.endsWith('k')) return parseFloat(lower) * 1000;
+                return parseInt(lower.replace(/[^\d]/g, ''), 10) || 0;
+              })
+              .filter((n) => n > 0);
+
+            if (parts.length >= 2) {
+              const lo = Math.min(...parts);
+              const hi = Math.max(...parts);
+              if (!effectiveMin) effectiveMin = lo;
+              if (!effectiveMax) effectiveMax = hi;
+            } else if (parts.length === 1) {
+              if (!effectiveMax) effectiveMax = parts[0];
+            }
           }
+
+          // Apply the filter using the first available real numeric price value
+          if (effectiveMin || effectiveMax) {
+            // Get the most accurate price number: prefer live-scraped low price
+            const rawPriceNum = pricesFound.length > 0
+              ? Math.min(...pricesFound)           // lowest real scraped price
+              : (sellingPrice
+                  ? parseInt(sellingPrice.replace(/[^\d]/g, ''), 10)
+                  : 0);
+
+            if (rawPriceNum > 0) {
+              if (effectiveMin && rawPriceNum < effectiveMin) {
+                console.log(`[ProductSpecScraper] Price filter: ${rawPriceNum} < min ${effectiveMin}, skipping "${item.title.slice(0, 40)}"`);
+                continue;
+              }
+              if (effectiveMax && rawPriceNum > effectiveMax) {
+                console.log(`[ProductSpecScraper] Price filter: ${rawPriceNum} > max ${effectiveMax}, skipping "${item.title.slice(0, 40)}"`);
+                continue;
+              }
+            }
+          }
+
 
           // Extract specs mentioned in real snippet
           const specTokens: string[] = [];
@@ -253,8 +422,10 @@ export async function searchProductsAndSpecs(
             };
           }
 
-          if (!b2bPricing) {
-            b2bPricing = synthesizeB2BPricing(cleanProductTitle || category, extractedSpecs, sellingPrice || priceStr, category);
+          // Only synthesize B2B pricing when a real price was scraped.
+          // Without a real price anchor the wholesale calculation is meaningless.
+          if (!b2bPricing && priceConfidence === 'live' && sellingPrice) {
+            b2bPricing = synthesizeB2BPricing(cleanProductTitle || category, extractedSpecs, sellingPrice, category);
           }
 
           records.push({
@@ -267,6 +438,7 @@ export async function searchProductsAndSpecs(
             sellingPrice,
             offerPrice,
             discountPercent,
+            priceConfidence,
             b2bPricing,
             sellerBusiness: `${platform} Official Merchant`,
             websiteSource: platform,
@@ -367,11 +539,12 @@ function getFallbackProductSpecs(options: {
       category: category || item.category || 'Commercial Procurement',
       product: customizedProduct,
       specs: customizedSpecs,
-      price: pricing.sellingPrice,
-      mrp: pricing.mrp,
-      sellingPrice: pricing.sellingPrice,
-      offerPrice: pricing.offerPrice,
+      price: `~${pricing.sellingPrice}`,
+      mrp: `~${pricing.mrp}`,
+      sellingPrice: `~${pricing.sellingPrice}`,
+      offerPrice: `~${pricing.offerPrice}`,
       discountPercent: pricing.discountPercent,
+      priceConfidence: 'benchmark' as DataConfidence,
       latitude: centerCoords.latitude,
       longitude: centerCoords.longitude,
       scrapedAt: new Date().toISOString(),
