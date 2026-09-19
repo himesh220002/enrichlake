@@ -1,4 +1,5 @@
 import { Page } from 'playwright';
+import { isValidGSTIN, isValidPAN, isHoneypotPhone, deobfuscateEmails } from '../validation/dataConfidence';
 
 export interface ExtractedContactInfo {
   domain: string;
@@ -63,24 +64,17 @@ const IGNORED_EMAIL_EXTENSIONS = [
 function isValidPhoneNumber(candidate: string): boolean {
   if (!candidate) return false;
   const cleaned = candidate.trim();
-
-  if (/\d+\.\d{2,}/.test(cleaned) || cleaned.includes('.0') || cleaned.includes('0.')) {
-    return false;
-  }
-
+  // Reject obvious non-phone numeric artefacts (versions, bundle ids, ratios)
+  if (/\d+\.\d+\.\d+/.test(cleaned)) return false;
+  if (/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/.test(cleaned)) return false; // IP
+  // Ratio / percentage artefacts
+  if (/^\d+\s*:\s*\d+/.test(cleaned) || /^\d+\s*\/\s*\d+/.test(cleaned) || cleaned.includes('%')) return false;
   const digits = cleaned.replace(/\D/g, '');
-  if (digits.length < 8 || digits.length > 15) {
-    return false;
-  }
-
-  if (/^(.)\1+$/.test(digits)) {
-    return false;
-  }
-
-  if ('0123456789012345'.includes(digits) || '987654321098765'.includes(digits)) {
-    return false;
-  }
-
+  if (digits.length < 10 || digits.length > 15) return false;
+  if (/^(.)\1+$/.test(digits)) return false;
+  if (isHoneypotPhone(digits)) return false;
+  // Block sequential asc/desc runs longer than 7 chars
+  if (/0123456|1234567|2345678|3456789|9876543|8765432/.test(digits)) return false;
   return true;
 }
 
@@ -144,7 +138,8 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
   ).catch(() => [] as string[]);
 
   const emailRegex = /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(?:com|org|net|io|co|ai|app|tech|dev|biz|info|us|uk|de|ca|eu|in|gov|edu|me|so|agency|design|global|online)\b/gi;
-  const textEmails = Array.from(visibleText.matchAll(emailRegex)).map((m) => m[0].toLowerCase());
+  const deobfuscated = deobfuscateEmails(visibleText);
+  const textEmails = Array.from(visibleText.matchAll(emailRegex)).map((m) => m[0].toLowerCase()).concat(deobfuscated);
 
   const allEmails = Array.from(new Set([...mailtoHrefs, ...textEmails]))
     .map(cleanEmail)
@@ -381,8 +376,10 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
   const PAN_REGEX = /\b[A-Z]{5}\d{4}[A-Z]{1}\b/g;
   const CIN_REGEX = /\b[UL]\d{5}[A-Z]{2}\d{4}[A-Z]{3}\d{6}\b/g;
 
-  const gstinMatches = Array.from(visibleText.matchAll(GSTIN_REGEX)).map((m) => m[0]);
-  const panMatches = Array.from(visibleText.matchAll(PAN_REGEX)).map((m) => m[0]);
+  const rawGstin = Array.from(visibleText.matchAll(GSTIN_REGEX)).map((m) => m[0]);
+  const gstinMatches = rawGstin.filter(g => isValidGSTIN(g));
+  const rawPan = Array.from(visibleText.matchAll(PAN_REGEX)).map((m) => m[0]);
+  const panMatches = rawPan.filter(p => isValidPAN(p));
   const cinMatches = Array.from(visibleText.matchAll(CIN_REGEX)).map((m) => m[0]);
   const hasIso = /ISO\s*(?:9001|14001|27001|22000|45001)|ISO\s*Certified/i.test(visibleText);
 

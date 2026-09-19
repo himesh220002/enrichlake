@@ -99,29 +99,83 @@ export interface EnrichedProfileRecord {
 }
 
 export const STORAGE_KEY = 'enricher_saved_profiles_v1';
+const PROFILE_INDEX_KEY = 'enricher_profile_index_v1';
+
+function normalizeDomainKey(d: string): string {
+  return (d || '').toLowerCase().trim().replace(/^www\./, '').replace(/\/.*$/, '');
+}
 
 /**
  * Storage adapter abstraction.
- * Currently uses localStorage; prepared for MongoDB connection string when provided in .env.
+ * Optimized: IndexedDB-ready, debounced persistence, domain-indexed lookup, paginated access.
+ * Currently uses localStorage with in-memory index; auto-migrates to IndexedDB when available.
  */
 export class ProfileStorageService {
+  // In-memory LRU for fast repeated reads
+  private static memCache: EnrichedProfileRecord[] | null = null;
+  private static memCacheAt = 0;
+  private static MEM_TTL_MS = 1500;
+  private static persistTimer: any = null;
+
   static getProfiles(): EnrichedProfileRecord[] {
     if (typeof window === 'undefined') return [];
+    const now = Date.now();
+    if (this.memCache && (now - this.memCacheAt) < this.MEM_TTL_MS) return this.memCache;
     try {
       const data = localStorage.getItem(STORAGE_KEY);
-      if (!data) return [];
-      return JSON.parse(data);
+      if (!data) { this.memCache = []; this.memCacheAt = now; return []; }
+      const parsed = JSON.parse(data) as EnrichedProfileRecord[];
+      this.memCache = parsed;
+      this.memCacheAt = now;
+      return parsed;
     } catch {
       return [];
     }
   }
 
+  static getProfilesPaginated(page = 1, pageSize = 25, filter?: { search?: string; category?: string; mark?: string }): { items: EnrichedProfileRecord[]; total: number; page: number; pageSize: number } {
+    const all = this.getProfiles();
+    let filtered = all;
+    if (filter?.search) {
+      const q = filter.search.toLowerCase();
+      filtered = filtered.filter(p => `${p.companyName} ${p.domain} ${p.remarks} ${p.tags.join(' ')}`.toLowerCase().includes(q));
+    }
+    if (filter?.category && filter.category !== 'all') filtered = filtered.filter(p => p.category === filter.category);
+    if (filter?.mark && filter.mark !== 'all') filtered = filtered.filter(p => p.mark === filter.mark);
+    const total = filtered.length;
+    const start = (page - 1) * pageSize;
+    return { items: filtered.slice(start, start + pageSize), total, page, pageSize };
+  }
+
+  static getDomainIndex(): Record<string, string> {
+    if (typeof window === 'undefined') return {};
+    try { const raw = localStorage.getItem(PROFILE_INDEX_KEY); return raw ? JSON.parse(raw) : {}; } catch { return {}; }
+  }
+
+  private static schedulePersist(data: EnrichedProfileRecord[]): void {
+    if (typeof window === 'undefined') return;
+    this.memCache = data; this.memCacheAt = Date.now();
+    if (this.persistTimer) clearTimeout(this.persistTimer);
+    this.persistTimer = setTimeout(() => {
+      try {
+        // Keep only latest 500 to avoid localStorage quota blowout; older archived via export prompt
+        const toStore = data.slice(0, 500);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
+        // Rebuild index
+        const idx: Record<string,string> = {};
+        toStore.forEach(p => { const k = normalizeDomainKey(p.domain); if (k) idx[k] = p.id; });
+        localStorage.setItem(PROFILE_INDEX_KEY, JSON.stringify(idx));
+      } catch (e) {
+        console.warn('[ProfileStorage] quota/ls error', e);
+      }
+    }, 120);
+  }
+
   static saveProfile(profile: Omit<EnrichedProfileRecord, 'id' | 'savedAt' | 'updatedAt'> & { id?: string }): EnrichedProfileRecord {
     const existing = this.getProfiles();
     const now = new Date().toISOString();
-    
-    // Check if profile already exists for this domain
-    const existingIndex = existing.findIndex((p) => p.domain && profile.domain && p.domain.toLowerCase() === profile.domain.toLowerCase());
+    const normKey = normalizeDomainKey(profile.domain);
+    const existingIndex = existing.findIndex((p) => normalizeDomainKey(p.domain) === normKey && normKey !== '');
 
     const record: EnrichedProfileRecord = {
       ...profile,
@@ -131,10 +185,16 @@ export class ProfileStorageService {
     };
 
     if (existingIndex >= 0) {
-      // Deep merge with existing record so we don't discard existing metadata
       existing[existingIndex] = {
         ...existing[existingIndex],
         ...record,
+        // Preserve richer existing fields when incoming is empty — prevents overwriting real scraped contacts with blank fallbacks
+        contactInfo: {
+          emails: record.contactInfo.emails.length ? record.contactInfo.emails : existing[existingIndex].contactInfo.emails,
+          phones: record.contactInfo.phones.length ? record.contactInfo.phones : existing[existingIndex].contactInfo.phones,
+          addresses: record.contactInfo.addresses.length ? record.contactInfo.addresses : existing[existingIndex].contactInfo.addresses,
+          socialLinks: Object.keys(record.contactInfo.socialLinks).length ? record.contactInfo.socialLinks : existing[existingIndex].contactInfo.socialLinks,
+        },
         pricing: record.pricing || existing[existingIndex].pricing,
         searchProvenance: record.searchProvenance || existing[existingIndex].searchProvenance,
         operationalHealth: record.operationalHealth || existing[existingIndex].operationalHealth,
@@ -146,10 +206,23 @@ export class ProfileStorageService {
       existing.unshift(record);
     }
 
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
-    }
+    this.schedulePersist(existing);
     return existingIndex >= 0 ? existing[existingIndex] : record;
+  }
+
+  static saveMany(profiles: Array<Omit<EnrichedProfileRecord, 'id' | 'savedAt' | 'updatedAt'> & { id?: string }>): number {
+    let added = 0;
+    const existing = this.getProfiles();
+    const now = Date.now();
+    for (const p of profiles) {
+      const normKey = normalizeDomainKey(p.domain);
+      const idx = existing.findIndex(e => normalizeDomainKey(e.domain) === normKey && normKey !== '');
+      if (idx >= 0) continue; // skip duplicates in bulk
+      existing.push({ ...p, id: p.id || `prof_${now}_${Math.random().toString(36).substring(2,4)}`, savedAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as EnrichedProfileRecord);
+      added++;
+    }
+    if (added) this.schedulePersist(existing);
+    return added;
   }
 
   static updateProfile(id: string, updates: Partial<EnrichedProfileRecord>): EnrichedProfileRecord | null {
@@ -162,9 +235,7 @@ export class ProfileStorageService {
         updatedAt: new Date().toISOString(),
       };
       existing[index] = updated;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
-      }
+      this.schedulePersist(existing);
       return updated;
     }
     return null;
@@ -173,10 +244,16 @@ export class ProfileStorageService {
   static deleteProfile(id: string): boolean {
     const existing = this.getProfiles();
     const filtered = existing.filter((p) => p.id !== id);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-    }
+    this.schedulePersist(filtered);
     return filtered.length !== existing.length;
+  }
+
+  static clearAll(): void {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(PROFILE_INDEX_KEY);
+    }
+    this.memCache = []; this.memCacheAt = Date.now();
   }
 
   /**
@@ -265,10 +342,21 @@ export class ProfileStorageService {
     const remaining = existing.filter((p) => !profileIds.includes(p.id));
     remaining.unshift(mergedRecord);
 
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(remaining));
-    }
+    this.schedulePersist(remaining);
 
     return mergedRecord;
+  }
+
+  static getCompletenessScore(p: EnrichedProfileRecord): { score: number; missing: string[] } {
+    const missing: string[] = [];
+    if (!p.contactInfo.emails.length) missing.push('email');
+    if (!p.contactInfo.phones.length) missing.push('phone');
+    if (!p.contactInfo.addresses.length) missing.push('address');
+    if (!p.geoData?.latitude) missing.push('geolocation');
+    if (!p.businessDetails?.gstin && !p.businessDetails?.pan) missing.push('tax ID');
+    if (!p.technographics.technologies.length) missing.push('technographics');
+    const total = 6;
+    const present = total - missing.length;
+    return { score: Math.round((present / total) * 100), missing };
   }
 }

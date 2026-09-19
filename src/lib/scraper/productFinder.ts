@@ -4,6 +4,7 @@ import { resolveLocationHub, calculateHaversineDistanceKm, GeoCoordinates } from
 import { scraperCache } from '../cache/scraperCache';
 import { INITIAL_PRODUCT_SELLERS } from '../types/initialScraperData';
 import { B2BPricingDetails, ProductSellerRecord, OperationalHealth, SupplyConsistency, HealthGrade, DataConfidence } from '../types/scraperTypes';
+import { scoreSpecMatch, detectIndustryGroup } from '../search/keywordTaxonomy';
 
 export type BusinessStatus =
   | 'Active'
@@ -286,10 +287,12 @@ export async function findProductsWithGeoRadius(
         ? 'site:alibaba.com OR site:globalsources.com OR site:made-in-china.com'
         : 'site:indiamart.com OR site:tradeindia.com OR site:exportersindia.com OR site:justdial.com';
 
+      const taxonomyGroup = detectIndustryGroup(`${category} ${effectiveQuery} ${specs}`);
+      const extraSpecClause = specs ? ` ${specs}` : '';
       const b2bQueries = [
-        `${effectiveQuery} wholesale supplier ${locationClause} ${directorySites}`,
-        `${effectiveQuery} ${category} B2B manufacturer distributor ${isWorld ? 'export' : 'India'} price`,
-        `${category || effectiveQuery} bulk supplier dealer ${isWorld ? 'international' : 'pan India'} indiamart tradeindia`,
+        `${effectiveQuery}${extraSpecClause} wholesale supplier ${locationClause} ${directorySites}`,
+        `${effectiveQuery}${extraSpecClause} ${category} B2B manufacturer distributor ${isWorld ? 'export' : 'India'} price`,
+        `${category || effectiveQuery}${extraSpecClause} bulk supplier dealer ${isWorld ? 'international' : 'pan India'} indiamart tradeindia`,
       ];
 
       const seenTitles = new Set<string>();
@@ -348,6 +351,15 @@ export async function findProductsWithGeoRadius(
             const fuzzyKey = businessName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 25);
             if (seenTitles.has(fuzzyKey)) continue;
             seenTitles.add(fuzzyKey);
+
+            // Spec-relevance gate for B2B sellers — skip if requested specs don't match snippet at all
+            if (specs && specs.trim()) {
+              const relScore = scoreSpecMatch(specs, `${item.title} ${item.snippet}`);
+              if (relScore < 10) { // very permissive — only block completely irrelevant suppliers
+                console.log(`[ProductFinder] Low spec relevance ${relScore}% — skipping "${businessName.slice(0,40)}"`);
+                continue;
+              }
+            }
 
             // Extract phone from snippet
             const phoneMatch = item.snippet.match(/(?:\+?91[\-\s]?)?[6-9]\d{9}|0\d{2,4}[\-\s]?\d{6,8}/);

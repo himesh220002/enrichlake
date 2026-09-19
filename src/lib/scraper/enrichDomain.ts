@@ -48,24 +48,23 @@ export interface ByokConfig {
   apiKey?: string;
 }
 
-// Curated enterprise profiles for user-specified benchmark demo targets
-const CURATED_TARGETS: Record<string, Partial<EnrichedCompanyProfile>> = {
+// Demo targets — clearly marked as synthetic demo so UI can show confidence badges.
+// These are ONLY returned if caller explicitly allows demo fallbacks; otherwise real scrape is attempted first.
+export const CURATED_TARGETS: Record<string, Partial<EnrichedCompanyProfile> & { _isDemoBenchmark?: boolean }> = {
   'techworldwb.com': {
-    companyName: 'TechWorld Computers',
+    _isDemoBenchmark: true,
+    companyName: 'TechWorld Computers (Demo)',
     category: 'Electronics Retail',
     productsServices: ['Laptops', 'Desktops', 'Accessories'],
-    description: 'Premier authorized electronics and computing retail hub in English Bazar providing commercial volume supply of premium laptops, custom workstations, and enterprise peripherals.',
+    description: 'Demo enterprise profile — real Malda-region electronics hub. Replace GSTIN/phones with verified scrape when domain is reachable.',
     contactInfo: {
-      emails: ['info@techworldwb.com', 'support@techworldwb.com'],
-      phones: ['+91-9876543210', '+91-9876543211'],
-      addresses: ['English Bazar, WB, India'],
-      socialLinks: {
-        linkedin: 'https://linkedin.com/company/techworldwb',
-        facebook: 'https://facebook.com/techworldwb',
-      },
+      emails: ['info@techworldwb.com'],
+      phones: [],
+      addresses: ['English Bazar, Malda, WB'],
+      socialLinks: {},
     },
     location: {
-      formattedAddress: 'English Bazar, WB, India',
+      formattedAddress: 'English Bazar, Malda, WB, India',
       city: 'English Bazar',
       state: 'WB',
       country: 'India',
@@ -75,34 +74,31 @@ const CURATED_TARGETS: Record<string, Partial<EnrichedCompanyProfile>> = {
       longitude: 88.1564,
     },
     businessDetails: {
-      gstin: '27ABCDE1234F1Z',
-      isoCertified: true,
-      rawDetails: 'GSTIN: 27ABCDE1234F1Z, ISO Certified',
+      gstin: null,
+      isoCertified: false,
+      rawDetails: null,
     },
-    verification: ['GSTIN Verified', 'PAN Verified'],
-    statusTags: ['Active', 'Expanding'],
+    verification: [],
+    statusTags: ['Active'],
     technographics: {
       technologies: [
-        { name: 'Shopify / WooCommerce', category: 'E-commerce', confidence: 0.95 },
-        { name: 'Razorpay', category: 'E-commerce', confidence: 0.98 },
-        { name: 'Google Analytics 4', category: 'Analytics', confidence: 0.9 },
-        { name: 'Cloudflare', category: 'Hosting/CDN', confidence: 0.99 },
+        { name: 'Shopify / WooCommerce', category: 'E-commerce', confidence: 0.5 },
+        { name: 'Cloudflare', category: 'Hosting/CDN', confidence: 0.6 },
       ],
-      rawDetectionsCount: 4,
+      rawDetectionsCount: 2,
     },
   },
   'agromartwb.in': {
-    companyName: 'AgroMart WB',
+    _isDemoBenchmark: true,
+    companyName: 'AgroMart WB (Demo)',
     category: 'Agriculture Supply',
     productsServices: ['Rice', 'Wheat', 'Fertilizers'],
-    description: 'Large-scale agricultural distribution and agrochemical supply enterprise based in Malda, specializing in high-grade grain procurement, certified seeds, and institutional fertilizer distribution.',
+    description: 'Demo agro-distribution profile for Malda region — no synthetic GSTIN/phone. Live scrape preferred.',
     contactInfo: {
-      emails: ['sales@agromartwb.in', 'procurement@agromartwb.in'],
-      phones: ['+91-9123456780', '+91-9123456782'],
+      emails: ['sales@agromartwb.in'],
+      phones: [],
       addresses: ['Malda, WB, India'],
-      socialLinks: {
-        linkedin: 'https://linkedin.com/company/agromartwb',
-      },
+      socialLinks: {},
     },
     location: {
       formattedAddress: 'Malda, WB, India',
@@ -115,28 +111,27 @@ const CURATED_TARGETS: Record<string, Partial<EnrichedCompanyProfile>> = {
       longitude: 88.1200,
     },
     businessDetails: {
-      pan: 'ABCDE1234F',
-      rawDetails: 'PAN: ABCDE1234F, Chamber Registered',
+      pan: null,
+      rawDetails: null,
     },
-    verification: ['PAN Verified', 'Chamber Registered'],
-    statusTags: ['Stable', 'Bulk Supplier'],
+    verification: [],
+    statusTags: ['Active'],
     technographics: {
       technologies: [
-        { name: 'WordPress', category: 'Framework', confidence: 0.92 },
-        { name: 'Apache HTTP Server', category: 'Hosting/CDN', confidence: 0.88 },
-        { name: 'cPanel Mail', category: 'Hosting/CDN', confidence: 0.9 },
+        { name: 'WordPress', category: 'Framework', confidence: 0.5 },
       ],
-      rawDetectionsCount: 3,
+      rawDetectionsCount: 1,
     },
   },
   'maldafabrics.com': {
-    companyName: 'Malda Textiles',
+    _isDemoBenchmark: true,
+    companyName: 'Malda Textiles (Demo)',
     category: 'Textile Wholesale',
     productsServices: ['Cotton', 'Polyester', 'Blends'],
-    description: 'Regional wholesale textile merchant and fabric trader operating in Malda Town, distributing commercial bulk woven cotton, industrial polyester rolls, and blended apparel fabrics.',
+    description: 'Demo textile merchant — live scrape preferred.',
     contactInfo: {
       emails: ['contact@maldafabrics.com'],
-      phones: ['+91-9988776655'],
+      phones: [],
       addresses: ['Malda Town, WB, India'],
       socialLinks: {},
     },
@@ -151,17 +146,16 @@ const CURATED_TARGETS: Record<string, Partial<EnrichedCompanyProfile>> = {
       longitude: 88.1500,
     },
     businessDetails: {
-      gstin: '19ABCDE5678F1Z',
-      rawDetails: 'GSTIN: 19ABCDE5678F1Z',
+      gstin: null,
+      rawDetails: null,
     },
-    verification: ['GSTIN Verified'],
-    statusTags: ['Needs Upgrade', 'Inventory Issues'],
+    verification: [],
+    statusTags: ['Active'],
     technographics: {
       technologies: [
-        { name: 'PHP', category: 'Framework', confidence: 0.85 },
-        { name: 'Bootstrap', category: 'Framework', confidence: 0.8 },
+        { name: 'PHP', category: 'Framework', confidence: 0.5 },
       ],
-      rawDetectionsCount: 2,
+      rawDetectionsCount: 1,
     },
   },
 };
@@ -180,38 +174,9 @@ export async function enrichDomain(
 
   const targetUrl = `https://${cleanDomain}`;
 
-  // Benchmark target check
-  if (CURATED_TARGETS[cleanDomain]) {
-    const curated = CURATED_TARGETS[cleanDomain];
-    return {
-      domain: cleanDomain,
-      url: `https://www.${cleanDomain}`,
-      companyName: curated.companyName || cleanDomain,
-      category: curated.category || 'Commercial Enterprise',
-      productsServices: curated.productsServices || [],
-      description: curated.description || '',
-      contactInfo: curated.contactInfo || {
-        emails: [],
-        phones: [],
-        addresses: [],
-        socialLinks: {},
-      },
-      location: curated.location || null,
-      geoData: curated.geoData || null,
-      businessDetails: curated.businessDetails || null,
-      verification: curated.verification || [],
-      statusTags: curated.statusTags || ['Active'],
-      technographics: (curated.technographics as TechnographicResult) || {
-        technologies: [
-          { name: 'Cloudflare', category: 'Hosting/CDN', confidence: 0.95 },
-        ],
-        rawDetectionsCount: 1,
-      },
-      status: 'success',
-      crawledAt: new Date().toISOString(),
-      executionTimeMs: 120,
-    };
-  }
+  // Benchmark targets are NOT returned immediately — they are only used as last-resort fallback
+  // if the live scrape fails / returns empty. This prevents synthetic demo data from masking real sites.
+  const curatedFallback = CURATED_TARGETS[cleanDomain];
 
   let browserInstance;
 
@@ -358,6 +323,29 @@ export async function enrichDomain(
       try {
         await browserInstance.close();
       } catch {}
+    }
+
+    // Last-resort: use curated demo benchmark ONLY if it exists — clearly flagged so UI shows "Demo / Benchmark" badge
+    if (curatedFallback) {
+      const c = curatedFallback;
+      return {
+        domain: cleanDomain,
+        url: `https://www.${cleanDomain}`,
+        companyName: c.companyName || cleanDomain,
+        category: c.category || 'Commercial Enterprise',
+        productsServices: c.productsServices || [],
+        description: (c.description || '') + ' [Demo Benchmark — live scrape unavailable]',
+        contactInfo: (c.contactInfo as any) || { emails: [], phones: [], addresses: [], socialLinks: {} },
+        location: (c.location as any) || null,
+        geoData: (c.geoData as any) || null,
+        businessDetails: (c.businessDetails as any) || null,
+        verification: [],
+        statusTags: ['Demo'],
+        technographics: (c.technographics as TechnographicResult) || { technologies: [], rawDetectionsCount: 0 },
+        status: 'partial',
+        crawledAt: new Date().toISOString(),
+        executionTimeMs: Date.now() - startTime,
+      };
     }
 
     return {

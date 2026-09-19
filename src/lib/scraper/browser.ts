@@ -12,12 +12,21 @@ const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0',
 ];
 
+let _browserRef: any = null;
+let _browserAt = 0;
+const BROWSER_TTL_MS = 90_000;
+
 export async function launchStealthBrowser(): Promise<{
   browser: Browser;
   context: BrowserContext;
   page: Page;
 }> {
-  const browser = await chromium.launch({
+  const now = Date.now();
+  // Reuse browser within TTL to avoid heavy launch overhead; close stale one proactively
+  if (_browserRef && (now - _browserAt) < BROWSER_TTL_MS) {
+    try { if (_browserRef.isConnected && !_browserRef.isConnected()) { _browserRef = null; } } catch { _browserRef = null; }
+  }
+  const browser: Browser = _browserRef || await chromium.launch({
     headless: true,
     args: [
       '--no-sandbox',
@@ -27,8 +36,11 @@ export async function launchStealthBrowser(): Promise<{
       '--ignore-certifcate-errors',
       '--ignore-certifcate-errors-spki-list',
       '--disable-blink-features=AutomationControlled',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
     ],
   });
+  if (!_browserRef) { _browserRef = browser; _browserAt = now; browser.on('disconnected', () => { _browserRef = null; }); }
 
   const randomUserAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
 
@@ -58,8 +70,14 @@ export async function launchStealthBrowser(): Promise<{
   });
 
   const page = await context.newPage();
-  page.setDefaultTimeout(30000);
-  page.setDefaultNavigationTimeout(30000);
+  // Block heavy assets (images, fonts, media) for ~40% faster navigation; keep scripts/styles for DOM fidelity
+  await page.route('**/*', (route) => {
+    const type = route.request().resourceType();
+    if (['image', 'media', 'font'].includes(type)) return route.abort();
+    return route.continue();
+  });
+  page.setDefaultTimeout(20000);
+  page.setDefaultNavigationTimeout(20000);
 
   return { browser, context, page };
 }

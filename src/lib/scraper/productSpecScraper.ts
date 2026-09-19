@@ -14,6 +14,7 @@ import {
   synthesizeB2BPricing,
   DataConfidence,
 } from '../types/scraperTypes';
+import { detectIndustryGroup, buildOptimizedQueries, scoreSpecMatch, normalizeSpecValue } from '../search/keywordTaxonomy';
 
 export {
   type ProductStatusTag,
@@ -83,13 +84,19 @@ export async function searchProductsAndSpecs(
     const { browser, page } = await launchStealthBrowser();
     browserInstance = browser;
 
-    // Top 4 targeted queries for high-yield, low-latency live discovery
-    const searchQueries = [
-      `${effectiveProduct} ${compiledSpecs} buy online price in India flipkart amazon`,
-      `${effectiveProduct} ${compiledSpecs} croma reliance digital price`,
-      `${effectiveProduct} ${compiledSpecs} indiamart wholesale price suppliers`,
-      `${effectiveProduct} ${compiledSpecs} price list India`,
-    ];
+    // Taxonomy-aware optimized queries — replace generic 4-query set for higher relevance per category
+    const group = detectIndustryGroup(`${category} ${effectiveProduct} ${compiledSpecs} ${query}`);
+    const taxonomyQueries = buildOptimizedQueries({ product: effectiveProduct, category, specs: compiledSpecs, group });
+    // Add domain-specific expansion for the top category
+    const extraQueries: string[] = [];
+    if (group === 'it') {
+      extraQueries.push(`${effectiveProduct} ${compiledSpecs} croma reliance digital price`);
+    } else if (group === 'metals' || group === 'construction') {
+      extraQueries.push(`${effectiveProduct} ${compiledSpecs} IS 1786 steel price per MT indiamart`);
+    } else if (group === 'chemicals') {
+      extraQueries.push(`${effectiveProduct} ${compiledSpecs} 99.9% chemical supplier price`);
+    }
+    const searchQueries = [...taxonomyQueries, ...extraQueries].slice(0, 4);
 
     const seenUrls = new Set<string>();
     const seenTitles = new Set<string>();
@@ -384,24 +391,43 @@ export async function searchProductsAndSpecs(
           }
 
 
-          // Extract specs mentioned in real snippet
+          // Universal spec extraction — category-aware (IT + machinery + metals + chemicals + textiles + solar + construction)
           const specTokens: string[] = [];
           const snippetText = `${item.title} ${item.snippet}`;
 
+          // IT
           const cpuMatch = snippetText.match(/(?:i[3579][\-\s]?\d{4,5}[A-Z]?|Ryzen\s*\d\s*\d{4}[A-Z]?|Core\s*[3579]\s*\d{3}[A-Z]?)/i);
-          if (cpuMatch) specTokens.push(cpuMatch[0]);
-
-          const ramMatch = snippetText.match(/\b(8|16|32|64)\s*GB\s*(?:DDR[45])?/i);
-          if (ramMatch) specTokens.push(ramMatch[0]);
-
+          if (cpuMatch) specTokens.push(normalizeSpecValue(cpuMatch[0]));
+          const ramMatch = snippetText.match(/\b(4|8|16|32|64)\s*GB\s*(?:DDR[45])?/i);
+          if (ramMatch) specTokens.push(normalizeSpecValue(ramMatch[0]));
           const gpuMatch = snippetText.match(/(?:RTX|GTX)\s*(2050|3050|4050|4060|4070|4080|1650)/i);
-          if (gpuMatch) specTokens.push(gpuMatch[0]);
-
-          const displayMatch = snippetText.match(/(?:144|165|240|300)\s*Hz/i);
-          if (displayMatch) specTokens.push(displayMatch[0]);
-
+          if (gpuMatch) specTokens.push(normalizeSpecValue(gpuMatch[0]));
+          const displayMatch = snippetText.match(/(?:120|144|165|240|300)\s*Hz/i);
+          if (displayMatch) specTokens.push(normalizeSpecValue(displayMatch[0]));
           const ssdMatch = snippetText.match(/(?:256|512)\s*GB\s*SSD|1\s*TB\s*(?:SSD|NVMe)/i);
-          if (ssdMatch) specTokens.push(ssdMatch[0]);
+          if (ssdMatch) specTokens.push(normalizeSpecValue(ssdMatch[0]));
+
+          // Hydraulics / machinery
+          const pressureMatch = snippetText.match(/\b(150|200|250|315|350)\s*Bar\b/i);
+          if (pressureMatch) specTokens.push(normalizeSpecValue(pressureMatch[0]));
+          const flowMatch = snippetText.match(/\b(20|40|60|80|120|200)\s*LPM\b/i);
+          if (flowMatch) specTokens.push(normalizeSpecValue(flowMatch[0]));
+          const cetopMatch = snippetText.match(/\bCETOP\s*3\b|\bNG6\b/i);
+          if (cetopMatch) specTokens.push(normalizeSpecValue(cetopMatch[0]));
+
+          // Metals
+          const diaMatch = snippetText.match(/\b(8|10|12|16|20|25|32)\s*mm\b/i);
+          if (diaMatch && (effectiveProduct.toLowerCase().includes('steel') || effectiveProduct.toLowerCase().includes('tmt') || category.toLowerCase().includes('metal'))) specTokens.push(normalizeSpecValue(diaMatch[0]));
+          const gradeMatch = snippetText.match(/\bFe\s*500D?\b|\bOPC\s*53\b|\bIS\s*1786\b/i);
+          if (gradeMatch) specTokens.push(normalizeSpecValue(gradeMatch[0]));
+
+          // Chemicals / textiles / solar
+          const purityMatch = snippetText.match(/\b99\.\d+\s*%\b/);
+          if (purityMatch && (group === 'chemicals' || group === 'agri')) specTokens.push(normalizeSpecValue(purityMatch[0]));
+          const gsmMatch = snippetText.match(/\b(150|180|200|220|250)\s*GSM\b/i);
+          if (gsmMatch) specTokens.push(normalizeSpecValue(gsmMatch[0]));
+          const wattMatch = snippetText.match(/\b(540|550|580|600)\s*W\b/i);
+          if (wattMatch) specTokens.push(normalizeSpecValue(wattMatch[0]));
 
           const extractedSpecs = specTokens.length > 0 ? specTokens.join(', ') : (compiledSpecs || parseDetailedSpecs(effectiveProduct, item.title, item.snippet));
 
@@ -426,6 +452,13 @@ export async function searchProductsAndSpecs(
           // Without a real price anchor the wholesale calculation is meaningless.
           if (!b2bPricing && priceConfidence === 'live' && sellingPrice) {
             b2bPricing = synthesizeB2BPricing(cleanProductTitle || category, extractedSpecs, sellingPrice, category);
+          }
+
+          // Taxonomy-aware keyword relevance scoring — filters out listings that don't match requested specs at all
+          const taxonomyScore = compiledSpecs.trim() ? scoreSpecMatch(compiledSpecs, extractedSpecs) : 100;
+          if (taxonomyScore < 20 && compiledSpecs.trim().length > 0) {
+            console.log(`[ProductSpecScraper] Low taxonomy relevance ${taxonomyScore}% — skipping "${cleanProductTitle.slice(0, 40)}"`);
+            continue;
           }
 
           records.push({

@@ -80,6 +80,23 @@ class ScraperMemoryCache {
   }
 
   /**
+   * Deduplicate concurrent in-flight requests for same key to avoid duplicate browser launches
+   */
+  private inflight: Map<string, Promise<any>> = new Map();
+  public async dedupe<T>(key: string, factory: () => Promise<T>, ttlMs?: number): Promise<T> {
+    const cached = this.get<T>(key);
+    if (cached) return cached;
+    if (this.inflight.has(key)) return this.inflight.get(key) as Promise<T>;
+    const p = factory().then((res) => {
+      if (res != null) this.set(key, res, ttlMs);
+      this.inflight.delete(key);
+      return res;
+    }).catch((e) => { this.inflight.delete(key); throw e; });
+    this.inflight.set(key, p);
+    return p;
+  }
+
+  /**
    * Invalidate specific key or clear all cache
    */
   public delete(key: string): boolean {
@@ -92,6 +109,10 @@ class ScraperMemoryCache {
 
   public size(): number {
     return this.cache.size;
+  }
+
+  public stats(): { size: number; keys: string[] } {
+    return { size: this.cache.size, keys: Array.from(this.cache.keys()).slice(0, 20) };
   }
 }
 

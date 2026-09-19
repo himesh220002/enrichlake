@@ -270,6 +270,11 @@ export default function EnrichmentDashboard() {
   const [productSpecInput, setProductSpecInput] = useState('i5-12450H, 16GB DDR5, RTX 3050, 144Hz');
   const [selectedTemplateGroup, setSelectedTemplateGroup] = useState<string>('all');
   const [appliedTemplateId, setAppliedTemplateId] = useState<string | null>('it_laptops');
+  // Collapsible UI — keep heavy panels hidden until needed (ZenFlow + FeatherLite)
+  const [showTemplates, setShowTemplates] = useState<boolean>(true);
+  const [showAudit, setShowAudit] = useState<boolean>(false);
+  const [showLegend, setShowLegend] = useState<boolean>(false);
+  const [showSpecBuilder, setShowSpecBuilder] = useState<boolean>(true);
 
   const handleApplyQuickTemplate = (template: CategoryQuickTemplate) => {
     setProductCategoryInput(template.category);
@@ -1392,193 +1397,172 @@ export default function EnrichmentDashboard() {
 
   return (
     <div className="min-h-screen text-slate-100 selection:bg-indigo-500 selection:text-white pb-16">
-      {/* Top Navigation */}
-      <header className="border-b border-slate-800/80 bg-slate-950/60 backdrop-blur-md sticky top-0 z-50">
-        <div className="w-full mx-auto px-6 sm:px-10 lg:px-20 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-cyan-400 p-0.5 shadow-lg shadow-indigo-500/20">
-              <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-indigo-400 animate-pulse" />
+      {/* Top Navigation — unified, seam-free */}
+      <header className="border-b border-white/[0.07] bg-[rgba(8,11,24,0.72)] backdrop-blur-xl sticky top-0 z-50">
+        <div className="page-shell h-[60px] flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-violet-600 to-cyan-400 p-[1.2px] shadow-md shadow-indigo-500/20 shrink-0">
+              <div className="w-full h-full bg-slate-950 rounded-[11px] flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-indigo-300" />
               </div>
             </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-extrabold tracking-wider text-base bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-extrabold tracking-[0.14em] text-[13px] bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">
                   ENRICHER.AI
                 </span>
-                <span className="px-2 py-0.5 text-[10px] font-mono tracking-widest uppercase rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span className="hidden sm:inline-flex px-2 py-0.5 text-[10px] font-mono tracking-widest uppercase rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
                   ZERO-API COST
                 </span>
+                <span className="hidden lg:inline-flex px-2 py-0.5 text-[10px] font-mono rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/15">Aurora • NeoGlass • FeatherLite</span>
               </div>
-              <p className="text-xs text-slate-400">Headless Stealth Scraping & 2026 BYOK AI RevOps Engine</p>
+              <p className="hidden sm:block text-[11px] leading-none text-slate-400 mt-0.5 truncate">Stealth scraping • Technographics • 2026 BYOK RevOps • B2B sourcing with GST-verified confidence</p>
             </div>
           </div>
 
-          {/* Engine Status Indicators */}
-          <div className="flex items-center space-x-3">
-            <div className="hidden md:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-xs text-slate-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-              <span className="font-mono text-emerald-400">Stealth Engine</span>
-              <span className="text-slate-500">|</span>
-              <span className="text-slate-400">Redis & BullMQ Active</span>
+          {/* Engine Status + Actions — contextual, lightweight */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/70 border border-slate-800 text-xs">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+              </span>
+              <span className="font-mono text-emerald-300">Stealth</span>
+              <span className="text-slate-600">·</span>
+              <span className="text-slate-400">Redis/BullMQ</span>
+              <span className="text-slate-600">·</span>
+              <span className={workerStatus==='active' ? 'text-emerald-400' : 'text-amber-400'}>{workerStatus==='active' ? 'Live' : 'Idle'}</span>
             </div>
 
             <button
               onClick={() => setActiveTab('saved')}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 transition"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-slate-200 transition feather-btn"
+              aria-label="Saved profiles"
             >
-              <Bookmark className="w-3.5 h-3.5" />
-              <span>Saved Profiles ({savedProfiles.length})</span>
+              <Bookmark className="w-3.5 h-3.5 text-cyan-300" />
+              <span className="hidden sm:inline">Profiles</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-200 text-[11px] font-mono">{savedProfiles.length}</span>
             </button>
 
             <button
               onClick={() => setActiveTab('byok')}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 transition"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-500/90 hover:bg-indigo-500 text-white shadow-sm shadow-indigo-500/20 transition feather-btn"
             >
               <Key className="w-3.5 h-3.5" />
-              <span>2026 BYOK Hub</span>
+              <span>BYOK Hub</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* Hero / Stat KPI Row */}
-      <div className="w-full mx-auto px-6 sm:px-10 lg:px-20 pt-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* KPI 1: Money Saved */}
-          <div className="glass-panel rounded-2xl p-5 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-            <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
-              <span className="font-medium tracking-wide uppercase">RevOps Cost Saved</span>
+      {/* Main shell — consistent gutters everywhere */}
+      <div className="page-shell pt-6 sm:pt-7">
+        {/* Hero KPIs — Minimal Grid, consistent card fill */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {/* KPI 1 */}
+          <div className="smart-card aurora-card p-4 sm:p-5 relative overflow-hidden lift-hover">
+            <div className="absolute -top-8 -right-8 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center justify-between text-slate-400 text-[11px] mb-2">
+              <span className="font-semibold tracking-widest uppercase">Cost Saved</span>
               <DollarSign className="w-4 h-4 text-emerald-400" />
             </div>
-            <div className="text-3xl font-black text-emerald-400 font-mono tracking-tight">
+            <div className="text-2xl sm:text-3xl font-black text-emerald-300 font-mono-tight tracking-tight">
               ${moneySaved.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
-            <p className="text-[11px] text-slate-400 mt-1 flex items-center space-x-1">
-              <TrendingUp className="w-3 h-3 text-emerald-400 inline mr-1" />
-              <span>Vs ZoomInfo / Apollo ($0.45/record benchmark)</span>
-            </p>
+            <p className="text-[11px] text-slate-400 mt-1">vs ZoomInfo / Apollo $0.45/rec · Zero vendor fees</p>
           </div>
 
-          {/* KPI 2: Records Processed */}
-          <div className="glass-panel rounded-2xl p-5 relative overflow-hidden">
-            <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
-              <span className="font-medium tracking-wide uppercase">Enriched Accounts</span>
+          {/* KPI 2 */}
+          <div className="smart-card p-4 sm:p-5 relative overflow-hidden lift-hover">
+            <div className="flex items-center justify-between text-slate-400 text-[11px] mb-2">
+              <span className="font-semibold tracking-widest uppercase">Enriched</span>
               <Database className="w-4 h-4 text-indigo-400" />
             </div>
-            <div className="text-3xl font-black text-white font-mono tracking-tight">
+            <div className="text-2xl sm:text-3xl font-black text-white font-mono-tight tracking-tight">
               {recordsProcessed.toLocaleString()}
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">Headless DOM & schema parsed</p>
+            <p className="text-[11px] text-slate-400 mt-1">DOM + schema nodes parsed</p>
           </div>
 
-          {/* KPI 3: Accuracy Guarantee */}
-          <div className="glass-panel rounded-2xl p-5 relative overflow-hidden">
-            <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
-              <span className="font-medium tracking-wide uppercase">Stale-Data Shield</span>
+          {/* KPI 3 */}
+          <div className="smart-card p-4 sm:p-5 relative overflow-hidden lift-hover">
+            <div className="flex items-center justify-between text-slate-400 text-[11px] mb-2">
+              <span className="font-semibold tracking-widest uppercase">Stale Shield</span>
               <ShieldCheck className="w-4 h-4 text-cyan-400" />
             </div>
-            <div className="text-3xl font-black text-cyan-400 font-mono tracking-tight">0% Overwrite</div>
-            <p className="text-[11px] text-slate-400 mt-1">CRM protective barrier enabled</p>
+            <div className="text-2xl sm:text-3xl font-black text-cyan-300 font-mono-tight tracking-tight">0% Overwrite</div>
+            <p className="text-[11px] text-slate-400 mt-1">CRM field protection active</p>
           </div>
 
-          {/* KPI 4: Infrastructure */}
-          <div className="glass-panel rounded-2xl p-5 relative overflow-hidden">
-            <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
-              <span className="font-medium tracking-wide uppercase">API Scraping Overhead</span>
+          {/* KPI 4 */}
+          <div className="smart-card p-4 sm:p-5 relative overflow-hidden lift-hover">
+            <div className="flex items-center justify-between text-slate-400 text-[11px] mb-2">
+              <span className="font-semibold tracking-widest uppercase">API Overhead</span>
               <Zap className="w-4 h-4 text-violet-400" />
             </div>
-            <div className="text-3xl font-black text-violet-300 font-mono tracking-tight">$0.00</div>
-            <p className="text-[11px] text-slate-400 mt-1">Zero commercial data vendor fees</p>
+            <div className="text-2xl sm:text-3xl font-black text-violet-200 font-mono-tight tracking-tight">$0.00</div>
+            <p className="text-[11px] text-slate-400 mt-1">Headless + cache + deduped</p>
           </div>
         </div>
 
-        {/* Tab Selection */}
-        <div className="mt-8 flex border-b border-slate-800 space-x-6 overflow-x-auto">
+        {/* Tab Selection — FeatherLite Pill Strip + ZenFlow minimal */}
+        <div className="mt-6 flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-thin">
           <button
             onClick={() => setActiveTab('live')}
-            className={`pb-3 text-sm font-semibold flex items-center space-x-2 transition relative whitespace-nowrap ${activeTab === 'live' ? 'text-indigo-400' : 'text-slate-400 hover:text-slate-200'
-              }`}
+            className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-semibold transition border ${activeTab === 'live' ? 'bg-white text-slate-900 border-white shadow-sm' : 'bg-white/[0.06] text-slate-300 border-white/10 hover:bg-white/[0.10] hover:text-white'}`}
           >
             <Globe className="w-4 h-4" />
-            <span>Live Domain Enrichment</span>
-            {activeTab === 'live' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500 rounded-full shadow-lg shadow-indigo-500/50" />
-            )}
+            <span>Live Domain</span>
           </button>
 
           <button
             onClick={() => setActiveTab('maps')}
-            className={`pb-3 text-sm font-semibold flex items-center space-x-2 transition relative whitespace-nowrap ${activeTab === 'maps' ? 'text-amber-400' : 'text-slate-400 hover:text-slate-200'
-              }`}
+            className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-semibold transition border ${activeTab === 'maps' ? 'bg-white text-slate-900 border-white shadow-sm' : 'bg-white/[0.06] text-slate-300 border-white/10 hover:bg-white/[0.10] hover:text-white'}`}
           >
-            <MapPin className="w-4 h-4 text-amber-400" />
-            <span>Google Maps & Keyword Scraper</span>
-            {activeTab === 'maps' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-400 rounded-full shadow-lg shadow-amber-400/50" />
-            )}
+            <MapPin className="w-4 h-4" />
+            <span>Maps & Keywords</span>
           </button>
 
           <button
             onClick={() => setActiveTab('products')}
-            className={`pb-3 text-sm font-semibold flex items-center space-x-2 transition relative whitespace-nowrap ${
-              activeTab === 'products' ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200'
-            }`}
+            className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-semibold transition border ${activeTab === 'products' ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm shadow-emerald-500/20' : 'bg-white/[0.06] text-slate-300 border-white/10 hover:bg-white/[0.10] hover:text-white'}`}
           >
-            <Package className="w-4 h-4 text-emerald-400" />
-            <span>Product & Specs Finder (500km)</span>
-            {activeTab === 'products' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-400 rounded-full shadow-lg shadow-emerald-400/50" />
-            )}
+            <Package className="w-4 h-4" />
+            <span>Product & Specs Finder</span>
           </button>
 
           <button
             onClick={() => setActiveTab('saved')}
-            className={`pb-3 text-sm font-semibold flex items-center space-x-2 transition relative whitespace-nowrap ${activeTab === 'saved' ? 'text-cyan-400' : 'text-slate-400 hover:text-slate-200'
-              }`}
+            className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-semibold transition border ${activeTab === 'saved' ? 'bg-white text-slate-900 border-white shadow-sm' : 'bg-white/[0.06] text-slate-300 border-white/10 hover:bg-white/[0.10] hover:text-white'}`}
           >
             <Bookmark className="w-4 h-4" />
-            <span>Saved Profiles & Account Graph ({savedProfiles.length})</span>
-            {activeTab === 'saved' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400 rounded-full shadow-lg shadow-cyan-500/50" />
-            )}
+            <span>Profiles</span>
+            <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-slate-900/10 text-[11px] font-mono">{savedProfiles.length}</span>
           </button>
 
           <button
             onClick={() => setActiveTab('byok')}
-            className={`pb-3 text-sm font-semibold flex items-center space-x-2 transition relative whitespace-nowrap ${activeTab === 'byok' ? 'text-indigo-400' : 'text-slate-400 hover:text-slate-200'
-              }`}
+            className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-semibold transition border ${activeTab === 'byok' ? 'bg-white text-slate-900 border-white shadow-sm' : 'bg-white/[0.06] text-slate-300 border-white/10 hover:bg-white/[0.10] hover:text-white'}`}
           >
             <Key className="w-4 h-4" />
-            <span>2026 BYOK AI Hub</span>
-            {activeTab === 'byok' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500 rounded-full shadow-lg shadow-indigo-500/50" />
-            )}
+            <span>BYOK Hub</span>
           </button>
 
           <button
             onClick={() => setActiveTab('rules')}
-            className={`pb-3 text-sm font-semibold flex items-center space-x-2 transition relative whitespace-nowrap ${activeTab === 'rules' ? 'text-indigo-400' : 'text-slate-400 hover:text-slate-200'
-              }`}
+            className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-semibold transition border ${activeTab === 'rules' ? 'bg-white text-slate-900 border-white shadow-sm' : 'bg-white/[0.06] text-slate-300 border-white/10 hover:bg-white/[0.10] hover:text-white'}`}
           >
             <ShieldCheck className="w-4 h-4" />
-            <span>RevOps Safeguards</span>
-            {activeTab === 'rules' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500 rounded-full shadow-lg shadow-indigo-500/50" />
-            )}
+            <span>Safeguards</span>
           </button>
 
           <button
             onClick={() => setActiveTab('queue')}
-            className={`pb-3 text-sm font-semibold flex items-center space-x-2 transition relative whitespace-nowrap ${activeTab === 'queue' ? 'text-indigo-400' : 'text-slate-400 hover:text-slate-200'
-              }`}
+            className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-semibold transition border ${activeTab === 'queue' ? 'bg-white text-slate-900 border-white shadow-sm' : 'bg-white/[0.06] text-slate-300 border-white/10 hover:bg-white/[0.10] hover:text-white'}`}
           >
             <Server className="w-4 h-4" />
-            <span>BullMQ Scraping Engine</span>
-            {activeTab === 'queue' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500 rounded-full shadow-lg shadow-indigo-500/50" />
-            )}
+            <span>Queue</span>
+            {(queueMetrics.waiting+queueMetrics.active)>0 && <span className="ml-0.5 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
           </button>
         </div>
 
@@ -2655,47 +2639,40 @@ export default function EnrichmentDashboard() {
         {/* ============================================================== */}
         {activeTab === 'products' && (
           <div className="mt-6 space-y-6">
-            {/* Header & Controls Panel */}
-            <div className="glass-panel p-6 rounded-2xl border border-emerald-500/20 shadow-xl shadow-emerald-950/20 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+            {/* Header & Controls Panel — tech-corners + consistent shell */}
+            <div className="glass-panel tech-corners p-5 sm:p-6 rounded-2xl border border-white/[0.07] shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-[420px] h-[420px] bg-emerald-500/[0.04] rounded-full blur-3xl pointer-events-none" />
               
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-slate-800/80">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-white/[0.06]">
                 <div>
-                  <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">
-                    <Package className="w-3.5 h-3.5" />
+                  <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white text-slate-900 text-[11px] font-bold tracking-widest uppercase">
+                    <Terminal className="w-3.5 h-3.5" />
                     <span>Internet-Wide Product & Specs Extraction Engine</span>
+                    <span className="hidden sm:inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded-full bg-indigo-500 text-white text-[10px] font-mono"><Sparkles className="w-3 h-3" /> AI</span>
                   </div>
-                  <h2 className="text-2xl font-bold text-white tracking-tight">
-                    Universal Product Finder & Specs Enrichment
+                  <h2 className="text-[22px] font-bold text-white tracking-tight mt-2 flex items-center gap-2">
+                    <span>Universal Product Finder & Specs Enrichment</span>
                   </h2>
-                  <p className="text-sm text-slate-400 mt-1 max-w-3xl">
-                    Scrapes 100s–1000s of internet seller sites with keyword matching, geo-radius perimeter filtering (e.g. 500km from hub), deep hardware/commodity spec extraction, and verified B2B seller enrichment.
+                  <p className="text-[13px] text-slate-400 mt-1 max-w-3xl leading-relaxed">
+                    Keyword-matched scraping with geo-radius perimeter, taxonomy-aware spec normalisation, and B2B seller enrichment — 100s–1000s of sources filtered to verified channels.
                   </p>
                 </div>
 
-                {/* Mode Switcher */}
-                <div className="flex items-center p-1 bg-slate-900/80 border border-slate-800 rounded-xl">
+                {/* Mode Switcher — FeatherLite */}
+                <div className="flex items-center p-1 bg-white/[0.06] border border-white/10 rounded-full">
                   <button
                     onClick={() => setProductViewMode('specs')}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-semibold transition ${
-                      productViewMode === 'specs'
-                        ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-900/40'
-                        : 'text-slate-400 hover:text-slate-200'
-                    }`}
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition border ${productViewMode === 'specs' ? 'bg-white text-slate-900 border-white shadow-sm' : 'text-slate-300 border-transparent hover:text-white'}`}
                   >
                     <Cpu className="w-3.5 h-3.5" />
                     <span>Product Specs & Marketplace View</span>
                   </button>
                   <button
                     onClick={() => setProductViewMode('sellers')}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-semibold transition ${
-                      productViewMode === 'sellers'
-                        ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-900/40'
-                        : 'text-slate-400 hover:text-slate-200'
-                    }`}
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition border ${productViewMode === 'sellers' ? 'bg-white text-slate-900 border-white shadow-sm' : 'text-slate-300 border-transparent hover:text-white'}`}
                   >
                     <ShoppingBag className="w-3.5 h-3.5" />
-                    <span>B2B Seller & Procurement Hub</span>
+                    <span>B2B Sellers</span>
                   </button>
                 </div>
               </div>
@@ -2819,133 +2796,125 @@ export default function EnrichmentDashboard() {
                   </div>
                 </div>
 
-                {/* Actual Business Search Quick Templates (14 Comprehensive Presets) */}
-                <div className="p-3.5 bg-slate-900/70 border border-slate-800 rounded-xl space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <Tag className="w-3.5 h-3.5 text-teal-400" />
-                        <span className="text-xs font-bold text-white uppercase tracking-wider">
-                          Actual Business Search Quick Templates ({CATEGORY_QUICK_TEMPLATES.length} Presets)
-                        </span>
-                        <span className="text-[10px] px-2 py-0.2 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/20 font-mono">
-                          Autofill Category, Specs & Price
-                        </span>
+                {/* Business Quick Templates — collapsible, techy icons, compact positioning */}
+                <div className="rounded-xl border border-white/[0.07] bg-[rgba(13,19,38,0.72)] overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowTemplates(v => !v)}
+                    className="w-full flex items-center justify-between gap-3 px-3.5 py-3 hover:bg-white/[0.03] transition text-left"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center shrink-0">
+                        <Layers className="w-3.5 h-3.5 text-white" />
+                      </span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold tracking-widest uppercase text-white">Business Templates</span>
+                          <span className="px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-200 border border-teal-500/20 text-[10px] font-mono">{CATEGORY_QUICK_TEMPLATES.length} · AI-mapped</span>
+                          {appliedTemplateId && <span className="hidden sm:inline px-1.5 py-0.5 rounded-full bg-white text-slate-900 text-[10px] font-bold">Active · {CATEGORY_QUICK_TEMPLATES.find(t=>t.id===appliedTemplateId)?.title.slice(0,22)}</span>}
+                        </div>
+                        <p className="text-[11px] text-slate-400 truncate hidden sm:block">One-click real-world procurement presets — category, specs & price autofill. Pure-spec templates search without model.</p>
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        Select real-world B2B procurement searches across key Indian and global supply chains. Some templates include model names, while others feature pure category-wide spec searches.
-                      </p>
                     </div>
+                    <span className={`shrink-0 w-7 h-7 rounded-full border flex items-center justify-center transition ${showTemplates ? 'bg-white text-slate-900 border-white' : 'bg-white/[0.06] text-slate-300 border-white/10'}`}>
+                      <span className={`transition-transform text-xs ${showTemplates ? 'rotate-180' : ''}`}>⌄</span>
+                    </span>
+                  </button>
 
-                    {/* Group Filter Tabs */}
-                    <div className="flex flex-wrap items-center gap-1">
-                      {[
-                        { key: 'all', label: `All (${CATEGORY_QUICK_TEMPLATES.length})` },
-                        { key: 'it', label: '💻 IT & Servers' },
-                        { key: 'metals', label: '🏗️ Steel & Metals' },
-                        { key: 'agri', label: '🌾 Agri & Food' },
-                        { key: 'solar', label: '☀️ Solar Energy' },
-                        { key: 'textiles', label: '🧵 Textiles' },
-                        { key: 'chemicals', label: '🧪 Chemicals' },
-                        { key: 'heavy', label: '⚙️ Machinery & PPE' },
-                      ].map((grp) => (
-                        <button
-                          key={grp.key}
-                          type="button"
-                          onClick={() => setSelectedTemplateGroup(grp.key)}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer ${
-                            selectedTemplateGroup === grp.key
-                              ? 'bg-teal-500/20 border border-teal-500/40 text-teal-200 font-semibold'
-                              : 'bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700/60'
-                          }`}
-                        >
-                          {grp.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  {showTemplates && (
+                    <div className="px-3.5 pb-3.5 space-y-3 border-t border-white/[0.06] pt-3">
+                      {/* AI involvement badge */}
+                      <div className="flex items-center gap-2 text-[11px]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-500/12 text-indigo-300 border border-indigo-500/20 font-mono"><Sparkles className="w-3 h-3" /> AI taxonomy-aware</span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-200 border border-cyan-500/15 font-mono"><Cpu className="w-3 h-3" /> Pure-spec supported</span>
+                      </div>
 
-                  {/* Templates Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 pt-1">
-                    {CATEGORY_QUICK_TEMPLATES
-                      .filter((tpl) => selectedTemplateGroup === 'all' || tpl.industryGroup === selectedTemplateGroup)
-                      .map((tpl) => {
-                        const isSelected = appliedTemplateId === tpl.id;
-                        const isPureSpec = !tpl.productName;
-
-                        return (
-                          <div
-                            key={tpl.id}
-                            onClick={() => handleApplyQuickTemplate(tpl)}
-                            className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between space-y-2 group ${
-                              isSelected
-                                ? 'bg-gradient-to-br from-teal-950/50 to-slate-900 border-teal-500/70 ring-1 ring-teal-500/40 shadow-lg shadow-teal-950/40'
-                                : 'bg-slate-950/60 hover:bg-slate-900/80 border-slate-800 hover:border-slate-700'
-                            }`}
+                      {/* Group Filter — pill style */}
+                      <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+                        {[
+                          { key: 'all', label: `All ${CATEGORY_QUICK_TEMPLATES.length}`, icon: Layers },
+                          { key: 'it', label: 'IT & Servers', icon: Cpu },
+                          { key: 'metals', label: 'Steel & Metals', icon: Layers },
+                          { key: 'agri', label: 'Agri & Food', icon: ShoppingBag },
+                          { key: 'solar', label: 'Solar', icon: Zap },
+                          { key: 'textiles', label: 'Textiles', icon: Tag },
+                          { key: 'chemicals', label: 'Chemicals', icon: FileText },
+                          { key: 'heavy', label: 'Machinery & PPE', icon: Server },
+                        ].map(({ key, label, icon: Ico }) => (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => setSelectedTemplateGroup(key)}
+                            className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition ${selectedTemplateGroup === key ? 'bg-white text-slate-900 border-white' : 'bg-white/[0.06] text-slate-300 border-white/10 hover:bg-white/[0.09]'}`}
                           >
-                            <div className="space-y-1">
-                              <div className="flex items-start justify-between gap-1.5">
-                                <div className="flex items-center space-x-1.5 truncate">
-                                  <span className="text-base">{tpl.icon}</span>
-                                  <span className="text-xs font-bold text-white group-hover:text-teal-300 transition truncate">
-                                    {tpl.title}
+                            <Ico className="w-3 h-3" /> {label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Grid — techy cards, no emoji, pure lucide */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
+                        {CATEGORY_QUICK_TEMPLATES
+                          .filter((tpl) => selectedTemplateGroup === 'all' || tpl.industryGroup === selectedTemplateGroup)
+                          .map((tpl) => {
+                            const isSelected = appliedTemplateId === tpl.id;
+                            const isPureSpec = !tpl.productName;
+                            const GIcon = (
+                              tpl.industryGroup === 'it' ? Cpu :
+                              tpl.industryGroup === 'metals' ? Layers :
+                              tpl.industryGroup === 'agri' ? ShoppingBag :
+                              tpl.industryGroup === 'solar' ? Zap :
+                              tpl.industryGroup === 'textiles' ? Tag :
+                              tpl.industryGroup === 'chemicals' ? FileText : Server
+                            );
+                            return (
+                              <button
+                                key={tpl.id}
+                                type="button"
+                                onClick={() => handleApplyQuickTemplate(tpl)}
+                                className={`p-3 rounded-xl border text-left flex flex-col gap-2 group transition ${isSelected ? 'bg-white text-slate-900 border-white shadow-md' : 'bg-white/[0.04] hover:bg-white/[0.07] border-white/10 text-slate-200 hover:border-white/15'}`}
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isSelected ? 'bg-slate-900 text-white' : 'bg-white/[0.07] text-teal-300 border border-white/10'}`}>
+                                    <GIcon className="w-3.5 h-3.5" />
+                                  </span>
+                                  <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono font-bold border shrink-0 ${isPureSpec ? (isSelected ? 'bg-amber-500 text-white border-amber-500' : 'bg-amber-500/15 text-amber-300 border-amber-500/20') : (isSelected ? 'bg-slate-900 text-white border-slate-900' : 'bg-white/[0.06] text-slate-400 border-white/10')}`}>
+                                    {isPureSpec ? 'Pure Spec' : 'Model'}
                                   </span>
                                 </div>
-                                {isPureSpec ? (
-                                  <span className="px-1.5 py-0.5 rounded text-[9px] bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono whitespace-nowrap">
-                                    ⚡ Pure Spec
-                                  </span>
-                                ) : (
-                                  <span className="px-1.5 py-0.5 rounded text-[9px] bg-slate-800 text-slate-400 border border-slate-700/60 font-mono whitespace-nowrap">
-                                    Model Match
-                                  </span>
-                                )}
-                              </div>
-
-                              <div className="text-[10px] text-teal-400/90 font-mono truncate">
-                                {tpl.category}
-                              </div>
-
-                              <p className="text-[11px] text-slate-400 line-clamp-2 leading-snug">
-                                {tpl.description}
-                              </p>
-                            </div>
-
-                            <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px]">
-                              <span className="font-mono text-emerald-400 font-semibold">
-                                {tpl.priceRangeText}
-                              </span>
-                              <span className="text-slate-500 group-hover:text-teal-400 transition font-semibold flex items-center space-x-0.5">
-                                <span>{isSelected ? '✓ Active' : 'Load →'}</span>
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
+                                <div className={`text-xs font-bold leading-tight line-clamp-2 ${isSelected ? 'text-slate-900' : 'text-white group-hover:text-white'}`}>{tpl.title}</div>
+                                <div className={`text-[10px] font-mono truncate ${isSelected ? 'text-slate-600' : 'text-teal-300/90'}`}>{tpl.category}</div>
+                                <p className={`text-[11px] leading-snug line-clamp-2 ${isSelected ? 'text-slate-600' : 'text-slate-400'}`}>{tpl.description}</p>
+                                <div className={`pt-2 mt-auto border-t flex items-center justify-between text-[10px] ${isSelected ? 'border-slate-200' : 'border-white/10'}`}>
+                                  <span className={`font-mono font-bold ${isSelected ? 'text-emerald-700' : 'text-emerald-300'}`}>{tpl.priceRangeText}</span>
+                                  <span className={`font-semibold ${isSelected ? 'text-slate-900' : 'text-slate-400 group-hover:text-white'}`}>{isSelected ? '✓ Active' : 'Load →'}</span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Dynamic +Spec Specification Criteria Builder */}
-                <div className="space-y-3 pt-2">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-800/80">
-                    <div className="flex items-center space-x-2">
-                      <Cpu className="w-4 h-4 text-teal-400" />
-                      <span className="text-xs font-bold text-white uppercase tracking-wider">
-                        Technical Specifications Criteria (+ Spec)
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full bg-teal-500/10 border border-teal-500/30 text-[10px] text-teal-300 font-mono font-semibold">
-                        {specsList.length} Criteria Defined
-                      </span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleAddSpec}
-                      className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-semibold shadow-md shadow-teal-900/30 transition cursor-pointer self-start sm:self-auto"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>+ Spec</span>
-                    </button>
+                {/* Spec Criteria — collapsible, techy AI-mapped */}
+                <div className="rounded-xl border border-white/[0.07] bg-[rgba(13,19,38,0.64)] overflow-hidden">
+                  <button type="button" onClick={() => setShowSpecBuilder(v=>!v)} className="w-full flex items-center justify-between gap-2 px-3.5 py-3 hover:bg-white/[0.03] transition">
+                    <span className="flex items-center gap-2">
+                      <span className="w-7 h-7 rounded-lg bg-white text-slate-900 flex items-center justify-center"><Terminal className="w-3.5 h-3.5" /></span>
+                      <span className="text-xs font-bold tracking-widest uppercase text-white">Spec Criteria</span>
+                      <span className="px-2 py-0.5 rounded-full bg-white text-slate-900 text-[10px] font-bold font-mono">{specsList.length} · AI normalized</span>
+                      <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-500/12 text-indigo-300 border border-indigo-500/20 text-[10px] font-mono"><Sparkles className="w-3 h-3" /> taxonomy-aware</span>
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span onClick={(e)=>{e.stopPropagation(); handleAddSpec();}} className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-400 transition"><Plus className="w-3 h-3" /> Add</span>
+                      <span className={`w-7 h-7 rounded-full border flex items-center justify-center text-xs transition ${showSpecBuilder ? 'bg-white text-slate-900 border-white' : 'bg-white/[0.06] border-white/10 text-slate-300'}`}>⌄</span>
+                    </span>
+                  </button>
+                  {showSpecBuilder && (
+                  <div className="px-3.5 pb-3.5 space-y-3 border-t border-white/[0.06] pt-3">
+                  <div className="flex justify-end sm:hidden">
+                    <button type="button" onClick={handleAddSpec} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-500 text-white text-xs font-bold"><Plus className="w-3.5 h-3.5" /> Add Spec</button>
                   </div>
 
                   {/* Spec List Cards */}
@@ -3106,12 +3075,15 @@ export default function EnrichmentDashboard() {
                       </button>
                     </div>
                   )}
+                  </div>
+                  )}
                 </div>
 
+                {/* Price & Geography — always visible, primary inputs (outside collapse) */}
                 {/* Row 2: Price Range & Geographic Scope Selector (Radius vs All India vs World) */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 pt-1">
-                  {/* Price Range Controls */}
-                  <div className="lg:col-span-5 space-y-2 p-3.5 bg-slate-900/70 border border-slate-800 rounded-xl">
+                  {/* Price Range Controls — consistent shell */}
+                  <div className="lg:col-span-5 space-y-2 p-3.5 bg-white/[0.04] border border-white/10 rounded-xl">
                     <label className="text-xs font-semibold text-slate-200 flex items-center justify-between">
                       <span className="flex items-center space-x-1.5">
                         <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
@@ -3179,8 +3151,8 @@ export default function EnrichmentDashboard() {
                     </div>
                   </div>
 
-                  {/* Geographic Range & Scope Controls (Slider + Tick Marks for All over India, World) */}
-                  <div className="lg:col-span-7 space-y-2 p-3.5 bg-slate-900/70 border border-slate-800 rounded-xl">
+                  {/* Geographic Scope — consistent shell */}
+                  <div className="lg:col-span-7 space-y-2 p-3.5 bg-white/[0.04] border border-white/10 rounded-xl">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-semibold text-slate-200 flex items-center space-x-1.5">
                         <Navigation className="w-3.5 h-3.5 text-cyan-400" />
@@ -3389,174 +3361,80 @@ export default function EnrichmentDashboard() {
               </div>
             </div>
 
-            {/* Professional Status Tagging Legend & RevOps Guidance Card */}
-            <div className="glass-panel p-5 rounded-2xl border border-slate-800 bg-slate-950/40">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-2">
-                  <Tag className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Professional Status Tagging Reference (Operational Health & Verification Trust)</span>
-                </h3>
-                <span className="text-[11px] text-slate-500 font-mono">Procurement-Ready Classification</span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                {/* Business Status Tags */}
-                <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800/80 space-y-2">
-                  <span className="font-semibold text-slate-200 block text-[11px] uppercase tracking-wider text-indigo-300">
-                    Business Status Tags (Operational Health & Trajectory)
+            {/* Collapsible helpers — only show when needed */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {/* Legend — collapsible */}
+              <div className="rounded-xl border border-white/[0.07] bg-[rgba(13,19,38,0.54)] overflow-hidden">
+                <button type="button" onClick={() => setShowLegend(v=>!v)} className="w-full flex items-center justify-between gap-2 px-3.5 py-3 hover:bg-white/[0.03] transition text-left">
+                  <span className="flex items-center gap-2">
+                    <span className="w-7 h-7 rounded-lg bg-white/[0.08] border border-white/10 flex items-center justify-center"><Tag className="w-3.5 h-3.5 text-violet-300" /></span>
+                    <span className="text-xs font-bold tracking-widest uppercase text-white">Status Legend</span>
+                    <span className="hidden sm:inline text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/10 text-slate-400 font-mono">On-demand reference</span>
                   </span>
-                  <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-400">
-                    <div><span className="font-semibold text-emerald-400">Active</span> → Currently operating & stable</div>
-                    <div><span className="font-semibold text-teal-400">Expanding</span> → Growing operations & scaling</div>
-                    <div><span className="font-semibold text-cyan-400">Stable</span> → Reliable with consistent output</div>
-                    <div><span className="font-semibold text-amber-400">Needs Upgrade</span> → Infrastructure/service gaps</div>
-                    <div><span className="font-semibold text-blue-400">Seasonal</span> → Operates in cycles / crops</div>
-                    <div><span className="font-semibold text-purple-400">Revisit Later</span> → Deferred evaluation</div>
-                    <div><span className="font-semibold text-indigo-400">Growing</span> → Early-stage but promising</div>
-                  </div>
-                </div>
-
-                {/* Verification Status Tags */}
-                <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800/80 space-y-2">
-                  <span className="font-semibold text-slate-200 block text-[11px] uppercase tracking-wider text-emerald-300">
-                    Verification Status Tags (Compliance & Trust Signals)
-                  </span>
-                  <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-400">
-                    <div><span className="font-semibold text-emerald-400">GSTIN Verified</span> → Registered tax authority</div>
-                    <div><span className="font-semibold text-teal-400">PAN Verified</span> → Business identity verified</div>
-                    <div><span className="font-semibold text-blue-400">ISO Certified</span> → Quality management certified</div>
-                    <div><span className="font-semibold text-amber-400">Chamber Registered</span> → Commerce member</div>
-                    <div><span className="font-semibold text-green-400">Certified Organic</span> → Organic standard certified</div>
-                    <div><span className="font-semibold text-purple-400">Verified Partner</span> → Recognized by major platform</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-
-            {/* ========================================================== */}
-            {/* Search Optimization, Regional Areas & Background Works Audit Panel */}
-            {/* ========================================================== */}
-            <div className="glass-panel p-5 rounded-2xl border border-teal-500/25 bg-slate-900/70 shadow-xl shadow-teal-950/15 space-y-4 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-80 h-80 bg-teal-500/5 rounded-full blur-3xl pointer-events-none" />
-              
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-800/80 relative z-10">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2.5 rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-600 text-white shadow-lg shadow-teal-950/30">
-                    <Navigation className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                        Search Optimization & Regional Coverage Audit
-                      </h3>
-                      <span className="px-2 py-0.5 rounded-full bg-teal-500/15 border border-teal-500/30 text-[10px] text-teal-300 font-mono font-bold">
-                        {searchCoverage.areasSearchedCount} Regional Areas Probed
-                      </span>
+                  <span className={`w-7 h-7 rounded-full border flex items-center justify-center text-xs transition ${showLegend ? 'bg-white text-slate-900 border-white' : 'bg-white/[0.06] border-white/10 text-slate-300'}`}>⌄</span>
+                </button>
+                {showLegend && (
+                  <div className="px-3.5 pb-3.5 grid grid-cols-1 gap-3 border-t border-white/[0.06] pt-3">
+                    <div className="p-2.5 rounded-xl bg-white/[0.04] border border-white/10 space-y-2">
+                      <span className="text-[10px] font-bold tracking-widest uppercase text-indigo-200">Business Status</span>
+                      <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300">
+                        <div><b className="text-emerald-300">Active</b> · operating</div>
+                        <div><b className="text-teal-300">Expanding</b> · scaling</div>
+                        <div><b className="text-cyan-300">Stable</b> · reliable</div>
+                        <div><b className="text-amber-300">Needs Upgrade</b> · gaps</div>
+                        <div><b className="text-blue-300">Seasonal</b> · cyclic</div>
+                        <div><b className="text-purple-300">Revisit Later</b> · deferred</div>
+                      </div>
                     </div>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Transparent background execution metrics: regional hubs taken into range, candidate nodes audited, and noise reduction ratio.
-                    </p>
+                    <div className="p-2.5 rounded-xl bg-white/[0.04] border border-white/10 space-y-2">
+                      <span className="text-[10px] font-bold tracking-widest uppercase text-emerald-200">Verification</span>
+                      <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300">
+                        <div><b className="text-emerald-300">GSTIN Verified</b> · tax</div>
+                        <div><b className="text-teal-300">PAN Verified</b> · identity</div>
+                        <div><b className="text-blue-300">ISO Certified</b> · quality</div>
+                        <div><b className="text-amber-300">Chamber Registered</b> · commerce</div>
+                        <div><b className="text-green-300">Certified Organic</b> · organic</div>
+                        <div><b className="text-purple-300">Verified Partner</b> · platform</div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
-                  <span className="px-3 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 text-xs font-mono">
-                    Perimeter: <strong className="text-teal-400">{productScope === 'radius' ? `${productRangeKm}km Radius` : (productScope === 'india' ? 'Pan-India' : 'Worldwide')}</strong>
-                  </span>
-                  <span className="px-3 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 text-xs font-mono">
-                    Center: <strong className="text-emerald-400">{productScope === 'world' ? 'Global Multi-Region' : (productScope === 'india' ? 'All India' : productCenterLocation)}</strong>
-                  </span>
-                </div>
+                )}
               </div>
-
-              {/* 4 Execution KPI Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 relative z-10">
-                <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800/90">
-                  <div className="text-[10px] text-slate-400 uppercase font-semibold flex items-center justify-between">
-                    <span>Areas Taken into Range</span>
-                    <MapPin className="w-3.5 h-3.5 text-teal-400" />
-                  </div>
-                  <div className="text-2xl font-black text-teal-300 font-mono mt-1">
-                    {searchCoverage.areasSearchedCount} <span className="text-xs font-normal text-slate-400">Trade Hubs</span>
-                  </div>
-                  <div className="text-[10px] text-slate-400 mt-1 truncate" title={searchCoverage.coveragePerimeter}>
-                    {searchCoverage.coveragePerimeter}
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800/90">
-                  <div className="text-[10px] text-slate-400 uppercase font-semibold flex items-center justify-between">
-                    <span>Candidate Nodes Audited</span>
-                    <Search className="w-3.5 h-3.5 text-indigo-400" />
-                  </div>
-                  <div className="text-2xl font-black text-indigo-300 font-mono mt-1">
-                    {searchCoverage.rawCandidatesAudited} <span className="text-xs font-normal text-slate-400">Listings</span>
-                  </div>
-                  <div className="text-[10px] text-slate-400 mt-1">
-                    Direct merchant & distributor listings evaluated
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800/90">
-                  <div className="text-[10px] text-slate-400 uppercase font-semibold flex items-center justify-between">
-                    <span>Accuracy Filter Ratio</span>
-                    <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                  </div>
-                  <div className="text-2xl font-black text-emerald-400 font-mono mt-1">
-                    {searchCoverage.noiseFilteredPercent}% <span className="text-xs font-normal text-slate-400">Noise Reduced</span>
-                  </div>
-                  <div className="text-[10px] text-slate-400 mt-1">
-                    Consumer markups & middlemen eliminated
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800/90">
-                  <div className="text-[10px] text-slate-400 uppercase font-semibold flex items-center justify-between">
-                    <span>Verified Matches Isolated</span>
-                    <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-                  </div>
-                  <div className="text-2xl font-black text-amber-300 font-mono mt-1">
-                    {productViewMode === 'specs' ? productSpecResults.length : productSellerResults.length} <span className="text-xs font-normal text-slate-400">Suppliers</span>
-                  </div>
-                  <div className="text-[10px] text-slate-400 mt-1">
-                    Full spec & wholesale pricing verified
-                  </div>
-                </div>
-              </div>
-
-              {/* Probed Regional Clusters Chips */}
-              <div className="space-y-1.5 relative z-10">
-                <div className="text-[11px] font-semibold text-slate-300 flex items-center justify-between">
-                  <span className="flex items-center space-x-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-rose-400" />
-                    <span>Commercial Areas & Supply Corridors Taken into Range ({searchCoverage.areasSearchedList.length}):</span>
+              {/* Coverage audit — summary always, details collapsible */}
+              <div className="rounded-xl border border-white/[0.07] bg-[rgba(13,19,38,0.54)] overflow-hidden">
+                <button type="button" onClick={() => setShowAudit(v=>!v)} className="w-full flex items-center justify-between gap-2 px-3.5 py-3 hover:bg-white/[0.03] transition text-left">
+                  <span className="flex items-center gap-2 min-w-0">
+                    <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center shrink-0"><Navigation className="w-3.5 h-3.5 text-white" /></span>
+                    <span className="text-xs font-bold tracking-widest uppercase text-white truncate">Coverage Audit</span>
+                    <span className="hidden sm:inline px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-200 border border-teal-500/20 text-[10px] font-mono">{searchCoverage.areasSearchedCount} hubs · {searchCoverage.noiseFilteredPercent}% filtered</span>
                   </span>
-                  <span className="text-[10px] text-teal-400 font-mono">100% Perimeter Probed</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
-                  {searchCoverage.areasSearchedList.map((area, idx) => (
-                    <span
-                      key={idx}
-                      className="px-2.5 py-1 rounded-lg bg-slate-950/90 border border-slate-800 text-slate-300 text-xs font-medium flex items-center space-x-1.5 hover:border-teal-500/40 transition"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
-                      <span>{area}</span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Background Execution Remarks Callout */}
-              <div className="p-3.5 rounded-xl bg-teal-950/40 border border-teal-500/35 text-xs text-teal-200/90 flex items-start space-x-3 relative z-10">
-                <Info className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <span className="font-bold text-teal-300 tracking-wide uppercase text-[10px] block">
-                    Background Works Remarks & Optimization Provenance
+                  <span className="flex items-center gap-2 shrink-0">
+                    <span className="hidden sm:inline text-[10px] font-mono text-slate-400 truncate max-w-[160px]">{searchCoverage.coveragePerimeter}</span>
+                    <span className={`w-7 h-7 rounded-full border flex items-center justify-center text-xs transition ${showAudit ? 'bg-white text-slate-900 border-white' : 'bg-white/[0.06] border-white/10 text-slate-300'}`}>⌄</span>
                   </span>
-                  <p className="text-slate-300 leading-relaxed text-xs">
-                    {searchCoverage.searchRemarks}
-                  </p>
-                </div>
+                </button>
+                {showAudit && (
+                  <div className="px-3.5 pb-3.5 space-y-3 border-t border-white/[0.06] pt-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="p-2.5 rounded-xl bg-white/[0.04] border border-white/10">
+                        <div className="text-[10px] tracking-widest uppercase text-slate-400">Trade Hubs</div>
+                        <div className="text-xl font-black font-mono text-teal-200">{searchCoverage.areasSearchedCount}</div>
+                        <div className="text-[10px] text-slate-500 truncate">{searchCoverage.coveragePerimeter}</div>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-white/[0.04] border border-white/10">
+                        <div className="text-[10px] tracking-widest uppercase text-slate-400">Nodes Audited</div>
+                        <div className="text-xl font-black font-mono text-indigo-200">{searchCoverage.rawCandidatesAudited}</div>
+                        <div className="text-[10px] text-slate-500">Listings evaluated</div>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                      {searchCoverage.areasSearchedList.map((area, idx) => (
+                        <span key={idx} className="px-2 py-1 rounded-full bg-white/[0.06] border border-white/10 text-[11px] text-slate-300 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-teal-400" />{area}</span>
+                      ))}
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-xs text-teal-100 flex gap-2"><Info className="w-4 h-4 text-teal-300 shrink-0 mt-0.5" /><p className="leading-relaxed text-slate-300">{searchCoverage.searchRemarks}</p></div>
+                  </div>
+                )}
               </div>
             </div>
 
