@@ -199,39 +199,165 @@ export async function enrichDomain(
       detectTechnographics(page),
     ]);
 
-    // Shallow contact/about page crawl if primary page lacked contact info
-    if (businessData.emails.length === 0 || businessData.phones.length === 0) {
+    // ====================================================================
+    // MULTI-PAGE DEEP CRAWL
+    // Always visit Contact, About, Team pages — regardless of whether the
+    // homepage already found some data. These pages almost always contain
+    // emails, phone numbers, owner names, and address details that are NOT
+    // on the homepage.
+    //
+    // Strategy:
+    //   1. Build a priority-ordered list of slug candidates to try
+    //   2. For each slug — try direct URL first, then find a matching link
+    //      on the current page (handles relative paths like ../contact)
+    //   3. Extract mailto: hrefs as the most reliable email signal
+    //   4. Extract owner/founder/CEO names from About / Team pages
+    //   5. Merge all results with deduplication
+    // ====================================================================
+
+    // Priority list: contact pages first (best email yield), then about/team
+    const CRAWL_SLUGS = [
+      '/contact-us',
+      '/contact',
+      '/contactus',
+      '/reach-us',
+      '/get-in-touch',
+      '/about-us',
+      '/about',
+      '/aboutus',
+      '/team',
+      '/our-team',
+      '/leadership',
+      '/people',
+      '/management',
+    ];
+
+    const visitedUrls = new Set<string>([page.url()]);
+    let ownerNames: string[] = [];
+
+    for (const slug of CRAWL_SLUGS) {
+      // We stop after 5 successful sub-pages to keep crawl time reasonable
+      if (visitedUrls.size > 6) break;
+
       try {
-        const contactLink = await page.$eval(
-          'a[href*="contact" i], a[href*="about" i], a[href*="services" i]',
-          (el) => el.getAttribute('href') || ''
-        ).catch(() => null);
+        const directUrl = new URL(slug, targetUrl).toString();
 
-        if (contactLink) {
-          const resolvedContactUrl = new URL(contactLink, targetUrl).toString();
-          await page.goto(resolvedContactUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
-          await page.waitForTimeout(1000);
+        // Skip if already visited
+        if (visitedUrls.has(directUrl)) continue;
 
-          const secondaryData = await extractLocalBusinessData(page, cleanDomain);
-          businessData.emails = Array.from(new Set([...businessData.emails, ...secondaryData.emails]));
-          businessData.phones = Array.from(new Set([...businessData.phones, ...secondaryData.phones]));
-          businessData.addresses = Array.from(new Set([...businessData.addresses, ...secondaryData.addresses]));
-          if (secondaryData.productsServices.length > 0) {
-            businessData.productsServices = Array.from(new Set([...businessData.productsServices, ...secondaryData.productsServices]));
-          }
-          if (secondaryData.location && !businessData.location) {
-            businessData.location = secondaryData.location;
-          }
-          if (secondaryData.geoData && !businessData.geoData) {
-            businessData.geoData = secondaryData.geoData;
-          }
-          if (secondaryData.businessDetails && !businessData.businessDetails) {
-            businessData.businessDetails = secondaryData.businessDetails;
-          }
+        // Try navigating directly to the slug
+        let navOk = false;
+        try {
+          const resp = await page.goto(directUrl, { waitUntil: 'domcontentloaded', timeout: 12000 });
+          navOk = (resp?.status() ?? 0) < 400;
+        } catch { }
+
+        // If direct slug 404'd, try finding a matching link on the current page
+        if (!navOk) {
+          try {
+            const slugKeyword = slug.replace(/^\//, '').split('-')[0]; // e.g. 'contact', 'about', 'team'
+            const linkHref = await page.$eval(
+              `a[href*="${slugKeyword}" i]`,
+              (el) => el.getAttribute('href') || ''
+            ).catch(() => '');
+
+            if (!linkHref) continue;
+            const resolvedHref = new URL(linkHref, targetUrl).toString();
+            if (visitedUrls.has(resolvedHref)) continue;
+
+            const resp2 = await page.goto(resolvedHref, { waitUntil: 'domcontentloaded', timeout: 12000 });
+            navOk = (resp2?.status() ?? 0) < 400;
+            if (!navOk) continue;
+          } catch { continue; }
         }
+
+        visitedUrls.add(page.url());
+        await page.waitForTimeout(700);
+
+        // ---- Extract mailto: hrefs (most reliable email source) ----
+        const mailtoEmails: string[] = await page.$$eval(
+          'a[href^="mailto:"]',
+          (anchors) => anchors
+            .map((a) => (a.getAttribute('href') || '').replace(/^mailto:/i, '').split('?')[0].trim().toLowerCase())
+            .filter(Boolean)
+        ).catch(() => []);
+
+        // ---- Extract tel: hrefs ----
+        const telPhones: string[] = await page.$$eval(
+          'a[href^="tel:"]',
+          (anchors) => anchors
+            .map((a) => (a.getAttribute('href') || '').replace(/^tel:/i, '').trim())
+            .filter(Boolean)
+        ).catch(() => []);
+
+        // ---- Run standard extraction on the page ----
+        const subData = await extractLocalBusinessData(page, cleanDomain);
+
+        // Merge emails (mailto: hrefs take priority — they're explicit)
+        const mergedEmails = Array.from(new Set([
+          ...mailtoEmails,
+          ...subData.emails,
+          ...businessData.emails,
+        ])).filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e));
+
+        // Merge phones
+        const mergedPhones = Array.from(new Set([
+          ...telPhones,
+          ...subData.phones,
+          ...businessData.phones,
+        ]));
+
+        businessData.emails = mergedEmails;
+        businessData.phones = mergedPhones;
+        businessData.addresses = Array.from(new Set([...businessData.addresses, ...subData.addresses]));
+
+        if (subData.productsServices.length > 0) {
+          businessData.productsServices = Array.from(new Set([
+            ...businessData.productsServices,
+            ...subData.productsServices,
+          ]));
+        }
+        if (subData.location && !businessData.location) businessData.location = subData.location;
+        if (subData.geoData && !businessData.geoData) businessData.geoData = subData.geoData;
+        if (subData.businessDetails && !businessData.businessDetails) businessData.businessDetails = subData.businessDetails;
+
+        // ---- Owner / Founder / CEO / Director name extraction ----
+        // Only meaningful on About/Team/Leadership pages
+        if (/about|team|leadership|people|management/i.test(slug)) {
+          try {
+            const pageText = await page.evaluate(() => document.body.innerText || '');
+            // Patterns: "Founder: John Smith", "CEO — Priya Sharma", "MD: Rahul Gupta"
+            const rolePatterns = [
+              /(?:founder|co-founder|ceo|cto|coo|director|md|managing director|owner|proprietor|president|chairman)\s*[:\-–—]\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})/gi,
+              /([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})\s*[,–—]\s*(?:founder|co-founder|ceo|cto|coo|director|md|owner|proprietor)/gi,
+            ];
+            for (const pattern of rolePatterns) {
+              let match: RegExpExecArray | null;
+              while ((match = pattern.exec(pageText)) !== null) {
+                const name = match[1].trim();
+                if (name.length > 3 && name.length < 60 && !ownerNames.includes(name)) {
+                  ownerNames.push(name);
+                }
+                if (ownerNames.length >= 5) break;
+              }
+            }
+          } catch { }
+        }
+
       } catch {
-        // Non-critical: ignore secondary crawl failure
+        // Non-critical: a broken sub-page should never kill the whole enrichment
       }
+    }
+
+    // Attach extracted owner names to businessDetails for UI display
+    if (ownerNames.length > 0) {
+      businessData.businessDetails = {
+        ...(businessData.businessDetails || { rawDetails: null }),
+        rawDetails: [
+          ownerNames.map((n) => `Key Person: ${n}`).join(' | '),
+          businessData.businessDetails?.rawDetails,
+        ].filter(Boolean).join(' · '),
+      };
     }
 
     await browser.close();

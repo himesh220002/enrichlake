@@ -212,6 +212,18 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
         }
       }
 
+      // Multiple branch offices listed in schema
+      if (item.branchOf || item['@type'] === 'Place') {
+        const name = item.name || '';
+        const addr = item.address;
+        if (addr && typeof addr === 'object') {
+          const formatted = [addr.streetAddress, addr.addressLocality, addr.addressRegion, addr.postalCode]
+            .filter(Boolean).join(', ');
+          if (formatted && name) addresses.push(`${name}: ${formatted}`);
+          else if (formatted) addresses.push(formatted);
+        }
+      }
+
       if (item.geo) {
         const gLat = parseFloat(item.geo.latitude);
         const gLng = parseFloat(item.geo.longitude);
@@ -349,20 +361,162 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
     category = 'Financial Technology & Payments';
   }
 
-  // 11. Location & Address — STRICT: NO FAKE MALDA OR FAKE ADDRESS
-  let formattedAddress: string | null = addresses[0] || null;
+  // ================================================================
+  // TEXT-BASED ADDRESS EXTRACTION
+  // Schema.org is unreliable — many sites only have addresses in
+  // visible text on Contact pages. We run three layers:
+  //   A) Targeted DOM elements (address, .contact, .office, etc.)
+  //   B) Multi-office block detection ("Jaipur Office \n addr \n ...")
+  //   C) Full-text Indian pincode + city regex
+  // ================================================================
+
+  // A) Targeted DOM element extraction
+  const domAddresses: string[] = await page.evaluate(() => {
+    const results: string[] = [];
+    const selectors = [
+      'address',
+      '[class*="address" i]',
+      '[class*="location" i]',
+      '[class*="office" i]',
+      '[class*="contact-detail" i]',
+      '[class*="contact_detail" i]',
+      '[class*="our-office" i]',
+      '[id*="address" i]',
+      '[id*="contact" i]',
+      '[itemprop="address"]',
+      '[itemprop="streetAddress"]',
+      'footer p',
+      '.footer p',
+      '#footer p',
+    ];
+    for (const sel of selectors) {
+      try {
+        const els = document.querySelectorAll(sel);
+        els.forEach((el) => {
+          const text = (el.textContent || '').trim().replace(/\s+/g, ' ');
+          // Must have an Indian pincode OR known city pattern to qualify
+          if (/\b\d{6}\b/.test(text) || /\b(mumbai|delhi|bangalore|bengaluru|hyderabad|jaipur|gurugram|gurgaon|pune|chennai|kolkata|ahmedabad|surat|lucknow|kochi|coimbatore|noida|thane|bhopal|indore|nagpur|patna|chandigarh|malda|siliguri)\b/i.test(text)) {
+            if (text.length > 15 && text.length < 500) results.push(text);
+          }
+        });
+      } catch {}
+    }
+    return results;
+  }).catch(() => [] as string[]);
+
+  // B) Multi-office block detection from visible text
+  // Pattern: "[City] Office\n[Address lines]...[Pincode]"
+  const officeBlockAddresses: string[] = [];
+  const officeBlockRegex = /([A-Z][a-zA-Z\s]+)\s+(?:Office|Branch|Centre|Center|HQ|Headquarters)[\s\n]+([^\n]{10,}(?:[\n][^\n]{5,}){0,4})/gi;
+  let officeMatch: RegExpExecArray | null;
+  while ((officeMatch = officeBlockRegex.exec(visibleText)) !== null) {
+    const officeCity = officeMatch[1].trim();
+    const officeAddr = officeMatch[2].replace(/\n/g, ', ').replace(/\s+/g, ' ').trim();
+    if (officeAddr.length > 10) {
+      officeBlockAddresses.push(`${officeCity} Office: ${officeAddr}`);
+    }
+    if (officeBlockAddresses.length >= 6) break;
+  }
+
+  // C) Full-text Indian address patterns (pincode anchored)
+  const textAddresses: string[] = [];
+  // Indian pincode: 6 digits, preceded by city/area text
+  const pincodeRegex = /([A-Za-z0-9\s,\.\-\/]+?[A-Za-z\s]+\s*[\-–]?\s*\d{6})/g;
+  let pincodeMatch: RegExpExecArray | null;
+  while ((pincodeMatch = pincodeRegex.exec(visibleText)) !== null) {
+    const candidate = pincodeMatch[1].replace(/\s+/g, ' ').trim();
+    // Must be long enough to be an address, not just a sentence
+    if (candidate.length >= 15 && candidate.length <= 300) {
+      textAddresses.push(candidate);
+    }
+    if (textAddresses.length >= 5) break;
+  }
+
+  // Merge all address sources — schema first (most structured), then DOM, then text
+  const allAddresses = Array.from(new Set([
+    ...addresses,
+    ...domAddresses,
+    ...officeBlockAddresses,
+    ...textAddresses,
+  ])).map((a) => a.replace(/\s+/g, ' ').trim()).filter((a) => a.length > 10).slice(0, 8);
+
+  // ================================================================
+  // LOCATION — city / state / country parsing from best address
+  // ================================================================
+  const INDIAN_CITIES: Record<string, { city: string; state: string }> = {
+    mumbai: { city: 'Mumbai', state: 'Maharashtra' },
+    pune: { city: 'Pune', state: 'Maharashtra' },
+    thane: { city: 'Thane', state: 'Maharashtra' },
+    nagpur: { city: 'Nagpur', state: 'Maharashtra' },
+    delhi: { city: 'New Delhi', state: 'Delhi' },
+    'new delhi': { city: 'New Delhi', state: 'Delhi' },
+    noida: { city: 'Noida', state: 'Uttar Pradesh' },
+    gurugram: { city: 'Gurugram', state: 'Haryana' },
+    gurgaon: { city: 'Gurugram', state: 'Haryana' },
+    bangalore: { city: 'Bangalore', state: 'Karnataka' },
+    bengaluru: { city: 'Bangalore', state: 'Karnataka' },
+    hyderabad: { city: 'Hyderabad', state: 'Telangana' },
+    chennai: { city: 'Chennai', state: 'Tamil Nadu' },
+    kolkata: { city: 'Kolkata', state: 'West Bengal' },
+    ahmedabad: { city: 'Ahmedabad', state: 'Gujarat' },
+    surat: { city: 'Surat', state: 'Gujarat' },
+    jaipur: { city: 'Jaipur', state: 'Rajasthan' },
+    lucknow: { city: 'Lucknow', state: 'Uttar Pradesh' },
+    kochi: { city: 'Kochi', state: 'Kerala' },
+    coimbatore: { city: 'Coimbatore', state: 'Tamil Nadu' },
+    bhopal: { city: 'Bhopal', state: 'Madhya Pradesh' },
+    indore: { city: 'Indore', state: 'Madhya Pradesh' },
+    patna: { city: 'Patna', state: 'Bihar' },
+    chandigarh: { city: 'Chandigarh', state: 'Punjab' },
+    malda: { city: 'Malda', state: 'West Bengal' },
+    siliguri: { city: 'Siliguri', state: 'West Bengal' },
+    'english bazar': { city: 'English Bazar', state: 'West Bengal' },
+    'new town': { city: 'New Town', state: 'West Bengal' },
+    guwahati: { city: 'Guwahati', state: 'Assam' },
+    bhubaneswar: { city: 'Bhubaneswar', state: 'Odisha' },
+    visakhapatnam: { city: 'Visakhapatnam', state: 'Andhra Pradesh' },
+    vadodara: { city: 'Vadodara', state: 'Gujarat' },
+    amritsar: { city: 'Amritsar', state: 'Punjab' },
+    agra: { city: 'Agra', state: 'Uttar Pradesh' },
+    varanasi: { city: 'Varanasi', state: 'Uttar Pradesh' },
+    meerut: { city: 'Meerut', state: 'Uttar Pradesh' },
+  };
+
+  let formattedAddress: string | null = allAddresses[0] || null;
   let city: string | null = null;
   let state: string | null = null;
   let country: string | null = null;
 
-  if (!formattedAddress) {
-    // Check if footer explicitly says "Remote Worldwide" or similar
-    if (/\b(remote worldwide|fully remote|remote-first)\b/i.test(fullText)) {
-      formattedAddress = 'Remote Worldwide';
+  if (!formattedAddress && /\b(remote worldwide|fully remote|remote-first)\b/i.test(fullText)) {
+    formattedAddress = 'Remote Worldwide';
+  }
+
+  // Try to extract city/state from the best address or visible text
+  const textToScan = (formattedAddress || visibleText).toLowerCase();
+  for (const [key, val] of Object.entries(INDIAN_CITIES)) {
+    if (textToScan.includes(key)) {
+      city = val.city;
+      state = val.state;
+      country = 'India';
+      break;
+    }
+  }
+  // Also check for state names directly if no city match
+  if (!state) {
+    const STATE_MAP: Record<string, string> = {
+      'west bengal': 'West Bengal', 'maharashtra': 'Maharashtra', 'karnataka': 'Karnataka',
+      'telangana': 'Telangana', 'rajasthan': 'Rajasthan', 'gujarat': 'Gujarat',
+      'tamil nadu': 'Tamil Nadu', 'kerala': 'Kerala', 'haryana': 'Haryana',
+      'uttar pradesh': 'Uttar Pradesh', 'madhya pradesh': 'Madhya Pradesh',
+      'bihar': 'Bihar', 'punjab': 'Punjab', 'odisha': 'Odisha', 'assam': 'Assam',
+      'andhra pradesh': 'Andhra Pradesh', 'jharkhand': 'Jharkhand',
+    };
+    for (const [k, v] of Object.entries(STATE_MAP)) {
+      if (textToScan.includes(k)) { state = v; country = 'India'; break; }
     }
   }
 
-  const location = formattedAddress
+  const location = formattedAddress || city
     ? { formattedAddress, city, state, country }
     : null;
 
@@ -418,7 +572,7 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
     description: metaDescription || `${companyName} is an active digital enterprise in ${category}.`,
     emails: allEmails.slice(0, 10),
     phones: validPhones.slice(0, 5),
-    addresses: Array.from(new Set(addresses)),
+    addresses: allAddresses,
     location,
     geoData,
     businessDetails,

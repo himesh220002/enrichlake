@@ -94,6 +94,10 @@ export interface EnrichedProfileRecord {
     icebreakers?: string[];
     buyingSignals?: string[];
   };
+  socialIntel?: {
+    facebook?: any;
+    metaAds?: any;
+  };
   savedAt: string;
   updatedAt: string;
 }
