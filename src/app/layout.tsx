@@ -17,16 +17,13 @@ export const metadata: Metadata = {
   description: "Headless Playwright stealth scraping, technographics, 2026 BYOK AI RevOps, and B2B procurement sourcing with GST-verified intelligence.",
 };
 
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
-
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col"><Navbar />{children}<Footer /></body>
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }
