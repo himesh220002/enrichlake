@@ -60,7 +60,269 @@ import {
   Activity,
   FileText,
   FolderTree,
+  ChevronDown,
+  Users,
+  Hash,
+  Image as ImageIcon,
+  FileDown,
+  Code,
+  Compass,
+  Maximize2,
+  Minimize2,
+  Columns,
+  Send,
+  Radio,
 } from 'lucide-react';
+import type { PitchTone, GeneratedPitchResult } from '@/lib/ai/pitchGenerator';
+
+const InstagramIcon = ({ className = 'w-4 h-4' }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+  </svg>
+);
+
+const LinkedinIcon = ({ className = 'w-4 h-4' }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+    <rect width="4" height="12" x="2" y="9" />
+    <circle cx="4" cy="4" r="2" />
+  </svg>
+);
+
+const FacebookIcon = ({ className = 'w-4 h-4' }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+  </svg>
+);
+
+const MetaIcon = ({ className = 'w-4 h-4' }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 7.2c-2.4 0-4.5 1.5-5.5 3.7C5.5 8.7 3.4 7.2 1 7.2 0.4 7.2 0 7.6 0 8.2v7.6c0 0.6 0.4 1 1 1 2.4 0 4.5-1.5 5.5-3.7 1 2.2 3.1 3.7 5.5 3.7s4.5-1.5 5.5-3.7c1 2.2 3.1 3.7 5.5 3.7 0.6 0 1-0.4 1-1V8.2c0-0.6-0.4-1-1-1-2.4 0-4.5 1.5-5.5 3.7-1-2.2-3.1-3.7-5.5-3.7zm-9 7.6c-1.7 0-3-1.3-3-3s1.3-3 3-3c1.3 0 2.4 0.8 2.8 2-.4 1.2-1.5 2-2.8 2zm18 0c-1.3 0-2.4-0.8-2.8-2 .4-1.2 1.5-2 2.8-2 1.7 0 3 1.3 3 3s-1.3 3-3 3z" />
+  </svg>
+);
+
+/** Parses inline markdown: **bold**, `code`, [link](url) */
+function parseInlineMarkdown(text: string): React.ReactNode[] {
+  const parts: React.ReactNode[] = [];
+  const regex = /(\*\*.*?\*\*|`.*?`|\[.*?\]\(.*?\))/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    const token = match[0];
+    if (token.startsWith('**') && token.endsWith('**')) {
+      parts.push(<strong key={match.index} className="font-bold text-white">{token.slice(2, -2)}</strong>);
+    } else if (token.startsWith('`') && token.endsWith('`')) {
+      parts.push(
+        <code key={match.index} className="px-1.5 py-0.5 rounded bg-slate-800 text-violet-300 font-mono text-xs border border-white/10">
+          {token.slice(1, -1)}
+        </code>
+      );
+    } else if (token.startsWith('[') && token.includes('](')) {
+      const closingBracket = token.indexOf('](');
+      const linkText = token.slice(1, closingBracket);
+      const linkUrl = token.slice(closingBracket + 2, -1);
+      parts.push(
+        <a key={match.index} href={linkUrl} target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:text-violet-300 underline underline-offset-2 font-medium">
+          {linkText}
+        </a>
+      );
+    }
+    lastIndex = regex.lastIndex;
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+  return parts.length > 0 ? parts : [text];
+}
+
+/** Formatted Rich Markdown Renderer */
+function RenderedMarkdownView({ markdown }: { markdown: string }) {
+  if (!markdown || !markdown.trim()) {
+    return <p className="text-slate-500 text-xs italic">No content available to preview.</p>;
+  }
+
+  const lines = markdown.split('\n');
+  const elements: React.ReactNode[] = [];
+  let inCodeBlock = false;
+  let codeBuffer: string[] = [];
+  let listBuffer: { type: 'ul' | 'ol'; items: string[] } | null = null;
+  let tableBuffer: string[] = [];
+
+  const flushList = () => {
+    if (!listBuffer) return;
+    if (listBuffer.type === 'ul') {
+      elements.push(
+        <ul key={`list-${elements.length}`} className="list-disc pl-5 space-y-1.5 text-slate-300 text-sm my-3 leading-relaxed">
+          {listBuffer.items.map((item, idx) => (
+            <li key={idx}>{parseInlineMarkdown(item)}</li>
+          ))}
+        </ul>
+      );
+    } else {
+      elements.push(
+        <ol key={`list-${elements.length}`} className="list-decimal pl-5 space-y-1.5 text-slate-300 text-sm my-3 leading-relaxed">
+          {listBuffer.items.map((item, idx) => (
+            <li key={idx}>{parseInlineMarkdown(item)}</li>
+          ))}
+        </ol>
+      );
+    }
+    listBuffer = null;
+  };
+
+  const flushTable = () => {
+    if (tableBuffer.length === 0) return;
+    const rows = tableBuffer
+      .map((row) => row.split('|').map((c) => c.trim()).filter((_, i, arr) => i !== 0 && i !== arr.length - 1))
+      .filter((r) => r.length > 0);
+    if (rows.length > 0) {
+      const headerRow = rows[0];
+      const bodyRows = rows.slice(1).filter((r) => !r.every((c) => /^[-:]+$/.test(c)));
+      elements.push(
+        <div key={`table-${elements.length}`} className="my-4 overflow-x-auto rounded-xl border border-white/10 shadow-sm">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="bg-slate-900/90 text-slate-200 font-semibold border-b border-white/10 uppercase tracking-wider text-[11px]">
+              <tr>
+                {headerRow.map((cell, idx) => (
+                  <th key={idx} className="p-3 border-r border-white/10 last:border-r-0">{cell}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.06] bg-slate-950/40">
+              {bodyRows.map((row, rIdx) => (
+                <tr key={rIdx} className="hover:bg-white/[0.03]">
+                  {row.map((cell, cIdx) => (
+                    <td key={cIdx} className="p-3 text-slate-300 border-r border-white/10 last:border-r-0">{cell}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    tableBuffer = [];
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i];
+    const trimmed = rawLine.trim();
+
+    // Code blocks
+    if (trimmed.startsWith('```')) {
+      if (inCodeBlock) {
+        elements.push(
+          <pre key={`code-${elements.length}`} className="bg-slate-950 p-4 rounded-xl border border-white/10 text-xs font-mono text-violet-200 my-3 overflow-x-auto select-text leading-relaxed">
+            <code>{codeBuffer.join('\n')}</code>
+          </pre>
+        );
+        codeBuffer = [];
+        inCodeBlock = false;
+      } else {
+        flushList();
+        flushTable();
+        inCodeBlock = true;
+      }
+      continue;
+    }
+
+    if (inCodeBlock) {
+      codeBuffer.push(rawLine);
+      continue;
+    }
+
+    // Table rows
+    if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+      flushList();
+      tableBuffer.push(trimmed);
+      continue;
+    } else if (tableBuffer.length > 0) {
+      flushTable();
+    }
+
+    // Unordered list
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+      const itemText = trimmed.slice(2).trim();
+      if (!listBuffer || listBuffer.type !== 'ul') {
+        flushList();
+        listBuffer = { type: 'ul', items: [itemText] };
+      } else {
+        listBuffer.items.push(itemText);
+      }
+      continue;
+    }
+
+    // Ordered list
+    const olMatch = trimmed.match(/^\d+\.\s+(.*)$/);
+    if (olMatch) {
+      const itemText = olMatch[1].trim();
+      if (!listBuffer || listBuffer.type !== 'ol') {
+        flushList();
+        listBuffer = { type: 'ol', items: [itemText] };
+      } else {
+        listBuffer.items.push(itemText);
+      }
+      continue;
+    }
+
+    // Flush any pending list
+    flushList();
+
+    if (!trimmed) continue;
+
+    // Headings
+    if (trimmed.startsWith('# ')) {
+      elements.push(
+        <h1 key={`h1-${elements.length}`} className="text-2xl font-black text-white tracking-tight mt-6 mb-3 border-b border-white/10 pb-2">
+          {trimmed.slice(2).trim()}
+        </h1>
+      );
+    } else if (trimmed.startsWith('## ')) {
+      elements.push(
+        <h2 key={`h2-${elements.length}`} className="text-xl font-bold text-white tracking-tight mt-5 mb-2.5">
+          {trimmed.slice(3).trim()}
+        </h2>
+      );
+    } else if (trimmed.startsWith('### ')) {
+      elements.push(
+        <h3 key={`h3-${elements.length}`} className="text-lg font-semibold text-slate-100 tracking-tight mt-4 mb-2">
+          {trimmed.slice(4).trim()}
+        </h3>
+      );
+    } else if (trimmed.startsWith('#### ')) {
+      elements.push(
+        <h4 key={`h4-${elements.length}`} className="text-base font-semibold text-slate-200 mt-3 mb-1.5">
+          {trimmed.slice(5).trim()}
+        </h4>
+      );
+    } else if (trimmed.startsWith('> ')) {
+      elements.push(
+        <blockquote key={`quote-${elements.length}`} className="border-l-4 border-violet-500 pl-4 py-1.5 italic text-slate-300 bg-violet-500/5 rounded-r my-3">
+          {parseInlineMarkdown(trimmed.slice(2).trim())}
+        </blockquote>
+      );
+    } else if (trimmed === '---') {
+      elements.push(<hr key={`hr-${elements.length}`} className="border-white/10 my-5" />);
+    } else {
+      elements.push(
+        <p key={`p-${elements.length}`} className="text-slate-300 text-sm leading-relaxed mb-3">
+          {parseInlineMarkdown(trimmed)}
+        </p>
+      );
+    }
+  }
+
+  flushList();
+  flushTable();
+
+  return <div className="space-y-1">{elements}</div>;
+}
 import { EnrichedProfileRecord, ProfileStorageService, ProfileSourceOrigin } from '@/lib/storage/profileStorage';
 import {
   KeywordScrapedItem,
@@ -244,13 +506,103 @@ const AI_PROVIDERS_2026 = [
 
 
 export default function EnrichmentDashboard() {
-  const [activeTab, setActiveTab] = useState<'live' | 'maps' | 'products' | 'saved' | 'byok' | 'rules' | 'queue'>('products');
+  const [activeTab, setActiveTab] = useState<'live' | 'maps' | 'products' | 'actors' | 'saved' | 'byok' | 'rules' | 'queue'>('products');
   const [domainInput, setDomainInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<EnrichmentResult | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+
+  // Squarespace-Style Mega Navigation State
+  const [hoveredMegaMenu, setHoveredMegaMenu] = useState<string | null>(null);
+  const megaMenuCloseTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const handleMegaMenuEnter = (menuKey: string) => {
+    if (megaMenuCloseTimerRef.current) {
+      clearTimeout(megaMenuCloseTimerRef.current);
+      megaMenuCloseTimerRef.current = null;
+    }
+    setHoveredMegaMenu(menuKey);
+  };
+
+  const handleMegaMenuLeave = () => {
+    megaMenuCloseTimerRef.current = setTimeout(() => {
+      setHoveredMegaMenu(null);
+    }, 180);
+  };
+
+  // Actor Studio & Web/Social Scraper State
+  const [actorType, setActorType] = useState<'web_content' | 'instagram' | 'linkedin' | 'facebook' | 'meta_ads' | 'omnichannel_360'>('web_content');
+  const [adPlatformFilter, setAdPlatformFilter] = useState<'all' | 'facebook' | 'instagram'>('all');
+  const [actorInput, setActorInput] = useState<string>('https://news.ycombinator.com');
+  const [actorLoading, setActorLoading] = useState<boolean>(false);
+  const [actorProgress, setActorProgress] = useState<number>(0);
+  const [actorCurrentStage, setActorCurrentStage] = useState<string>('');
+  const [actorLogs, setActorLogs] = useState<Array<{ time: string; stage: string; status: 'info' | 'success' | 'warn' | 'error' }>>([]);
+  const [actorResult, setActorResult] = useState<any>(null);
+  const [actorError, setActorError] = useState<string | null>(null);
+  const [actorViewTab, setActorViewTab] = useState<'preview' | 'markdown' | 'headings' | 'json' | 'refined'>('preview');
+  const [enrichingContent, setEnrichingContent] = useState<boolean>(false);
+  const [refinedBriefingCopied, setRefinedBriefingCopied] = useState<boolean>(false);
+  const [actorRenderJs, setActorRenderJs] = useState<boolean>(true);
+  const [actorMarkdownCopied, setActorMarkdownCopied] = useState<boolean>(false);
+  const [markdownPreviewMode, setMarkdownPreviewMode] = useState<'split' | 'preview_only' | 'source_only'>('split');
+
+  // AI Outreach Pitch Synthesizer State
+  const [pitchModalOpen, setPitchModalOpen] = useState<boolean>(false);
+  const [pitchTargetData, setPitchTargetData] = useState<any>(null);
+  const [pitchTone, setPitchTone] = useState<PitchTone>('direct');
+  const [pitchTab, setPitchTab] = useState<'email' | 'linkedin' | 'whatsapp'>('email');
+  const [pitchGenerating, setPitchGenerating] = useState<boolean>(false);
+  const [generatedPitch, setGeneratedPitch] = useState<GeneratedPitchResult | null>(null);
+  const [pitchCopiedSubject, setPitchCopiedSubject] = useState<boolean>(false);
+  const [pitchCopiedBody, setPitchCopiedBody] = useState<boolean>(false);
+
+  const handleSelectActorType = (
+    type: 'web_content' | 'instagram' | 'linkedin' | 'facebook' | 'meta_ads' | 'omnichannel_360',
+    defaultInput?: string
+  ) => {
+    setActorType(type);
+    setActorResult(null);
+    setActorError(null);
+    if (defaultInput) {
+      setActorInput(defaultInput);
+    }
+  };
+
+  // Dynamic Base Origin & Sub-Pages for Web Content Crawler
+  const parsedWebTarget = useMemo(() => {
+    if (!actorInput || !actorInput.trim()) return null;
+    let raw = actorInput.trim();
+    if (!/^https?:\/\//i.test(raw)) raw = `https://${raw}`;
+    try {
+      const u = new URL(raw);
+      return {
+        origin: u.origin,
+        hostname: u.hostname.replace(/^www\./, ''),
+        pathname: u.pathname,
+      };
+    } catch {
+      return null;
+    }
+  }, [actorInput]);
+
+  // Sub-pages extracted from internal links
+  const discoveredSubPages = useMemo(() => {
+    if (!actorResult?.links?.internal || !Array.isArray(actorResult.links.internal)) return [];
+    const set = new Set<string>();
+    actorResult.links.internal.forEach((l: string) => {
+      try {
+        const u = new URL(l);
+        if (u.pathname && u.pathname !== '/' && !u.pathname.includes('.') && u.pathname.length < 32) {
+          set.add(u.pathname);
+        }
+      } catch {}
+    });
+    return Array.from(set).slice(0, 10);
+  }, [actorResult]);
 
   // Google Maps & Keyword Scraper State
   const [mapsKeywordsInput, setMapsKeywordsInput] = useState('16gb ram, i5, rtx3050, 144hz display, under 1 lakh');
@@ -266,7 +618,7 @@ export default function EnrichmentDashboard() {
 
   // Universal Product & Specs Finder State (User-specified Category, Product, Spec, Price Range, and Scope)
   const [productCategoryInput, setProductCategoryInput] = useState('Electronics & Computers (IT)');
-  const [productNameInput, setProductNameInput] = useState('Acer Nitro V15');
+  const [productNameInput, setProductNameInput] = useState('Acer');
   const [productSpecInput, setProductSpecInput] = useState('i5-12450H, 16GB DDR5, RTX 3050, 144Hz');
   const [selectedTemplateGroup, setSelectedTemplateGroup] = useState<string>('all');
   const [appliedTemplateId, setAppliedTemplateId] = useState<string | null>('it_laptops');
@@ -291,9 +643,9 @@ export default function EnrichmentDashboard() {
 
   // Dynamic +Spec Criteria Builder State
   const [specsList, setSpecsList] = useState<SpecFilterItem[]>([
-    { id: 'spec_1', name: 'Processor', mode: 'same', value: 'i5-12450H' },
-    { id: 'spec_2', name: 'RAM', mode: 'same', value: '16GB DDR5' },
-    { id: 'spec_3', name: 'GPU', mode: 'same', value: 'RTX 3050' },
+    { id: 'spec_1', name: 'Processor', mode: 'range', minValue: 'i5-13400H' },
+    { id: 'spec_2', name: 'RAM', mode: 'range', minValue: '16GB DDR4' },
+    { id: 'spec_3', name: 'GPU', mode: 'range', minValue: 'RTX 3050' },
     { id: 'spec_4', name: 'Display Refresh', mode: 'range', minValue: '144Hz', maxValue: '240Hz' },
   ]);
 
@@ -319,11 +671,11 @@ export default function EnrichmentDashboard() {
     );
   };
 
-  const [productMinPrice, setProductMinPrice] = useState('70000');
-  const [productMaxPrice, setProductMaxPrice] = useState('100000');
-  const [productPriceRangeText, setProductPriceRangeText] = useState('₹70,000 - ₹1,00,000');
+  const [productMinPrice, setProductMinPrice] = useState('60000');
+  const [productMaxPrice, setProductMaxPrice] = useState('120000');
+  const [productPriceRangeText, setProductPriceRangeText] = useState('₹60,000 - ₹1,20,000');
   const [productScope, setProductScope] = useState<'radius' | 'india' | 'world'>('radius');
-  const [productCenterLocation, setProductCenterLocation] = useState('Malda, WB, India');
+  const [productCenterLocation, setProductCenterLocation] = useState('Kolkata, WB, India');
   const [productRangeKm, setProductRangeKm] = useState(500);
   const [productMaxResults, setProductMaxResults] = useState(50);
   const [productViewMode, setProductViewMode] = useState<'specs' | 'sellers'>('specs');
@@ -505,15 +857,15 @@ export default function EnrichmentDashboard() {
   const PRESET_DOMAINS = [
     {
       name: 'Top Indian E-Com',
-      domains: ['flipkart.com', 'meesho.com', 'nykaa.com', 'tatadigital.com', 'jiomart.com'],
+      domains: ['flipkart.com', 'meesho.com', 'nykaa.com', 'tatadigital.com', 'jiomart.com', 'amazon.in', 'myntra.com', 'ajio.com', 'shopify.com', 'wholesalecart.in', 'alibaba.com', 'indiamart.com']
     },
     {
       name: 'Fintech & SaaS',
-      domains: ['razorpay.com', 'postman.com', 'linear.app', 'notion.so', 'browserstack.com'],
+      domains: ['razorpay.com', 'postman.com', 'linear.app', 'notion.so', 'browserstack.com', 'stripe.com', 'paypal.com', 'airbnb.com'],
     },
     {
       name: 'Hardware & PC Brands',
-      domains: ['asus.com', 'lenovo.com', 'dell.com', 'hp.com', 'acer.com'],
+      domains: ['asus.com', 'lenovo.com', 'dell.com', 'hp.com', 'acer.com', 'msicomputer.com', 'samsung.com', 'huawei.com', 'lg.com', 'microsoft.com', 'gigabite']
     },
   ];
 
@@ -587,9 +939,7 @@ export default function EnrichmentDashboard() {
       const data = await res.json();
       if (data.data) {
         setResult(data.data);
-        if (data.aiSynthesis) {
-          setAiAnalysis(data.aiSynthesis);
-        }
+        // AI synthesis is on-demand — cleared so user must click Generate
         setRecordsProcessed((prev) => prev + 1);
         setMoneySaved((prev) => +(prev + 0.45).toFixed(2));
       } else {
@@ -601,6 +951,452 @@ export default function EnrichmentDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  /** On-demand AI synthesis — only fires when user clicks "Generate Analysis" */
+  const handleGenerateAI = async () => {
+    if (!result || !apiKey) return;
+    setAiLoading(true);
+    try {
+      const activeModel = customModel.trim() || selectedModel;
+      const res = await fetch('/api/ai-analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          byokConfig: { provider: selectedProvider, model: activeModel, apiKey },
+          companyData: {
+            domain: result.domain,
+            companyName: result.companyName,
+            description: result.description,
+            technologies: result.technographics.technologies.map((t) => t.name),
+            emails: result.contactInfo.emails,
+            phones: result.contactInfo.phones,
+            socialLinks: result.contactInfo.socialLinks as Record<string, string>,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.aiSynthesis) setAiAnalysis(data.aiSynthesis);
+      else alert(data.error || 'AI synthesis returned no result');
+    } catch (err: any) {
+      alert('AI analysis failed: ' + err.message);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  /** Runs Actor scraper (Web Content, Instagram, LinkedIn, Facebook, Meta Ads) with live progress telemetry */
+  const handleRunActorScraper = async (
+    overrideTarget?: string,
+    overrideType?: 'web_content' | 'instagram' | 'linkedin' | 'facebook' | 'meta_ads' | 'omnichannel_360'
+  ) => {
+    const targetToUse = (overrideTarget || actorInput).trim();
+    const typeToUse = overrideType || actorType;
+    if (!targetToUse) return;
+
+    setActorLoading(true);
+    setActorError(null);
+    setActorResult(null);
+    setActorProgress(18);
+    setActorCurrentStage(
+      typeToUse === 'omnichannel_360'
+        ? 'Spinning up 360° multi-platform sweep (Web, Social & Meta Ads)...'
+        : 'Spinning up stealth crawler engine & evasion headers...'
+    );
+    const start = Date.now();
+
+    const actorEngineName =
+      typeToUse === 'web_content'
+        ? 'Website Content Markdown Crawler'
+        : typeToUse === 'instagram'
+        ? 'Instagram Profile & Media Harvester'
+        : typeToUse === 'linkedin'
+        ? 'LinkedIn Entity & Company Scanner'
+        : typeToUse === 'facebook'
+        ? 'Facebook Public Page & Post Harvester'
+        : typeToUse === 'meta_ads'
+        ? 'Meta Ad Library & Creative Intelligence Scanner'
+        : '360° Omnichannel Lead Fusion Sweep';
+
+    setActorLogs([
+      {
+        time: '0.0s',
+        stage: `Initiated ${actorEngineName} on ${targetToUse}`,
+        status: 'info',
+      },
+    ]);
+
+    const stepTimer1 = setTimeout(() => {
+      setActorProgress(45);
+      setActorCurrentStage(
+        typeToUse === 'omnichannel_360'
+          ? 'Parallel sweeping Web, Facebook, Meta Ads, Instagram & LinkedIn...'
+          : 'Navigating to target & resolving live DOM...'
+      );
+      setActorLogs((prev) => [
+        ...prev,
+        {
+          time: `${((Date.now() - start) / 1000).toFixed(1)}s`,
+          stage:
+            typeToUse === 'omnichannel_360'
+              ? 'Querying Web Content, Facebook Page, Meta Ad Library, Instagram & LinkedIn concurrently'
+              : 'Navigated to target URL; executing stealth script evaluations & DOM hydration',
+          status: 'info',
+        },
+      ]);
+    }, 1500);
+
+    const stepTimer2 = setTimeout(() => {
+      setActorProgress(75);
+      setActorCurrentStage(
+        typeToUse === 'omnichannel_360'
+          ? 'Computing Digital Presence Score & merging unified contact graph...'
+          : 'Parsing AST, structural tags, and schema graphs...'
+      );
+      setActorLogs((prev) => [
+        ...prev,
+        {
+          time: `${((Date.now() - start) / 1000).toFixed(1)}s`,
+          stage:
+            typeToUse === 'omnichannel_360'
+              ? 'Synthesizing multi-platform metrics, reach volume, and active ad creative insights'
+              : 'Transforming DOM into clean Markdown, headings outline, and entity metadata',
+          status: 'info',
+        },
+      ]);
+    }, 3800);
+
+    try {
+      const endpoint = typeToUse === 'omnichannel_360' ? '/api/actor-fusion' : '/api/actor-scrape';
+      const reqPayload =
+        typeToUse === 'omnichannel_360'
+          ? { target: targetToUse }
+          : {
+              type: typeToUse,
+              target: targetToUse,
+              options: {
+                renderJs: actorRenderJs,
+                includeLinks: true,
+                includeImages: true,
+              },
+            };
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reqPayload),
+      });
+
+      clearTimeout(stepTimer1);
+      clearTimeout(stepTimer2);
+
+      const json = await res.json();
+      if (!res.ok || json.error) {
+        throw new Error(json.error || 'Actor scraping request failed');
+      }
+
+      const elapsed = ((Date.now() - start) / 1000).toFixed(2);
+      setActorProgress(100);
+      setActorCurrentStage(`Scraping workflow completed successfully in ${elapsed}s!`);
+      setActorLogs((prev) => [
+        ...prev,
+        {
+          time: `${elapsed}s`,
+          stage: `Successfully extracted ${typeToUse} data payload`,
+          status: 'success',
+        },
+      ]);
+      setActorResult({ ...json.data, actorType: typeToUse });
+    } catch (err: any) {
+      clearTimeout(stepTimer1);
+      clearTimeout(stepTimer2);
+      const elapsed = ((Date.now() - start) / 1000).toFixed(2);
+      setActorProgress(100);
+      setActorError(err.message || 'Scraper execution error');
+      setActorCurrentStage(`Error: ${err.message}`);
+      setActorLogs((prev) => [
+        ...prev,
+        {
+          time: `${elapsed}s`,
+          stage: `Scraper error: ${err.message}`,
+          status: 'error',
+        },
+      ]);
+    } finally {
+      setActorLoading(false);
+    }
+  };
+
+  const handleCopyMarkdown = (md: string) => {
+    navigator.clipboard.writeText(md);
+    setActorMarkdownCopied(true);
+    setTimeout(() => setActorMarkdownCopied(false), 2000);
+  };
+
+  const handleDownloadMarkdown = (md: string, filename: string) => {
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename.replace(/[^a-z0-9_-]/gi, '_')}.md`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleEnrichWebContent = async () => {
+    if (!actorResult || (!actorResult.markdown && !actorResult.plainText)) return;
+    setEnrichingContent(true);
+    setActorLogs((prev) => [
+      ...prev,
+      {
+        time: '0.0s',
+        stage: 'Initiated smart content refinement & executive dossier extraction...',
+        status: 'info',
+      },
+    ]);
+
+    const currentModel = selectedModel === 'custom' ? customModel : selectedModel;
+
+    try {
+      const res = await fetch('/api/actor-enrich', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          markdown: actorResult.markdown || actorResult.plainText,
+          title: actorResult.title,
+          url: actorResult.url,
+          headings: actorResult.headings,
+          wordCount: actorResult.wordCount,
+          byokConfig: apiKey ? { provider: selectedProvider, model: currentModel, apiKey } : undefined,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed to refine web content');
+
+      setActorResult((prev: any) => ({
+        ...prev,
+        refinedData: json.data,
+      }));
+      setActorViewTab('refined');
+      setActorLogs((prev) => [
+        ...prev,
+        {
+          time: '0.8s',
+          stage: `Successfully synthesized & refined page into executive intelligence dossier (${json.data.refinementSource})`,
+          status: 'success',
+        },
+      ]);
+    } catch (err: any) {
+      console.error('Refinement error:', err);
+      setActorLogs((prev) => [
+        ...prev,
+        {
+          time: '0.5s',
+          stage: `Refinement notice: ${err.message}`,
+          status: 'warn',
+        },
+      ]);
+    } finally {
+      setEnrichingContent(false);
+    }
+  };
+
+  const handleCopyRefinedBriefing = (refined: any) => {
+    if (!refined) return;
+    const text = `
+EXECUTIVE INTELLIGENCE BRIEFING: ${refined.title}
+URL: ${refined.url}
+Industry Sector: ${refined.industrySector}
+Target Audience: ${refined.targetAudience}
+
+EXECUTIVE SUMMARY:
+${refined.executiveSummary}
+
+CORE VALUE PROPOSITION:
+${refined.valueProposition}
+
+CORE OFFERINGS & PRODUCTS:
+${refined.coreOfferings?.map((o: string) => `• ${o}`).join('\n')}
+
+CONTACT & BUSINESS SIGNALS:
+Emails: ${refined.contacts?.emails?.join(', ') || 'None detected'}
+Phones: ${refined.contacts?.phones?.join(', ') || 'None detected'}
+Social Links: ${refined.contacts?.socialLinks?.join(', ') || 'None detected'}
+Locations: ${refined.contacts?.locations?.join(', ') || 'None detected'}
+
+PRICING & COMMERCIAL SIGNALS:
+${refined.pricingSignals?.join(' | ') || 'None detected'}
+
+STRATEGIC TAKEAWAYS:
+${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
+    `.trim();
+
+    navigator.clipboard.writeText(text);
+    setRefinedBriefingCopied(true);
+    setTimeout(() => setRefinedBriefingCopied(false), 2000);
+  };
+
+  const handleOpenPitchModal = (leadData: any) => {
+    setPitchTargetData(leadData);
+    setPitchModalOpen(true);
+    handleGeneratePitch(leadData, pitchTone);
+  };
+
+  const handleGeneratePitch = async (leadData: any, tone: PitchTone) => {
+    setPitchGenerating(true);
+    try {
+      const res = await fetch('/api/generate-pitch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          companyName: leadData.companyName || leadData.brandName || leadData.title || leadData.domain || 'Target Lead',
+          domain: leadData.domain || leadData.url,
+          valueProposition: leadData.valueProposition || leadData.description || leadData.refinedData?.valueProposition,
+          industry: leadData.industrySector || leadData.industry || leadData.category,
+          coreOfferings: leadData.coreOfferings || leadData.refinedData?.coreOfferings,
+          activeAdsCount: leadData.activePaidAdsCount || leadData.totalActiveAds || (leadData.metaAds ? 1 : 0),
+          topAdHeadline: leadData.metaAdsIntel?.topCreativeHeadline || leadData.ads?.[0]?.adCreative?.headline,
+          techStack: leadData.webIntel?.technologySignals || leadData.technologies,
+          tone,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok && json.data) {
+        setGeneratedPitch(json.data);
+      }
+    } catch (err) {
+      console.error('Pitch generation error:', err);
+    } finally {
+      setPitchGenerating(false);
+    }
+  };
+
+  const handleSaveActorToProfiles = (
+    record: any,
+    type: 'web_content' | 'instagram' | 'linkedin' | 'facebook' | 'meta_ads' | 'omnichannel_360'
+  ) => {
+    let domain = '';
+    let url = '';
+    let companyName = '';
+    let category = '';
+    let description = '';
+    let remarks = '';
+    const emails: string[] = [];
+    const phones: string[] = [];
+    const addresses: string[] = [];
+    let socialIntel: any = undefined;
+
+    if (type === 'web_content') {
+      try {
+        domain = new URL(record.url).hostname.replace(/^www\./, '');
+      } catch {
+        domain = record.url;
+      }
+      url = record.url;
+      companyName = record.title || domain;
+      category = record.refinedData?.industrySector || 'Web Content & RAG';
+      description = record.refinedData?.executiveSummary || record.description || record.plainText?.slice(0, 240) || '';
+      
+      if (record.refinedData?.contacts?.emails) emails.push(...record.refinedData.contacts.emails);
+      if (record.refinedData?.contacts?.phones) phones.push(...record.refinedData.contacts.phones);
+      if (record.refinedData?.contacts?.locations) addresses.push(...record.refinedData.contacts.locations);
+
+      remarks = record.refinedData
+        ? `Refined Intel: ${record.refinedData.valueProposition?.slice(0, 100)} | Audience: ${record.refinedData.targetAudience} | Offerings: ${record.refinedData.coreOfferings?.slice(0, 2).join(', ')}`
+        : `Actor Web Content: ${record.wordCount} words extracted. Read time: ${record.readTimeMinutes} min. Headings: ${record.headings?.length || 0}.`;
+    } else if (type === 'instagram') {
+      domain = `instagram.com/${record.username}`;
+      url = `https://www.instagram.com/${record.username}/`;
+      companyName = `${record.fullName} (@${record.username})`;
+      category = record.category || 'Instagram Influencer / Brand';
+      description = record.biography || '';
+      remarks = `Instagram Actor: ${record.followersFormatted} Followers, ${record.followingFormatted} Following, ${record.postsCount} Posts. Verified: ${record.isVerified ? 'Yes' : 'No'}. Recent posts: ${record.posts?.length || 0}`;
+    } else if (type === 'linkedin') {
+      domain = `linkedin.com/company/${record.companySlug}`;
+      url = record.linkedinUrl || `https://www.linkedin.com/company/${record.companySlug}/`;
+      companyName = record.companyName;
+      category = record.industry || 'LinkedIn Enterprise';
+      description = record.aboutSummary || record.tagline || '';
+      if (record.headquarters) addresses.push(record.headquarters);
+      remarks = `LinkedIn Actor: Size: ${record.companySize}. HQ: ${record.headquarters}. Specialties: ${record.specialties?.slice(0, 4).join(', ')}`;
+    } else if (type === 'facebook') {
+      domain = `facebook.com/${record.pageSlug}`;
+      url = record.pageUrl || `https://www.facebook.com/${record.pageSlug}/`;
+      companyName = record.pageName || record.pageSlug;
+      category = record.category || 'Facebook Business Page';
+      description = record.about || record.intro || '';
+      if (record.address) addresses.push(record.address);
+      if (record.email) emails.push(record.email);
+      if (record.phone) phones.push(record.phone);
+      remarks = `Facebook Page: ${record.likesFormatted} Likes, ${record.followersFormatted} Followers. Category: ${record.category}. Recent posts: ${record.posts?.length || 0}. Verified: ${record.isVerified ? 'Yes' : 'No'}.`;
+      socialIntel = { facebook: record };
+    } else if (type === 'meta_ads') {
+      domain = `${(record.query || 'advertiser').toLowerCase()}.com`;
+      url = record.adLibraryUrl;
+      companyName = `${record.pageName || record.query} (Meta Ads)`;
+      category = 'Meta Active Advertiser (FB & IG)';
+      description = `${record.totalActiveAds} active ad campaigns running across Facebook & Instagram Ad Library.`;
+      remarks = `Meta Ad Library: ${record.totalActiveAds} active ads detected across platforms: ${record.platformsDetected?.join(', ')}. Top creatives & CTA tracked.`;
+      socialIntel = { metaAds: record };
+    } else if (type === 'omnichannel_360') {
+      domain = record.domain;
+      url = record.unifiedContacts?.socialProfiles?.website || `https://${record.domain}`;
+      companyName = record.brandName;
+      category = record.industrySector || '360° Omnichannel Brand';
+      description = record.executiveSummary || record.valueProposition || '';
+
+      if (record.unifiedContacts?.emails) emails.push(...record.unifiedContacts.emails);
+      if (record.unifiedContacts?.phones) phones.push(...record.unifiedContacts.phones);
+      if (record.unifiedContacts?.locations) addresses.push(...record.unifiedContacts.locations);
+
+      remarks = `360° Omnichannel Sweep: Digital Score: ${record.digitalPresenceScore}/100. Reach: ${record.totalAudienceReach}. Active Meta Ads: ${record.activePaidAdsCount}. Channels: ${record.channelsDetected?.join(', ')}`;
+      socialIntel = {
+        facebook: record.facebookIntel,
+        metaAds: record.metaAdsIntel,
+        instagram: record.instagramIntel,
+        linkedin: record.linkedinIntel,
+      };
+    }
+
+    ProfileStorageService.saveProfile({
+      domain,
+      url,
+      companyName,
+      category,
+      description,
+      rating: 5,
+      mark: 'Target Account',
+      remarks,
+      listName: 'Actor Scraped Leads',
+      tags: [type.toUpperCase(), 'ACTOR_SCRAPED', 'VERIFIED_PUBLIC'],
+      contactInfo: {
+        emails,
+        phones,
+        addresses,
+        socialLinks:
+          type === 'instagram'
+            ? { instagram: url }
+            : type === 'linkedin'
+            ? { linkedin: url }
+            : type === 'facebook'
+            ? { facebook: url }
+            : {},
+      },
+      sourceOrigin: 'domain_crawler',
+      businessDetails: {
+        rawDetails: remarks,
+      },
+      socialIntel,
+      technographics: {
+        technologies: [],
+        rawDetectionsCount: 0,
+      },
+    });
+
+    loadProfiles();
+    setSaveSuccessMsg(`Saved "${companyName}" to Workspace Profiles!`);
+    setTimeout(() => setSaveSuccessMsg(null), 3000);
   };
 
   const handleSaveCurrentResult = () => {
@@ -1207,7 +2003,7 @@ export default function EnrichmentDashboard() {
       if (seller.website) {
         try {
           cleanDomain = new URL(seller.website).hostname.replace(/^www\./, '');
-        } catch {}
+        } catch { }
       }
       ProfileStorageService.saveProfile({
         domain: cleanDomain,
@@ -1302,10 +2098,10 @@ export default function EnrichmentDashboard() {
             prev.map((s) =>
               s.id === seller.id
                 ? {
-                    ...s,
-                    email: s.email || enrichedEmails[0] || '',
-                    phone: s.phone || enrichedPhones[0] || '',
-                  }
+                  ...s,
+                  email: s.email || enrichedEmails[0] || '',
+                  phone: s.phone || enrichedPhones[0] || '',
+                }
                 : s
             )
           );
@@ -1323,7 +2119,7 @@ export default function EnrichmentDashboard() {
     if (seller.website) {
       try {
         cleanDomain = new URL(seller.website).hostname.replace(/^www\./, "");
-      } catch {}
+      } catch { }
     }
     ProfileStorageService.saveProfile({
       domain: cleanDomain,
@@ -1397,9 +2193,10 @@ export default function EnrichmentDashboard() {
 
   return (
     <div className="min-h-screen text-slate-100 selection:bg-indigo-500 selection:text-white pb-16">
-      {/* Top Navigation — unified, seam-free */}
-      <header className="border-b border-white/[0.07] bg-[rgba(8,11,24,0.72)] backdrop-blur-xl sticky top-0 z-50">
-        <div className="page-shell h-[60px] flex items-center justify-between gap-3">
+      {/* Top Navigation — Squarespace-Grade Mega Navigation */}
+      <header className="border-b border-white/[0.07] bg-[rgba(8,11,24,0.85)] backdrop-blur-2xl sticky top-0 z-50">
+        <div className="page-shell h-[62px] flex items-center justify-between gap-4">
+          {/* Brand Logo & Tagline */}
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-violet-600 to-cyan-400 p-[1.2px] shadow-md shadow-indigo-500/20 shrink-0">
               <div className="w-full h-full bg-slate-950 rounded-[11px] flex items-center justify-center">
@@ -1407,32 +2204,106 @@ export default function EnrichmentDashboard() {
               </div>
             </div>
             <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
                 <span className="font-extrabold tracking-[0.14em] text-[13px] bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">
                   ENRICHER.AI
                 </span>
-                <span className="hidden sm:inline-flex px-2 py-0.5 text-[10px] font-mono tracking-widest uppercase rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                <span className="hidden xl:inline-flex px-2 py-0.5 text-[9px] font-mono tracking-widest uppercase rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
                   ZERO-API COST
                 </span>
-                <span className="hidden lg:inline-flex px-2 py-0.5 text-[10px] font-mono rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/15">Aurora • NeoGlass • FeatherLite</span>
               </div>
-              <p className="hidden sm:block text-[11px] leading-none text-slate-400 mt-0.5 truncate">Stealth scraping • Technographics • 2026 BYOK RevOps • B2B sourcing with GST-verified confidence</p>
+              <p className="hidden 2xl:block text-[10px] leading-none text-slate-400 mt-0.5 truncate">Apify-class serverless scrapers • Technographics • BYOK RevOps</p>
             </div>
           </div>
 
-          {/* Engine Status + Actions — contextual, lightweight */}
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/70 border border-slate-800 text-xs">
+          {/* Squarespace Mega-Nav Menu Links (Hover opens large content panels) */}
+          <nav className="hidden lg:flex items-center gap-7 text-[13px] font-medium text-slate-300">
+            {/* Nav 1: Scrapers & Actors */}
+            <div
+              className="py-4 cursor-pointer"
+              onMouseEnter={() => handleMegaMenuEnter('scrapers')}
+              onMouseLeave={handleMegaMenuLeave}
+            >
+              <button
+                type="button"
+                className={`mega-nav-item inline-flex items-center gap-1.5 transition ${hoveredMegaMenu === 'scrapers' || activeTab === 'actors' ? 'text-white active' : 'text-slate-300 hover:text-white'}`}
+                onClick={() => { setActiveTab('actors'); setHoveredMegaMenu(null); }}
+              >
+                <span>Scrapers & Actors</span>
+                <span className="px-1.5 py-0.2 text-[9px] font-mono font-bold rounded bg-violet-500/25 text-violet-300 border border-violet-500/30">NEW</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${hoveredMegaMenu === 'scrapers' ? 'rotate-180 text-violet-400' : 'text-slate-500'}`} />
+              </button>
+            </div>
+
+            {/* Nav 2: B2B Sourcing */}
+            <div
+              className="py-4 cursor-pointer"
+              onMouseEnter={() => handleMegaMenuEnter('b2b')}
+              onMouseLeave={handleMegaMenuLeave}
+            >
+              <button
+                type="button"
+                className={`mega-nav-item inline-flex items-center gap-1.5 transition ${hoveredMegaMenu === 'b2b' || activeTab === 'products' ? 'text-white active' : 'text-slate-300 hover:text-white'}`}
+                onClick={() => { setActiveTab('products'); setHoveredMegaMenu(null); }}
+              >
+                <span>B2B Sourcing</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${hoveredMegaMenu === 'b2b' ? 'rotate-180 text-emerald-400' : 'text-slate-500'}`} />
+              </button>
+            </div>
+
+            {/* Nav 3: AI & Automation */}
+            <div
+              className="py-4 cursor-pointer"
+              onMouseEnter={() => handleMegaMenuEnter('ai')}
+              onMouseLeave={handleMegaMenuLeave}
+            >
+              <button
+                type="button"
+                className={`mega-nav-item inline-flex items-center gap-1.5 transition ${hoveredMegaMenu === 'ai' || activeTab === 'byok' ? 'text-white active' : 'text-slate-300 hover:text-white'}`}
+                onClick={() => { setActiveTab('byok'); setHoveredMegaMenu(null); }}
+              >
+                <span>AI & Automation</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${hoveredMegaMenu === 'ai' ? 'rotate-180 text-indigo-400' : 'text-slate-500'}`} />
+              </button>
+            </div>
+
+            {/* Nav 4: Lead Dossier */}
+            <div
+              className="py-4 cursor-pointer"
+              onMouseEnter={() => handleMegaMenuEnter('dossier')}
+              onMouseLeave={handleMegaMenuLeave}
+            >
+              <button
+                type="button"
+                className={`mega-nav-item inline-flex items-center gap-1.5 transition ${hoveredMegaMenu === 'dossier' || activeTab === 'saved' ? 'text-white active' : 'text-slate-300 hover:text-white'}`}
+                onClick={() => { setActiveTab('saved'); setHoveredMegaMenu(null); }}
+              >
+                <span>Lead Dossier</span>
+                <span className="px-1.5 py-0.2 text-[9px] font-mono rounded-full bg-cyan-500/20 text-cyan-300">{savedProfiles.length}</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${hoveredMegaMenu === 'dossier' ? 'rotate-180 text-cyan-400' : 'text-slate-500'}`} />
+              </button>
+            </div>
+          </nav>
+
+          {/* Engine Status + Fast Action Buttons */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-xs">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
               </span>
               <span className="font-mono text-emerald-300">Stealth</span>
               <span className="text-slate-600">·</span>
-              <span className="text-slate-400">Redis/BullMQ</span>
-              <span className="text-slate-600">·</span>
-              <span className={workerStatus==='active' ? 'text-emerald-400' : 'text-amber-400'}>{workerStatus==='active' ? 'Live' : 'Idle'}</span>
+              <span className="text-slate-400 font-mono text-[11px]">{workerStatus === 'active' ? 'BullMQ Active' : 'Idle'}</span>
             </div>
+
+            <button
+              onClick={() => setActiveTab('actors')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-violet-600/90 hover:bg-violet-600 text-white shadow-sm shadow-violet-500/20 transition feather-btn"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Actor Studio</span>
+            </button>
 
             <button
               onClick={() => setActiveTab('saved')}
@@ -1440,19 +2311,462 @@ export default function EnrichmentDashboard() {
               aria-label="Saved profiles"
             >
               <Bookmark className="w-3.5 h-3.5 text-cyan-300" />
-              <span className="hidden sm:inline">Profiles</span>
+              <span className="hidden md:inline">Profiles</span>
               <span className="px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-200 text-[11px] font-mono">{savedProfiles.length}</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('byok')}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-500/90 hover:bg-indigo-500 text-white shadow-sm shadow-indigo-500/20 transition feather-btn"
-            >
-              <Key className="w-3.5 h-3.5" />
-              <span>BYOK Hub</span>
             </button>
           </div>
         </div>
+
+        {/* ============================================================== */}
+        {/* Squarespace Mega Dropdown (Hover-opened large content panel) */}
+        {/* ============================================================== */}
+        {hoveredMegaMenu && (
+          <div
+            className="absolute top-[62px] left-0 right-0 bg-[rgba(8,11,24,0.96)] backdrop-blur-3xl border-b border-white/[0.10] shadow-[0_25px_60px_rgba(0,0,0,0.8)] z-50 mega-menu-enter"
+            onMouseEnter={() => {
+              if (megaMenuCloseTimerRef.current) {
+                clearTimeout(megaMenuCloseTimerRef.current);
+                megaMenuCloseTimerRef.current = null;
+              }
+            }}
+            onMouseLeave={handleMegaMenuLeave}
+          >
+            <div className="page-shell py-8">
+              {/* Menu 1: Scrapers & Actors */}
+              {hoveredMegaMenu === 'scrapers' && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  {/* Col 1: Web & Social Scrapers */}
+                  <div className="space-y-3">
+                    <div className="text-[11px] font-mono uppercase tracking-wider text-violet-400 font-semibold flex items-center gap-1.5">
+                      <Code className="w-3.5 h-3.5" />
+                      <span>Web & Social Actors</span>
+                    </div>
+
+                    <button
+                      onClick={() => { setActiveTab('actors'); handleSelectActorType('omnichannel_360', 'nike.com'); setHoveredMegaMenu(null); }}
+                      className="w-full text-left group p-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 via-violet-500/10 to-pink-500/10 hover:from-amber-500/20 hover:to-pink-500/20 transition flex items-start gap-3 border border-amber-500/20 hover:border-amber-500/40"
+                    >
+                      <div className="p-2 rounded-lg bg-gradient-to-tr from-amber-500 to-violet-600 text-white shadow-sm shrink-0">
+                        <Sparkles className="w-4 h-4 text-yellow-200" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white group-hover:text-amber-300 flex items-center gap-1.5">
+                          <span>360° Omnichannel Fusion</span>
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold">Unified Sweep</span>
+                        </div>
+                        <p className="text-xs text-slate-300 mt-0.5 leading-snug">All-in-one sweep: Web content, Facebook, Meta Ads, Instagram & LinkedIn.</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => { setActiveTab('actors'); handleSelectActorType('web_content', 'https://news.ycombinator.com'); setHoveredMegaMenu(null); }}
+                      className="w-full text-left group p-2.5 rounded-xl hover:bg-white/[0.05] transition flex items-start gap-3 border border-transparent hover:border-white/10"
+                    >
+                      <div className="p-2 rounded-lg bg-violet-500/10 text-violet-300 border border-violet-500/20 group-hover:bg-violet-500/20 shrink-0">
+                        <Globe className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white group-hover:text-violet-300 flex items-center gap-1.5">
+                          <span>Web Content Crawler</span>
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-violet-500/20 text-violet-300">RAG Ready</span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5 leading-snug">Extracts clean Markdown, heading hierarchy & OpenGraph metadata for LLMs.</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => { setActiveTab('actors'); handleSelectActorType('instagram', 'nike'); setHoveredMegaMenu(null); }}
+                      className="w-full text-left group p-2.5 rounded-xl hover:bg-white/[0.05] transition flex items-start gap-3 border border-transparent hover:border-white/10"
+                    >
+                      <div className="p-2 rounded-lg bg-pink-500/10 text-pink-300 border border-pink-500/20 group-hover:bg-pink-500/20 shrink-0">
+                        <InstagramIcon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white group-hover:text-pink-300 flex items-center gap-1.5">
+                          <span>Instagram Scraper</span>
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-pink-500/20 text-pink-300">Public Intel</span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5 leading-snug">Public profile bio, verified badge, followers count, recent reels & hashtags.</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => { setActiveTab('actors'); handleSelectActorType('linkedin', 'stripe'); setHoveredMegaMenu(null); }}
+                      className="w-full text-left group p-2.5 rounded-xl hover:bg-white/[0.05] transition flex items-start gap-3 border border-transparent hover:border-white/10"
+                    >
+                      <div className="p-2 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-500/20 group-hover:bg-sky-500/20 shrink-0">
+                        <LinkedinIcon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white group-hover:text-sky-300 flex items-center gap-1.5">
+                          <span>LinkedIn Scanner</span>
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-300">Enterprise</span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5 leading-snug">Company headcount size, industry classification, headquarters & specialties.</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => { setActiveTab('actors'); handleSelectActorType('facebook', 'nike'); setHoveredMegaMenu(null); }}
+                      className="w-full text-left group p-2.5 rounded-xl hover:bg-white/[0.05] transition flex items-start gap-3 border border-transparent hover:border-white/10"
+                    >
+                      <div className="p-2 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/20 group-hover:bg-blue-500/20 shrink-0">
+                        <FacebookIcon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white group-hover:text-blue-300 flex items-center gap-1.5">
+                          <span>Facebook Page Intel</span>
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300">Pages & Posts</span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5 leading-snug">Public page likes, followers, verified status, contact info & video views.</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => { setActiveTab('actors'); handleSelectActorType('meta_ads', 'nike'); setHoveredMegaMenu(null); }}
+                      className="w-full text-left group p-2.5 rounded-xl hover:bg-white/[0.05] transition flex items-start gap-3 border border-transparent hover:border-white/10"
+                    >
+                      <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500/20 to-pink-500/20 text-pink-300 border border-pink-500/30 group-hover:bg-pink-500/30 shrink-0">
+                        <MetaIcon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white group-hover:text-pink-300 flex items-center gap-1.5">
+                          <span>Meta Ad Library</span>
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300">FB & IG Ads</span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5 leading-snug">Active ad campaigns on FB & Instagram, creative copy, CTA & impressions.</p>
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* Col 2: Search & Perimeter Harvesters */}
+                  <div className="space-y-3">
+                    <div className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-semibold flex items-center gap-1.5">
+                      <Compass className="w-3.5 h-3.5" />
+                      <span>Search & Directory Engines</span>
+                    </div>
+                    <button
+                      onClick={() => { setActiveTab('maps'); setHoveredMegaMenu(null); }}
+                      className="w-full text-left group p-2.5 rounded-xl hover:bg-white/[0.05] transition flex items-start gap-3 border border-transparent hover:border-white/10"
+                    >
+                      <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 group-hover:bg-emerald-500/20 shrink-0">
+                        <MapPin className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white group-hover:text-emerald-300 flex items-center gap-1.5">
+                          <span>Google Maps Harvester</span>
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300">B2B Local</span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5 leading-snug">Scrapes local merchants, GSTIN, coordinates, phone numbers & ratings.</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => { setActiveTab('live'); setHoveredMegaMenu(null); }}
+                      className="w-full text-left group p-2.5 rounded-xl hover:bg-white/[0.05] transition flex items-start gap-3 border border-transparent hover:border-white/10"
+                    >
+                      <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 group-hover:bg-cyan-500/20 shrink-0">
+                        <Navigation className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white group-hover:text-cyan-300 flex items-center gap-1.5">
+                          <span>Deep Domain Crawler</span>
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300">Multi-Page</span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5 leading-snug">Auto-traverses Contact, About & Team pages to collect emails, phones & owner names.</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => { setActiveTab('products'); setHoveredMegaMenu(null); }}
+                      className="w-full text-left group p-2.5 rounded-xl hover:bg-white/[0.05] transition flex items-start gap-3 border border-transparent hover:border-white/10"
+                    >
+                      <div className="p-2 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20 group-hover:bg-amber-500/20 shrink-0">
+                        <Package className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white group-hover:text-amber-300 flex items-center gap-1.5">
+                          <span>Product & Spec Finder</span>
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300">3-Tier Matrix</span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5 leading-snug">E-commerce price extraction with 3-tier B2B wholesale pricing and MOQ.</p>
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* Col 3: Architecture & Actor Engine */}
+                  <div className="space-y-3">
+                    <div className="text-[11px] font-mono uppercase tracking-wider text-indigo-400 font-semibold flex items-center gap-1.5">
+                      <Terminal className="w-3.5 h-3.5" />
+                      <span>Scraping Architecture</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-2.5 text-xs text-slate-300">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span><strong>Cheerio Fast Parser</strong>: Zero-browser overhead for lightweight static parsing.</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                        <span><strong>Stealth Playwright</strong>: Headless Chromium with anti-bot evasion & JS hydration.</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                        <span><strong>Live Progress Context</strong>: Step-by-step progress bar and real-time execution logs.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Col 4: Squarespace-Style Featured Spotlight Card */}
+                  <div className="mega-card-glow rounded-2xl bg-gradient-to-br from-violet-950/40 via-slate-900/70 to-slate-950 p-5 border border-violet-500/20 flex flex-col justify-between">
+                    <div>
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-mono tracking-widest uppercase bg-violet-500/20 text-violet-300 border border-violet-500/30 mb-3">
+                        FEATURED ACTOR
+                      </span>
+                      <h4 className="text-base font-bold text-white mb-1.5">Serverless Actor Studio</h4>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        Apify-grade actors with zero subscription fees. Extract markdown for RAG, harvest Instagram media, and probe LinkedIn company headcounts with live stage telemetry.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => { setActiveTab('actors'); setHoveredMegaMenu(null); }}
+                      className="mt-4 w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white shadow-md shadow-violet-600/30 transition flex items-center justify-center gap-2"
+                    >
+                      <span>Launch Actor Studio</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Menu 2: B2B Sourcing */}
+              {hoveredMegaMenu === 'b2b' && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="space-y-3">
+                    <div className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-semibold">
+                      Product Spec & Price Matrix
+                    </div>
+                    <button
+                      onClick={() => { setActiveTab('products'); setProductViewMode('specs'); setHoveredMegaMenu(null); }}
+                      className="w-full text-left group p-2.5 rounded-xl hover:bg-white/[0.05] transition flex items-start gap-3 border border-transparent hover:border-white/10"
+                    >
+                      <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 shrink-0">
+                        <ShoppingBag className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white group-hover:text-emerald-300">Hardware & Specs Matrix</div>
+                        <p className="text-xs text-slate-400 mt-0.5">CPU, RAM, GPU, Hz, selling prices & card offer comparisons.</p>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => { setActiveTab('products'); setProductViewMode('sellers'); setHoveredMegaMenu(null); }}
+                      className="w-full text-left group p-2.5 rounded-xl hover:bg-white/[0.05] transition flex items-start gap-3 border border-transparent hover:border-white/10"
+                    >
+                      <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 shrink-0">
+                        <Truck className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white group-hover:text-indigo-300">Verified B2B Suppliers Hub</div>
+                        <p className="text-xs text-slate-400 mt-0.5">Wholesale tier discounts, MOQ, credit terms & logistics radius.</p>
+                      </div>
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="text-[11px] font-mono uppercase tracking-wider text-cyan-400 font-semibold">
+                      Regional Coverage & Presets
+                    </div>
+                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-2 text-xs text-slate-300">
+                      <div className="font-semibold text-white">1,000km Procurement Perimeter</div>
+                      <p className="text-slate-400 leading-snug">36 regional procurement zones probed across eastern & national trade corridors.</p>
+                      <div className="pt-1 flex flex-wrap gap-1">
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 text-[10px]">14 Business Templates</span>
+                        <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 text-[10px]">GSTIN Confidence</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
+                      Direct Wholesale Sourcing
+                    </div>
+                    <div className="text-xs text-slate-300 space-y-2 leading-relaxed">
+                      <p>Eliminate intermediary markups. Our scrapers extract real wholesale pricing and procurement terms directly from vendor digital footprints.</p>
+                    </div>
+                  </div>
+
+                  {/* Featured Card */}
+                  <div className="mega-card-glow rounded-2xl bg-gradient-to-br from-emerald-950/40 via-slate-900/70 to-slate-950 p-5 border border-emerald-500/20 flex flex-col justify-between">
+                    <div>
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-mono tracking-widest uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mb-3">
+                        B2B ENGINE
+                      </span>
+                      <h4 className="text-base font-bold text-white mb-1.5">Universal Product & Specs Finder</h4>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        Search across 100s-1000s of internet seller sites with keyword matching and perimeter filtering.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => { setActiveTab('products'); setHoveredMegaMenu(null); }}
+                      className="mt-4 w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-2"
+                    >
+                      <span>Explore Sourcing Matrix</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Menu 3: AI & Automation */}
+              {hoveredMegaMenu === 'ai' && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="space-y-3">
+                    <div className="text-[11px] font-mono uppercase tracking-wider text-indigo-400 font-semibold">
+                      BYOK AI Studio
+                    </div>
+                    <button
+                      onClick={() => { setActiveTab('byok'); setHoveredMegaMenu(null); }}
+                      className="w-full text-left group p-2.5 rounded-xl hover:bg-white/[0.05] transition flex items-start gap-3 border border-transparent hover:border-white/10"
+                    >
+                      <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 shrink-0">
+                        <Key className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white group-hover:text-indigo-300">2026 BYOK Hub</div>
+                        <p className="text-xs text-slate-400 mt-0.5">Anthropic Claude 3.7, Google Gemini 3.8 Flash, OpenAI GPT-4o.</p>
+                      </div>
+                    </button>
+                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs text-slate-300">
+                      <div className="font-semibold text-white mb-1">On-Demand Token Guard</div>
+                      <p className="text-slate-400">Tokens are consumed only when you explicitly click "Generate Analysis" on an entity.</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="text-[11px] font-mono uppercase tracking-wider text-violet-400 font-semibold">
+                      Asynchronous Operations
+                    </div>
+                    <button
+                      onClick={() => { setActiveTab('queue'); setHoveredMegaMenu(null); }}
+                      className="w-full text-left group p-2.5 rounded-xl hover:bg-white/[0.05] transition flex items-start gap-3 border border-transparent hover:border-white/10"
+                    >
+                      <div className="p-2 rounded-lg bg-violet-500/10 text-violet-300 border border-violet-500/20 shrink-0">
+                        <Server className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white group-hover:text-violet-300">Redis & BullMQ Pipeline</div>
+                        <p className="text-xs text-slate-400 mt-0.5">Concurrency worker running background crawls with active telemetry.</p>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => { setActiveTab('rules'); setHoveredMegaMenu(null); }}
+                      className="w-full text-left group p-2.5 rounded-xl hover:bg-white/[0.05] transition flex items-start gap-3 border border-transparent hover:border-white/10"
+                    >
+                      <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 shrink-0">
+                        <ShieldCheck className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white group-hover:text-cyan-300">CRM Safeguards Shield</div>
+                        <p className="text-xs text-slate-400 mt-0.5">Zero-overwrite protection preventing stale data overwriting verified CRM fields.</p>
+                      </div>
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
+                      Zero Middleware Privacy
+                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      API keys are stored strictly in client-side localStorage. No logs, no telemetry, no 3rd-party SaaS tracking your prompts or scraped datasets.
+                    </p>
+                  </div>
+
+                  {/* Featured Card */}
+                  <div className="mega-card-glow rounded-2xl bg-gradient-to-br from-indigo-950/40 via-slate-900/70 to-slate-950 p-5 border border-indigo-500/20 flex flex-col justify-between">
+                    <div>
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-mono tracking-widest uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 mb-3">
+                        AI ENGINE
+                      </span>
+                      <h4 className="text-base font-bold text-white mb-1.5">Bring Your Own Key Hub</h4>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        Synthesize verified entity dossiers into ICP fits, tech stack audits, and executive pitches with frontier AI.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => { setActiveTab('byok'); setHoveredMegaMenu(null); }}
+                      className="mt-4 w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition flex items-center justify-center gap-2"
+                    >
+                      <span>Configure Keys</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Menu 4: Lead Dossier */}
+              {hoveredMegaMenu === 'dossier' && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="space-y-3">
+                    <div className="text-[11px] font-mono uppercase tracking-wider text-cyan-400 font-semibold">
+                      CRM Account Graph
+                    </div>
+                    <button
+                      onClick={() => { setActiveTab('saved'); setHoveredMegaMenu(null); }}
+                      className="w-full text-left group p-2.5 rounded-xl hover:bg-white/[0.05] transition flex items-start gap-3 border border-transparent hover:border-white/10"
+                    >
+                      <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 shrink-0">
+                        <Bookmark className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white group-hover:text-cyan-300">Saved Lead Profiles</div>
+                        <p className="text-xs text-slate-400 mt-0.5">{savedProfiles.length} verified accounts across web, maps, and social scrapers.</p>
+                      </div>
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
+                      List & Export Options
+                    </div>
+                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs text-slate-300 space-y-1.5">
+                      <div className="font-semibold text-white">Multi-Origin Filter</div>
+                      <p className="text-slate-400">Isolate leads by origin: Domain Crawler, Product Spec Matrix, Google Maps, or Actor Scrapers.</p>
+                      <div className="pt-1 text-[11px] text-cyan-300 font-mono">1-Click CSV & JSON Export Ready</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
+                      CRM Sync Readiness
+                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Format-ready for direct upsert into HubSpot, Salesforce, and Zoho CRM with preserved field histories and contact deduplication.
+                    </p>
+                  </div>
+
+                  {/* Featured Card */}
+                  <div className="mega-card-glow rounded-2xl bg-gradient-to-br from-cyan-950/40 via-slate-900/70 to-slate-950 p-5 border border-cyan-500/20 flex flex-col justify-between">
+                    <div>
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-mono tracking-widest uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 mb-3">
+                        REVOPS GRAPH
+                      </span>
+                      <h4 className="text-base font-bold text-white mb-1.5">Lead Dossier & CRM Hub</h4>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        Manage, rate, categorize, and export accounts with full search provenance and operational consistency audits.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => { setActiveTab('saved'); setHoveredMegaMenu(null); }}
+                      className="mt-4 w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-md shadow-cyan-600/30 transition flex items-center justify-center gap-2"
+                    >
+                      <span>Open Lead Dossier</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Main shell — consistent gutters everywhere */}
@@ -1532,6 +2846,15 @@ export default function EnrichmentDashboard() {
           </button>
 
           <button
+            onClick={() => setActiveTab('actors')}
+            className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-semibold transition border ${activeTab === 'actors' ? 'bg-violet-600 text-white border-violet-500 shadow-sm shadow-violet-500/20' : 'bg-white/[0.06] text-slate-300 border-white/10 hover:bg-white/[0.10] hover:text-white'}`}
+          >
+            <Sparkles className="w-4 h-4 text-violet-300" />
+            <span>Actor Studio</span>
+            <span className="px-1.5 py-0.2 text-[9px] font-mono font-bold rounded-full bg-violet-400/20 text-violet-200 uppercase">New</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('saved')}
             className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-semibold transition border ${activeTab === 'saved' ? 'bg-white text-slate-900 border-white shadow-sm' : 'bg-white/[0.06] text-slate-300 border-white/10 hover:bg-white/[0.10] hover:text-white'}`}
           >
@@ -1562,7 +2885,7 @@ export default function EnrichmentDashboard() {
           >
             <Server className="w-4 h-4" />
             <span>Queue</span>
-            {(queueMetrics.waiting+queueMetrics.active)>0 && <span className="ml-0.5 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
+            {(queueMetrics.waiting + queueMetrics.active) > 0 && <span className="ml-0.5 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
           </button>
         </div>
 
@@ -1634,7 +2957,7 @@ export default function EnrichmentDashboard() {
                 {/* 10-Dimension Domain Enrichment Hero Banner */}
                 <div className="glass-panel p-6 rounded-2xl border border-cyan-500/30 shadow-2xl relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-80 h-80 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
-                  
+
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-slate-800">
                     <div>
                       {/* Category & Status Tags Bar */}
@@ -2088,109 +3411,170 @@ export default function EnrichmentDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div className="lg:col-span-2">
 
-                  {/* Technographic Stack Scanner */}
-                  <div className="glass-panel p-6 rounded-2xl">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-2">
-                        <Cpu className="w-5 h-5 text-indigo-400" />
-                        <h3 className="text-base font-bold text-white">Technographic Fingerprint</h3>
+                    {/* Technographic Stack Scanner */}
+                    <div className="glass-panel p-6 rounded-2xl">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-2">
+                          <Cpu className="w-5 h-5 text-indigo-400" />
+                          <h3 className="text-base font-bold text-white">Technographic Fingerprint</h3>
+                        </div>
+                        <span className="text-xs font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                          {result.technographics.technologies.length} Technologies Detected
+                        </span>
                       </div>
-                      <span className="text-xs font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
-                        {result.technographics.technologies.length} Technologies Detected
-                      </span>
-                    </div>
 
-                    {result.technographics.technologies.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {result.technographics.technologies.map((tech, idx) => (
-                          <div
-                            key={idx}
-                            className="px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-700/60 flex items-center space-x-2"
-                          >
-                            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                            <span className="text-xs font-semibold text-slate-200">{tech.name}</span>
-                            <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
-                              {tech.category}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-slate-400 italic">
-                        Standard static footprint or non-CDN asset signatures.
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Right Col: BYOK AI Insights & Account Scoring */}
-                <div className="space-y-6">
-                  <div className="glass-panel p-6 rounded-2xl border border-indigo-500/30 relative">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-2">
-                        <Sparkles className="w-5 h-5 text-indigo-400" />
-                        <h3 className="text-base font-bold text-white">2026 BYOK AI Synthesis</h3>
-                      </div>
-                      <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
-                        {selectedProvider}
-                      </span>
-                    </div>
-
-                    {aiAnalysis ? (
-                      <div className="space-y-4">
-                        <div className="p-3 bg-indigo-950/40 rounded-xl border border-indigo-800/40">
-                          <div className="text-xs text-indigo-300 font-medium">Buyer Propensity Score</div>
-                          <div className="flex items-end space-x-2 mt-1">
-                            <span className="text-3xl font-black text-white font-mono">{aiAnalysis.buyerIntentScore}</span>
-                            <span className="text-xs text-slate-400 pb-1">/ 100</span>
-                          </div>
-                          <div className="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                      {result.technographics.technologies.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {result.technographics.technologies.map((tech, idx) => (
                             <div
-                              className="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full rounded-full"
-                              style={{ width: `${aiAnalysis.buyerIntentScore}%` }}
-                            />
+                              key={idx}
+                              className="px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-700/60 flex items-center space-x-2"
+                            >
+                              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                              <span className="text-xs font-semibold text-slate-200">{tech.name}</span>
+                              <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+                                {tech.category}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-400 italic">
+                          Standard static footprint or non-CDN asset signatures.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Col: BYOK AI Insights — on-demand, no auto-fire */}
+                  <div className="space-y-6">
+                    <div className="glass-panel p-5 rounded-2xl border border-indigo-500/30 relative overflow-hidden">
+                      {/* Subtle glow behind card */}
+                      <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+
+                      <div className="flex items-center justify-between mb-4 relative z-10">
+                        <div className="flex items-center space-x-2">
+                          <Sparkles className="w-4 h-4 text-indigo-400" />
+                          <h3 className="text-sm font-bold text-white">BYOK AI Synthesis</h3>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
+                            {selectedProvider}
+                          </span>
+                          {aiAnalysis && (
+                            <button
+                              onClick={() => { setAiAnalysis(null); }}
+                              className="text-[10px] text-slate-500 hover:text-rose-400 transition font-mono"
+                              title="Clear result"
+                            >
+                              ✕ Clear
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {aiAnalysis ? (
+                        /* ── RESULTS ── */
+                        <div className="space-y-4 relative z-10">
+                          <div className="p-3 bg-indigo-950/40 rounded-xl border border-indigo-800/40">
+                            <div className="text-xs text-indigo-300 font-medium">Buyer Propensity Score</div>
+                            <div className="flex items-end space-x-2 mt-1">
+                              <span className="text-3xl font-black text-white font-mono">{aiAnalysis.buyerIntentScore}</span>
+                              <span className="text-xs text-slate-400 pb-1">/ 100</span>
+                            </div>
+                            <div className="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                              <div
+                                className="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full rounded-full transition-all duration-700"
+                                style={{ width: `${aiAnalysis.buyerIntentScore}%` }}
+                              />
+                            </div>
                           </div>
-                        </div>
 
-                        <div>
-                          <span className="text-xs font-semibold text-slate-400">ICP Classification:</span>
-                          <p className="text-sm font-semibold text-emerald-400 mt-0.5">{aiAnalysis.icpFit}</p>
-                        </div>
-
-                        <div>
-                          <span className="text-xs font-semibold text-slate-400">Executive Summary:</span>
-                          <p className="text-xs text-slate-300 mt-1 leading-relaxed">{aiAnalysis.summary}</p>
-                        </div>
-
-                        {aiAnalysis.icebreakers && aiAnalysis.icebreakers.length > 0 && (
                           <div>
-                            <span className="text-xs font-semibold text-slate-400">Cold Outreach Icebreakers:</span>
-                            <ul className="mt-1 space-y-1.5">
-                              {aiAnalysis.icebreakers.map((ice: string, i: number) => (
-                                <li key={i} className="text-[11px] text-indigo-200 bg-indigo-950/30 p-2 rounded border border-indigo-800/30">
-                                  {ice}
-                                </li>
-                              ))}
-                            </ul>
+                            <span className="text-xs font-semibold text-slate-400">ICP Classification:</span>
+                            <p className="text-sm font-semibold text-emerald-400 mt-0.5">{aiAnalysis.icpFit}</p>
                           </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6">
-                        <Key className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-                        <p className="text-xs text-slate-400">Add your API Key in the 2026 BYOK tab to unlock live AI summaries & intent scores.</p>
-                        <button
-                          onClick={() => setActiveTab('byok')}
-                          className="mt-3 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition"
-                        >
-                          Configure 2026 BYOK Key
-                        </button>
-                      </div>
-                    )}
+
+                          <div>
+                            <span className="text-xs font-semibold text-slate-400">Executive Summary:</span>
+                            <p className="text-xs text-slate-300 mt-1 leading-relaxed">{aiAnalysis.summary}</p>
+                          </div>
+
+                          {aiAnalysis.icebreakers && aiAnalysis.icebreakers.length > 0 && (
+                            <div>
+                              <span className="text-xs font-semibold text-slate-400">Cold Outreach Icebreakers:</span>
+                              <ul className="mt-1 space-y-1.5">
+                                {aiAnalysis.icebreakers.map((ice: string, i: number) => (
+                                  <li key={i} className="text-[11px] text-indigo-200 bg-indigo-950/30 p-2 rounded border border-indigo-800/30">
+                                    {ice}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {/* Re-generate button */}
+                          <button
+                            onClick={handleGenerateAI}
+                            disabled={aiLoading}
+                            className="w-full mt-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-semibold transition disabled:opacity-50"
+                          >
+                            {aiLoading ? (
+                              <><span className="w-3 h-3 rounded-full border-2 border-indigo-400 border-t-transparent animate-spin" />Regenerating…</>
+                            ) : (
+                              <><Sparkles className="w-3.5 h-3.5" />Regenerate Analysis</>
+                            )}
+                          </button>
+                        </div>
+                      ) : aiLoading ? (
+                        /* ── LOADING STATE ── */
+                        <div className="flex flex-col items-center justify-center py-10 gap-3 relative z-10">
+                          <div className="w-10 h-10 rounded-full border-[3px] border-indigo-500 border-t-transparent animate-spin" />
+                          <p className="text-xs text-indigo-300 font-semibold animate-pulse">Running AI synthesis…</p>
+                          <p className="text-[11px] text-slate-500">Scoring ICP fit, intent signals & icebreakers</p>
+                        </div>
+                      ) : apiKey ? (
+                        /* ── READY — SHOW GENERATE BUTTON ── */
+                        <div className="flex flex-col items-center justify-center py-8 gap-4 relative z-10">
+                          <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                            <Sparkles className="w-7 h-7 text-indigo-400" />
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm font-semibold text-white">AI Analysis Ready</p>
+                            <p className="text-xs text-slate-400 mt-0.5 max-w-[200px] leading-snug">
+                              Generates buyer intent score, ICP fit, executive summary & icebreakers using your {selectedProvider} key.
+                            </p>
+                          </div>
+                          <button
+                            id="btn-generate-ai"
+                            onClick={handleGenerateAI}
+                            disabled={!result}
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-bold shadow-lg shadow-indigo-600/25 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            <Sparkles className="w-4 h-4" />
+                            Generate Analysis
+                          </button>
+                          {!result && (
+                            <p className="text-[11px] text-slate-500">Enrich a domain first to enable AI analysis</p>
+                          )}
+                        </div>
+                      ) : (
+                        /* ── NO KEY — PROMPT TO CONFIGURE ── */
+                        <div className="text-center py-8 relative z-10">
+                          <Key className="w-8 h-8 text-slate-600 mx-auto mb-3" />
+                          <p className="text-xs text-slate-400 max-w-[200px] mx-auto">Add your API Key in BYOK Hub to unlock on-demand AI synthesis.</p>
+                          <button
+                            onClick={() => setActiveTab('byok')}
+                            className="mt-3 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition"
+                          >
+                            Configure BYOK Key
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
             )}
           </div>
         )}
@@ -2642,30 +4026,29 @@ export default function EnrichmentDashboard() {
             {/* Header & Controls Panel — tech-corners + consistent shell */}
             <div className="glass-panel tech-corners p-5 sm:p-6 rounded-2xl border border-white/[0.07] shadow-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-[420px] h-[420px] bg-emerald-500/[0.04] rounded-full blur-3xl pointer-events-none" />
-              
+
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-white/[0.06]">
                 <div>
                   <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white text-slate-900 text-[11px] font-bold tracking-widest uppercase">
                     <Terminal className="w-3.5 h-3.5" />
                     <span>Internet-Wide Product & Specs Extraction Engine</span>
-                    <span className="hidden sm:inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded-full bg-indigo-500 text-white text-[10px] font-mono"><Sparkles className="w-3 h-3" /> AI</span>
                   </div>
                   <h2 className="text-[22px] font-bold text-white tracking-tight mt-2 flex items-center gap-2">
                     <span>Universal Product Finder & Specs Enrichment</span>
                   </h2>
                   <p className="text-[13px] text-slate-400 mt-1 max-w-3xl leading-relaxed">
-                    Keyword-matched scraping with geo-radius perimeter, taxonomy-aware spec normalisation, and B2B seller enrichment — 100s–1000s of sources filtered to verified channels.
+                    Keyword-matched scraping with geo-radius perimeter, taxonomy-aware spec normalisation, and B2B seller enrichment.
                   </p>
                 </div>
 
                 {/* Mode Switcher — FeatherLite */}
-                <div className="flex items-center p-1 bg-white/[0.06] border border-white/10 rounded-full">
+                <div className="flex items-center gap-2 p-1 bg-white/[0.06] border border-white/10 rounded-full">
                   <button
                     onClick={() => setProductViewMode('specs')}
                     className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition border ${productViewMode === 'specs' ? 'bg-white text-slate-900 border-white shadow-sm' : 'text-slate-300 border-transparent hover:text-white'}`}
                   >
                     <Cpu className="w-3.5 h-3.5" />
-                    <span>Product Specs & Marketplace View</span>
+                    <span>Product Specs & Marketplace</span>
                   </button>
                   <button
                     onClick={() => setProductViewMode('sellers')}
@@ -2708,7 +4091,7 @@ export default function EnrichmentDashboard() {
                         Type or Pick Below
                       </span>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       <div className="relative flex-1">
                         <input
@@ -2764,16 +4147,15 @@ export default function EnrichmentDashboard() {
                             <span>✕ Clear (Category Search)</span>
                           </button>
                         )}
-                        <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${
-                          productNameInput.trim()
-                            ? 'bg-slate-800 text-slate-300 border border-slate-700'
-                            : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 font-semibold'
-                        }`}>
+                        <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${productNameInput.trim()
+                          ? 'bg-slate-800 text-slate-300 border border-slate-700'
+                          : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 font-semibold'
+                          }`}>
                           {productNameInput.trim() ? 'Model Specified' : 'Optional (Blank = All Category)'}
                         </span>
                       </div>
                     </div>
-                    
+
                     <div className="relative">
                       <input
                         type="text"
@@ -2811,7 +4193,7 @@ export default function EnrichmentDashboard() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-xs font-bold tracking-widest uppercase text-white">Business Templates</span>
                           <span className="px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-200 border border-teal-500/20 text-[10px] font-mono">{CATEGORY_QUICK_TEMPLATES.length} · AI-mapped</span>
-                          {appliedTemplateId && <span className="hidden sm:inline px-1.5 py-0.5 rounded-full bg-white text-slate-900 text-[10px] font-bold">Active · {CATEGORY_QUICK_TEMPLATES.find(t=>t.id===appliedTemplateId)?.title.slice(0,22)}</span>}
+                          {appliedTemplateId && <span className="hidden sm:inline px-1.5 py-0.5 rounded-full bg-white text-slate-900 text-[10px] font-bold">Active · {CATEGORY_QUICK_TEMPLATES.find(t => t.id === appliedTemplateId)?.title.slice(0, 22)}</span>}
                         </div>
                         <p className="text-[11px] text-slate-400 truncate hidden sm:block">One-click real-world procurement presets — category, specs & price autofill. Pure-spec templates search without model.</p>
                       </div>
@@ -2861,11 +4243,11 @@ export default function EnrichmentDashboard() {
                             const isPureSpec = !tpl.productName;
                             const GIcon = (
                               tpl.industryGroup === 'it' ? Cpu :
-                              tpl.industryGroup === 'metals' ? Layers :
-                              tpl.industryGroup === 'agri' ? ShoppingBag :
-                              tpl.industryGroup === 'solar' ? Zap :
-                              tpl.industryGroup === 'textiles' ? Tag :
-                              tpl.industryGroup === 'chemicals' ? FileText : Server
+                                tpl.industryGroup === 'metals' ? Layers :
+                                  tpl.industryGroup === 'agri' ? ShoppingBag :
+                                    tpl.industryGroup === 'solar' ? Zap :
+                                      tpl.industryGroup === 'textiles' ? Tag :
+                                        tpl.industryGroup === 'chemicals' ? FileText : Server
                             );
                             return (
                               <button
@@ -2899,7 +4281,7 @@ export default function EnrichmentDashboard() {
 
                 {/* Spec Criteria — collapsible, techy AI-mapped */}
                 <div className="rounded-xl border border-white/[0.07] bg-[rgba(13,19,38,0.64)] overflow-hidden">
-                  <button type="button" onClick={() => setShowSpecBuilder(v=>!v)} className="w-full flex items-center justify-between gap-2 px-3.5 py-3 hover:bg-white/[0.03] transition">
+                  <button type="button" onClick={() => setShowSpecBuilder(v => !v)} className="w-full flex items-center justify-between gap-2 px-3.5 py-3 hover:bg-white/[0.03] transition">
                     <span className="flex items-center gap-2">
                       <span className="w-7 h-7 rounded-lg bg-white text-slate-900 flex items-center justify-center"><Terminal className="w-3.5 h-3.5" /></span>
                       <span className="text-xs font-bold tracking-widest uppercase text-white">Spec Criteria</span>
@@ -2907,175 +4289,172 @@ export default function EnrichmentDashboard() {
                       <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-500/12 text-indigo-300 border border-indigo-500/20 text-[10px] font-mono"><Sparkles className="w-3 h-3" /> taxonomy-aware</span>
                     </span>
                     <span className="flex items-center gap-2">
-                      <span onClick={(e)=>{e.stopPropagation(); handleAddSpec();}} className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-400 transition"><Plus className="w-3 h-3" /> Add</span>
+                      <span onClick={(e) => { e.stopPropagation(); handleAddSpec(); }} className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-400 transition"><Plus className="w-3 h-3" /> Add</span>
                       <span className={`w-7 h-7 rounded-full border flex items-center justify-center text-xs transition ${showSpecBuilder ? 'bg-white text-slate-900 border-white' : 'bg-white/[0.06] border-white/10 text-slate-300'}`}>⌄</span>
                     </span>
                   </button>
                   {showSpecBuilder && (
-                  <div className="px-3.5 pb-3.5 space-y-3 border-t border-white/[0.06] pt-3">
-                  <div className="flex justify-end sm:hidden">
-                    <button type="button" onClick={handleAddSpec} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-500 text-white text-xs font-bold"><Plus className="w-3.5 h-3.5" /> Add Spec</button>
-                  </div>
+                    <div className="px-3.5 pb-3.5 space-y-3 border-t border-white/[0.06] pt-3">
+                      <div className="flex justify-end sm:hidden">
+                        <button type="button" onClick={handleAddSpec} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-500 text-white text-xs font-bold"><Plus className="w-3.5 h-3.5" /> Add Spec</button>
+                      </div>
 
-                  {/* Spec List Cards */}
-                  <div className="space-y-2.5">
-                    {specsList.map((spec, index) => {
-                      const isRange = spec.mode === 'range';
-                      const isInvalidRange = isRange && !spec.minValue?.trim() && !spec.maxValue?.trim();
+                      {/* Spec List Cards */}
+                      <div className="space-y-2.5">
+                        {specsList.map((spec, index) => {
+                          const isRange = spec.mode === 'range';
+                          const isInvalidRange = isRange && !spec.minValue?.trim() && !spec.maxValue?.trim();
 
-                      return (
-                        <div
-                          key={spec.id}
-                          className={`p-3 rounded-xl border transition-all ${
-                            isInvalidRange
-                              ? 'bg-amber-950/20 border-amber-500/40'
-                              : 'bg-slate-900/80 border-slate-700/70 hover:border-slate-600'
-                          }`}
-                        >
-                          <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center">
-                            {/* Spec Name / Attribute */}
-                            <div className="md:col-span-4">
-                              <label className="text-[10px] font-semibold text-slate-400 block mb-1">
-                                Spec Name #{index + 1}
-                              </label>
-                              <input
-                                type="text"
-                                value={spec.name}
-                                onChange={(e) => handleUpdateSpec(spec.id, { name: e.target.value })}
-                                placeholder="e.g. RAM, Storage, Screen, Grade"
-                                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500"
-                              />
-                            </div>
-
-                            {/* Mode Checkbox Selector: Same (Default) vs Range */}
-                            <div className="md:col-span-3 flex items-center justify-start md:justify-center pt-2 md:pt-4">
-                              <label className="flex items-center space-x-2 cursor-pointer select-none group">
-                                <input
-                                  type="checkbox"
-                                  checked={isRange}
-                                  onChange={(e) =>
-                                    handleUpdateSpec(spec.id, {
-                                      mode: e.target.checked ? 'range' : 'same',
-                                    })
-                                  }
-                                  className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-teal-500 focus:ring-teal-500 focus:ring-offset-slate-900 cursor-pointer"
-                                />
-                                <span className="text-xs font-semibold text-slate-300 group-hover:text-white transition">
-                                  {isRange ? (
-                                    <span className="text-teal-400 font-bold flex items-center space-x-1">
-                                      <span>Range Mode</span>
-                                      <span className="text-[10px] font-normal text-teal-300/80">(Min / Max)</span>
-                                    </span>
-                                  ) : (
-                                    <span className="text-slate-400">Default: Same (Exact)</span>
-                                  )}
-                                </span>
-                              </label>
-                            </div>
-
-                            {/* Spec Values: Single Field if Same, Min & Max Fields if Range */}
-                            <div className="md:col-span-4">
-                              {!isRange ? (
-                                <div>
+                          return (
+                            <div
+                              key={spec.id}
+                              className={`p-3 rounded-xl border transition-all ${isInvalidRange
+                                ? 'bg-amber-950/20 border-amber-500/40'
+                                : 'bg-slate-900/80 border-slate-700/70 hover:border-slate-600'
+                                }`}
+                            >
+                              <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center">
+                                {/* Spec Name / Attribute */}
+                                <div className="md:col-span-4">
                                   <label className="text-[10px] font-semibold text-slate-400 block mb-1">
-                                    Exact Value <span className="text-slate-500">(Single Match)</span>
+                                    Spec Name #{index + 1}
                                   </label>
                                   <input
                                     type="text"
-                                    value={spec.value || ''}
-                                    onChange={(e) => handleUpdateSpec(spec.id, { value: e.target.value })}
-                                    placeholder="e.g. 16GB DDR5, RTX 3050, Fe 500D"
-                                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 font-mono"
+                                    value={spec.name}
+                                    onChange={(e) => handleUpdateSpec(spec.id, { name: e.target.value })}
+                                    placeholder="e.g. RAM, Storage, Screen, Grade"
+                                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500"
                                   />
                                 </div>
-                              ) : (
-                                <div>
-                                  <div className="flex items-center justify-between mb-1">
-                                    <label className="text-[10px] font-semibold text-teal-300">
-                                      Range Section <span className="text-slate-400 font-normal">(Min / Max)</span>
-                                    </label>
-                                    <span className="text-[9px] text-slate-400">
-                                      Fill at least one (Min or Max)
+
+                                {/* Mode Checkbox Selector: Same (Default) vs Range */}
+                                <div className="md:col-span-3 flex items-center justify-start md:justify-center pt-2 md:pt-4">
+                                  <label className="flex items-center space-x-2 cursor-pointer select-none group">
+                                    <input
+                                      type="checkbox"
+                                      checked={isRange}
+                                      onChange={(e) =>
+                                        handleUpdateSpec(spec.id, {
+                                          mode: e.target.checked ? 'range' : 'same',
+                                        })
+                                      }
+                                      className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-teal-500 focus:ring-teal-500 focus:ring-offset-slate-900 cursor-pointer"
+                                    />
+                                    <span className="text-xs font-semibold text-slate-300 group-hover:text-white transition">
+                                      {isRange ? (
+                                        <span className="text-teal-400 font-bold flex items-center space-x-1">
+                                          <span>Range Mode</span>
+                                          <span className="text-[10px] font-normal text-teal-300/80">(Min / Max)</span>
+                                        </span>
+                                      ) : (
+                                        <span className="text-slate-400">Default: Same (Exact)</span>
+                                      )}
                                     </span>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-2">
+                                  </label>
+                                </div>
+
+                                {/* Spec Values: Single Field if Same, Min & Max Fields if Range */}
+                                <div className="md:col-span-4">
+                                  {!isRange ? (
                                     <div>
+                                      <label className="text-[10px] font-semibold text-slate-400 block mb-1">
+                                        Exact Value <span className="text-slate-500">(Single Match)</span>
+                                      </label>
                                       <input
                                         type="text"
-                                        value={spec.minValue || ''}
-                                        onChange={(e) => handleUpdateSpec(spec.id, { minValue: e.target.value })}
-                                        placeholder="Min (e.g. 8GB, 144Hz)"
-                                        className={`w-full bg-slate-950 border rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 font-mono ${
-                                          isInvalidRange ? 'border-amber-500/60' : 'border-slate-700'
-                                        }`}
+                                        value={spec.value || ''}
+                                        onChange={(e) => handleUpdateSpec(spec.id, { value: e.target.value })}
+                                        placeholder="e.g. 16GB DDR5, RTX 3050, Fe 500D"
+                                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 font-mono"
                                       />
                                     </div>
+                                  ) : (
                                     <div>
-                                      <input
-                                        type="text"
-                                        value={spec.maxValue || ''}
-                                        onChange={(e) => handleUpdateSpec(spec.id, { maxValue: e.target.value })}
-                                        placeholder="Max (e.g. 32GB, 240Hz)"
-                                        className={`w-full bg-slate-950 border rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 font-mono ${
-                                          isInvalidRange ? 'border-amber-500/60' : 'border-slate-700'
-                                        }`}
-                                      />
+                                      <div className="flex items-center justify-between mb-1">
+                                        <label className="text-[10px] font-semibold text-teal-300">
+                                          Range Section <span className="text-slate-400 font-normal">(Min / Max)</span>
+                                        </label>
+                                        <span className="text-[9px] text-slate-400">
+                                          Fill at least one (Min or Max)
+                                        </span>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                          <input
+                                            type="text"
+                                            value={spec.minValue || ''}
+                                            onChange={(e) => handleUpdateSpec(spec.id, { minValue: e.target.value })}
+                                            placeholder="Min (e.g. 8GB, 144Hz)"
+                                            className={`w-full bg-slate-950 border rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 font-mono ${isInvalidRange ? 'border-amber-500/60' : 'border-slate-700'
+                                              }`}
+                                          />
+                                        </div>
+                                        <div>
+                                          <input
+                                            type="text"
+                                            value={spec.maxValue || ''}
+                                            onChange={(e) => handleUpdateSpec(spec.id, { maxValue: e.target.value })}
+                                            placeholder="Max (e.g. 32GB, 240Hz)"
+                                            className={`w-full bg-slate-950 border rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 font-mono ${isInvalidRange ? 'border-amber-500/60' : 'border-slate-700'
+                                              }`}
+                                          />
+                                        </div>
+                                      </div>
                                     </div>
-                                  </div>
+                                  )}
+                                </div>
+
+                                {/* Delete Row Button */}
+                                <div className="md:col-span-1 flex items-center justify-end pt-2 md:pt-4">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveSpec(spec.id)}
+                                    className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                                    title="Remove this spec requirement"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {isInvalidRange && (
+                                <div className="mt-2 text-[10px] text-amber-300 flex items-center space-x-1">
+                                  <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
+                                  <span>Range mode selected: There is no restriction to fill both, but any one Min or Max must be filled.</span>
                                 </div>
                               )}
                             </div>
+                          );
+                        })}
 
-                            {/* Delete Row Button */}
-                            <div className="md:col-span-1 flex items-center justify-end pt-2 md:pt-4">
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveSpec(spec.id)}
-                                className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
-                                title="Remove this spec requirement"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
+                        {specsList.length === 0 && (
+                          <div className="p-4 rounded-xl border border-dashed border-slate-800 text-center text-slate-500 text-xs">
+                            No specifications defined. Click <strong className="text-teal-400">+ Spec</strong> above to add customized criteria or select a quick template above.
                           </div>
+                        )}
+                      </div>
 
-                          {isInvalidRange && (
-                            <div className="mt-2 text-[10px] text-amber-300 flex items-center space-x-1">
-                              <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
-                              <span>Range mode selected: There is no restriction to fill both, but any one Min or Max must be filled.</span>
-                            </div>
-                          )}
+                      {/* Live Compiled Spec Preview Bar */}
+                      {specsList.length > 0 && (
+                        <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center space-x-2 truncate">
+                            <span className="text-[10px] text-slate-500 uppercase font-mono whitespace-nowrap">Active Criteria:</span>
+                            <span className="text-teal-300 font-mono text-[11px] truncate" title={formatSpecsFromList(specsList)}>
+                              {formatSpecsFromList(specsList) || 'None'}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleAddSpec}
+                            className="text-[11px] text-teal-400 hover:text-teal-300 font-semibold flex items-center space-x-1 whitespace-nowrap self-end sm:self-auto cursor-pointer"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>+ Another Spec</span>
+                          </button>
                         </div>
-                      );
-                    })}
-
-                    {specsList.length === 0 && (
-                      <div className="p-4 rounded-xl border border-dashed border-slate-800 text-center text-slate-500 text-xs">
-                        No specifications defined. Click <strong className="text-teal-400">+ Spec</strong> above to add customized criteria or select a quick template above.
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Live Compiled Spec Preview Bar */}
-                  {specsList.length > 0 && (
-                    <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                      <div className="flex items-center space-x-2 truncate">
-                        <span className="text-[10px] text-slate-500 uppercase font-mono whitespace-nowrap">Active Criteria:</span>
-                        <span className="text-teal-300 font-mono text-[11px] truncate" title={formatSpecsFromList(specsList)}>
-                          {formatSpecsFromList(specsList) || 'None'}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleAddSpec}
-                        className="text-[11px] text-teal-400 hover:text-teal-300 font-semibold flex items-center space-x-1 whitespace-nowrap self-end sm:self-auto cursor-pointer"
-                      >
-                        <Plus className="w-3 h-3" />
-                        <span>+ Another Spec</span>
-                      </button>
+                      )}
                     </div>
-                  )}
-                  </div>
                   )}
                 </div>
 
@@ -3169,15 +4548,13 @@ export default function EnrichmentDashboard() {
                       <button
                         type="button"
                         onClick={() => setProductScope('radius')}
-                        className={`p-2 rounded-lg border text-left flex items-start space-x-2 transition cursor-pointer ${
-                          productScope === 'radius'
-                            ? 'bg-emerald-950/40 border-emerald-500 text-white shadow-sm'
-                            : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                        }`}
+                        className={`p-2 rounded-lg border text-left flex items-start space-x-2 transition cursor-pointer ${productScope === 'radius'
+                          ? 'bg-emerald-950/40 border-emerald-500 text-white shadow-sm'
+                          : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                          }`}
                       >
-                        <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center border shrink-0 ${
-                          productScope === 'radius' ? 'border-emerald-400 bg-emerald-500 text-black' : 'border-slate-600'
-                        }`}>
+                        <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center border shrink-0 ${productScope === 'radius' ? 'border-emerald-400 bg-emerald-500 text-black' : 'border-slate-600'
+                          }`}>
                           {productScope === 'radius' && <Check className="w-3 h-3 stroke-[3]" />}
                         </div>
                         <div>
@@ -3192,15 +4569,13 @@ export default function EnrichmentDashboard() {
                       <button
                         type="button"
                         onClick={() => setProductScope('india')}
-                        className={`p-2 rounded-lg border text-left flex items-start space-x-2 transition cursor-pointer ${
-                          productScope === 'india'
-                            ? 'bg-amber-950/40 border-amber-500 text-white shadow-sm'
-                            : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                        }`}
+                        className={`p-2 rounded-lg border text-left flex items-start space-x-2 transition cursor-pointer ${productScope === 'india'
+                          ? 'bg-amber-950/40 border-amber-500 text-white shadow-sm'
+                          : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                          }`}
                       >
-                        <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center border shrink-0 ${
-                          productScope === 'india' ? 'border-amber-400 bg-amber-500 text-black' : 'border-slate-600'
-                        }`}>
+                        <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center border shrink-0 ${productScope === 'india' ? 'border-amber-400 bg-amber-500 text-black' : 'border-slate-600'
+                          }`}>
                           {productScope === 'india' && <Check className="w-3 h-3 stroke-[3]" />}
                         </div>
                         <div>
@@ -3215,15 +4590,13 @@ export default function EnrichmentDashboard() {
                       <button
                         type="button"
                         onClick={() => setProductScope('world')}
-                        className={`p-2 rounded-lg border text-left flex items-start space-x-2 transition cursor-pointer ${
-                          productScope === 'world'
-                            ? 'bg-cyan-950/40 border-cyan-500 text-white shadow-sm'
-                            : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                        }`}
+                        className={`p-2 rounded-lg border text-left flex items-start space-x-2 transition cursor-pointer ${productScope === 'world'
+                          ? 'bg-cyan-950/40 border-cyan-500 text-white shadow-sm'
+                          : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                          }`}
                       >
-                        <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center border shrink-0 ${
-                          productScope === 'world' ? 'border-cyan-400 bg-cyan-500 text-black' : 'border-slate-600'
-                        }`}>
+                        <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center border shrink-0 ${productScope === 'world' ? 'border-cyan-400 bg-cyan-500 text-black' : 'border-slate-600'
+                          }`}>
                           {productScope === 'world' && <Check className="w-3 h-3 stroke-[3]" />}
                         </div>
                         <div>
@@ -3365,7 +4738,7 @@ export default function EnrichmentDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               {/* Legend — collapsible */}
               <div className="rounded-xl border border-white/[0.07] bg-[rgba(13,19,38,0.54)] overflow-hidden">
-                <button type="button" onClick={() => setShowLegend(v=>!v)} className="w-full flex items-center justify-between gap-2 px-3.5 py-3 hover:bg-white/[0.03] transition text-left">
+                <button type="button" onClick={() => setShowLegend(v => !v)} className="w-full flex items-center justify-between gap-2 px-3.5 py-3 hover:bg-white/[0.03] transition text-left">
                   <span className="flex items-center gap-2">
                     <span className="w-7 h-7 rounded-lg bg-white/[0.08] border border-white/10 flex items-center justify-center"><Tag className="w-3.5 h-3.5 text-violet-300" /></span>
                     <span className="text-xs font-bold tracking-widest uppercase text-white">Status Legend</span>
@@ -3402,7 +4775,7 @@ export default function EnrichmentDashboard() {
               </div>
               {/* Coverage audit — summary always, details collapsible */}
               <div className="rounded-xl border border-white/[0.07] bg-[rgba(13,19,38,0.54)] overflow-hidden">
-                <button type="button" onClick={() => setShowAudit(v=>!v)} className="w-full flex items-center justify-between gap-2 px-3.5 py-3 hover:bg-white/[0.03] transition text-left">
+                <button type="button" onClick={() => setShowAudit(v => !v)} className="w-full flex items-center justify-between gap-2 px-3.5 py-3 hover:bg-white/[0.03] transition text-left">
                   <span className="flex items-center gap-2 min-w-0">
                     <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center shrink-0"><Navigation className="w-3.5 h-3.5 text-white" /></span>
                     <span className="text-xs font-bold tracking-widest uppercase text-white truncate">Coverage Audit</span>
@@ -3801,17 +5174,16 @@ export default function EnrichmentDashboard() {
                             {/* Status/Tags */}
                             <td className="p-3.5 whitespace-nowrap">
                               <span
-                                className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                                  item.statusTag === 'completed'
-                                    ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                                    : item.statusTag === 'working'
+                                className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${item.statusTag === 'completed'
+                                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                                  : item.statusTag === 'working'
                                     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                                     : item.statusTag === 'in_progress'
-                                    ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
-                                    : item.statusTag === 'upgrade_needed'
-                                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                                    : 'bg-purple-500/10 text-purple-400 border-purple-500/30'
-                                }`}
+                                      ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+                                      : item.statusTag === 'upgrade_needed'
+                                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                                        : 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+                                  }`}
                               >
                                 {item.statusTag}
                               </span>
@@ -4232,15 +5604,14 @@ export default function EnrichmentDashboard() {
                             {/* 10. Business Status */}
                             <td className="p-3.5 whitespace-nowrap">
                               <span
-                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                                  seller.businessStatus === 'Active' || seller.businessStatus === 'Operational'
-                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                                    : seller.businessStatus === 'Closed'
+                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${seller.businessStatus === 'Active' || seller.businessStatus === 'Operational'
+                                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                                  : seller.businessStatus === 'Closed'
                                     ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
                                     : seller.businessStatus === 'Expanding'
-                                    ? 'bg-teal-500/10 text-teal-400 border-teal-500/30'
-                                    : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30'
-                                }`}
+                                      ? 'bg-teal-500/10 text-teal-400 border-teal-500/30'
+                                      : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30'
+                                  }`}
                               >
                                 {seller.businessStatus === 'Active' ? 'Operational' : seller.businessStatus}
                               </span>
@@ -4249,17 +5620,16 @@ export default function EnrichmentDashboard() {
                             {/* 11. Verification Status */}
                             <td className="p-3.5 whitespace-nowrap">
                               <span
-                                className={`px-2 py-0.5 rounded text-[10px] font-semibold border inline-flex items-center space-x-1 ${
-                                  seller.verificationStatus === 'Google Maps Verified'
-                                    ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/30'
-                                    : seller.verificationStatus === 'GSTIN Verified'
+                                className={`px-2 py-0.5 rounded text-[10px] font-semibold border inline-flex items-center space-x-1 ${seller.verificationStatus === 'Google Maps Verified'
+                                  ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/30'
+                                  : seller.verificationStatus === 'GSTIN Verified'
                                     ? 'bg-teal-950/60 text-teal-300 border-teal-500/30'
                                     : seller.verificationStatus === 'ISO Certified'
-                                    ? 'bg-blue-950/60 text-blue-300 border-blue-500/30'
-                                    : seller.verificationStatus === 'Unverified Listing'
-                                    ? 'bg-slate-900 text-slate-400 border-slate-700'
-                                    : 'bg-purple-950/60 text-purple-300 border-purple-500/30'
-                                }`}
+                                      ? 'bg-blue-950/60 text-blue-300 border-blue-500/30'
+                                      : seller.verificationStatus === 'Unverified Listing'
+                                        ? 'bg-slate-900 text-slate-400 border-slate-700'
+                                        : 'bg-purple-950/60 text-purple-300 border-purple-500/30'
+                                  }`}
                               >
                                 {seller.verificationStatus === 'Google Maps Verified' && (
                                   <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" />
@@ -4281,13 +5651,12 @@ export default function EnrichmentDashboard() {
                                     </span>
                                   )}
                                 </div>
-                                <span className={`text-[9px] font-semibold px-1.5 py-0.2 rounded w-max border ${
-                                  seller.operationalHealth?.healthGrade === 'A+'
-                                    ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
-                                    : seller.operationalHealth?.healthGrade === 'A'
+                                <span className={`text-[9px] font-semibold px-1.5 py-0.2 rounded w-max border ${seller.operationalHealth?.healthGrade === 'A+'
+                                  ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                                  : seller.operationalHealth?.healthGrade === 'A'
                                     ? 'bg-teal-500/15 text-teal-300 border-teal-500/30'
                                     : 'bg-slate-800 text-slate-400 border-slate-700'
-                                }`}>
+                                  }`}>
                                   {seller.operationalHealth?.supplyConsistency || 'Stable Supply'}
                                 </span>
                               </div>
@@ -4295,11 +5664,10 @@ export default function EnrichmentDashboard() {
 
                             {/* 13. Trade Credit Terms */}
                             <td className="p-3.5 whitespace-nowrap font-mono text-[11px]">
-                              <span className={`px-2 py-0.5 rounded border text-[10px] font-semibold ${
-                                (seller.tradeCreditTerms || '').includes('Net')
-                                  ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30'
-                                  : 'bg-slate-900 text-slate-300 border-slate-700'
-                              }`}>
+                              <span className={`px-2 py-0.5 rounded border text-[10px] font-semibold ${(seller.tradeCreditTerms || '').includes('Net')
+                                ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30'
+                                : 'bg-slate-900 text-slate-300 border-slate-700'
+                                }`}>
                                 {seller.tradeCreditTerms || (seller.b2bPricing?.paymentTerms || 'Offline Procurement Only')}
                               </span>
                             </td>
@@ -4341,11 +5709,10 @@ export default function EnrichmentDashboard() {
                                 <button
                                   onClick={() => handleToggleBookmarkSeller(seller.id)}
                                   title={bookmarkedSellerIds.includes(seller.id) ? "Bookmarked (Click to remove)" : "Bookmark Vendor"}
-                                  className={`p-1 rounded border transition ${
-                                    bookmarkedSellerIds.includes(seller.id)
-                                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                                      : 'bg-slate-800 text-slate-400 hover:text-white border-slate-700'
-                                  }`}
+                                  className={`p-1 rounded border transition ${bookmarkedSellerIds.includes(seller.id)
+                                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                                    : 'bg-slate-800 text-slate-400 hover:text-white border-slate-700'
+                                    }`}
                                 >
                                   <Star className="w-3.5 h-3.5" fill={bookmarkedSellerIds.includes(seller.id) ? "currentColor" : "none"} />
                                 </button>
@@ -4354,11 +5721,10 @@ export default function EnrichmentDashboard() {
                                 <button
                                   onClick={() => handleToggleFlagSeller(seller.id)}
                                   title={flaggedSellerIds.includes(seller.id) ? "Flagged for Revisit (Click to clear)" : "Flag for Revisit / Audit"}
-                                  className={`p-1 rounded border transition ${
-                                    flaggedSellerIds.includes(seller.id)
-                                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                                      : 'bg-slate-800 text-slate-400 hover:text-rose-400 border-slate-700'
-                                  }`}
+                                  className={`p-1 rounded border transition ${flaggedSellerIds.includes(seller.id)
+                                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                                    : 'bg-slate-800 text-slate-400 hover:text-rose-400 border-slate-700'
+                                    }`}
                                 >
                                   <Flag className="w-3.5 h-3.5" fill={flaggedSellerIds.includes(seller.id) ? "currentColor" : "none"} />
                                 </button>
@@ -4611,7 +5977,2344 @@ export default function EnrichmentDashboard() {
         )}
 
         {/* ============================================================== */}
-        {/* Tab 2: Saved Profiles Workspace (Filter, Search, Merge, Rate, Remarks) */}{/* ============================================================== */}
+        {/* Tab: Serverless Actor Studio & Social Scrapers (Apify-Grade) */}
+        {/* ============================================================== */}
+        {activeTab === 'actors' && (
+          <div className="mt-6 space-y-6">
+            {/* Hero Header Card */}
+            <div className="glass-panel p-6 sm:p-7 rounded-2xl relative overflow-hidden">
+              <div className="absolute -top-12 -right-12 w-48 h-48 bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-widest uppercase bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                      APIFY ACTOR ARCHITECTURE
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono tracking-widest uppercase bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">
+                      ZERO PLATFORM FEES
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono tracking-widest uppercase bg-cyan-500/15 text-cyan-300 border border-cyan-500/25">
+                      LIVE PROGRESS CONTEXT
+                    </span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-violet-400" />
+                    <span>Serverless Actor Studio & Social Scrapers</span>
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-3xl leading-relaxed">
+                    Execute high-performance web and social scrapers locally. Crawl web content into clean Markdown for LLM/RAG pipelines, harvest public Instagram profiles & reels, and probe LinkedIn company intelligence with real-time execution telemetry.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-right">
+                    <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Engine Cost</div>
+                    <div className="text-lg font-bold text-emerald-400 font-mono-tight">$0.00 / Run</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 6 Actor Scraper Engine Switchers */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mt-6">
+                {/* Engine 1: Web Content Crawler */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleSelectActorType('web_content', 'https://news.ycombinator.com');
+                  }}
+                  className={`p-3.5 rounded-xl text-left transition border ${actorType === 'web_content' ? 'bg-violet-950/40 border-violet-500/50 shadow-md shadow-violet-500/10' : 'bg-slate-900/50 border-white/[0.07] hover:border-white/15'}`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="p-1.5 rounded-lg bg-violet-500/20 text-violet-300">
+                      <Globe className="w-4 h-4" />
+                    </div>
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-violet-500/20 text-violet-300">RAG Ready</span>
+                  </div>
+                  <div className="font-semibold text-white text-xs">Web Content Crawler</div>
+                  <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">Clean Markdown, heading outlines, and metadata.</p>
+                </button>
+
+                {/* Engine 2: Instagram Scraper */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleSelectActorType('instagram', 'nike');
+                  }}
+                  className={`p-3.5 rounded-xl text-left transition border ${actorType === 'instagram' ? 'bg-pink-950/40 border-pink-500/50 shadow-md shadow-pink-500/10' : 'bg-slate-900/50 border-white/[0.07] hover:border-white/15'}`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="p-1.5 rounded-lg bg-pink-500/20 text-pink-300">
+                      <InstagramIcon className="w-4 h-4" />
+                    </div>
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-pink-500/20 text-pink-300">Public Intel</span>
+                  </div>
+                  <div className="font-semibold text-white text-xs">Instagram Scraper</div>
+                  <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">Bio, verified badge, followers count & reels.</p>
+                </button>
+
+                {/* Engine 3: LinkedIn Scraper */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleSelectActorType('linkedin', 'stripe');
+                  }}
+                  className={`p-3.5 rounded-xl text-left transition border ${actorType === 'linkedin' ? 'bg-sky-950/40 border-sky-500/50 shadow-md shadow-sky-500/10' : 'bg-slate-900/50 border-white/[0.07] hover:border-white/15'}`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="p-1.5 rounded-lg bg-sky-500/20 text-sky-300">
+                      <LinkedinIcon className="w-4 h-4" />
+                    </div>
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-300">Enterprise</span>
+                  </div>
+                  <div className="font-semibold text-white text-xs">LinkedIn Scanner</div>
+                  <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">Company headcount, HQ, sector & specialties.</p>
+                </button>
+
+                {/* Engine 4: Facebook Page Intel */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleSelectActorType('facebook', 'nike');
+                  }}
+                  className={`p-3.5 rounded-xl text-left transition border ${actorType === 'facebook' ? 'bg-blue-950/40 border-blue-500/50 shadow-md shadow-blue-500/10' : 'bg-slate-900/50 border-white/[0.07] hover:border-white/15'}`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-300">
+                      <FacebookIcon className="w-4 h-4" />
+                    </div>
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300">Pages & Posts</span>
+                  </div>
+                  <div className="font-semibold text-white text-xs">Facebook Page Intel</div>
+                  <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">Page likes, followers, contact & post views.</p>
+                </button>
+
+                {/* Engine 5: Meta Ad Library */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleSelectActorType('meta_ads', 'nike');
+                  }}
+                  className={`p-3.5 rounded-xl text-left transition border ${actorType === 'meta_ads' ? 'bg-gradient-to-br from-blue-950/40 to-pink-950/40 border-pink-500/50 shadow-md shadow-pink-500/10' : 'bg-slate-900/50 border-white/[0.07] hover:border-white/15'}`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="p-1.5 rounded-lg bg-gradient-to-r from-blue-500/20 to-pink-500/20 text-pink-300">
+                      <MetaIcon className="w-4 h-4" />
+                    </div>
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300">FB & IG Ads</span>
+                  </div>
+                  <div className="font-semibold text-white text-xs">Meta Ad Library</div>
+                  <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">Active FB/IG ad creatives, copy, CTA & reach.</p>
+                </button>
+
+                {/* Engine 6: 360° Omnichannel Lead Fusion */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleSelectActorType('omnichannel_360', 'nike.com');
+                  }}
+                  className={`p-3.5 rounded-xl text-left transition border ${actorType === 'omnichannel_360' ? 'bg-gradient-to-br from-amber-950/40 via-violet-950/40 to-pink-950/40 border-amber-500/50 shadow-md shadow-amber-500/20' : 'bg-slate-900/50 border-white/[0.07] hover:border-white/15'}`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="p-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 via-violet-500/20 to-pink-500/20 text-amber-300">
+                      <Radio className="w-4 h-4" />
+                    </div>
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-gradient-to-r from-amber-500/20 to-pink-500/20 text-amber-300 border border-amber-500/30">360° Fusion</span>
+                  </div>
+                  <div className="font-semibold text-white text-xs">Omnichannel 360°</div>
+                  <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">Web + FB + Meta Ads + IG + LI + Presence Score.</p>
+                </button>
+              </div>
+            </div>
+
+            {/* Input & Execution Bar */}
+            <div className="glass-panel p-6 rounded-2xl space-y-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    {actorType === 'web_content' && <Globe className="w-4 h-4 text-violet-400" />}
+                    {actorType === 'instagram' && <InstagramIcon className="w-4 h-4 text-pink-400" />}
+                    {actorType === 'linkedin' && <LinkedinIcon className="w-4 h-4 text-sky-400" />}
+                    {actorType === 'facebook' && <FacebookIcon className="w-4 h-4 text-blue-400" />}
+                    {actorType === 'meta_ads' && <MetaIcon className="w-4 h-4 text-pink-400" />}
+                    {actorType === 'omnichannel_360' && <Radio className="w-4 h-4 text-amber-400" />}
+                  </div>
+                  <input
+                    type="text"
+                    value={actorInput}
+                    onChange={(e) => setActorInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleRunActorScraper(); }}
+                    placeholder={
+                      actorType === 'web_content'
+                        ? 'Enter target webpage URL (e.g. https://news.ycombinator.com, tech blogs, documentation...)'
+                        : actorType === 'instagram'
+                        ? 'Enter Instagram handle or URL (e.g. @nike, zara, apple, instagram.com/nike...)'
+                        : actorType === 'linkedin'
+                        ? 'Enter company name or URL (e.g. stripe, nvidia, airbnb, linkedin.com/company/stripe...)'
+                        : actorType === 'facebook'
+                        ? 'Enter Facebook page handle or URL (e.g. nike, cardekho, shopify, facebook.com/nike...)'
+                        : actorType === 'meta_ads'
+                        ? 'Enter advertiser brand or domain for Meta Ad Library (e.g. nike, cardekho, shopify, apple...)'
+                        : 'Enter brand name or domain for 360° Omnichannel Sweep (e.g. nike.com, cardekho, shopify, stripe...)'
+                    }
+                    className="w-full pl-10 pr-24 py-3 rounded-xl bg-slate-900/90 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition"
+                  />
+                  {actorInput && (
+                    <button
+                      type="button"
+                      onClick={() => setActorInput('')}
+                      className="absolute inset-y-0 right-2 px-2 flex items-center text-xs text-slate-400 hover:text-white"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={actorLoading || !actorInput.trim()}
+                  onClick={() => handleRunActorScraper()}
+                  className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-semibold shadow-md shadow-violet-600/30 transition flex items-center justify-center gap-2 shrink-0"
+                >
+                  {actorLoading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Scraping...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 fill-white" />
+                      <span>Run Scraper Actor</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Quick Preset Chips */}
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                <span className="text-slate-400 font-mono text-[11px] uppercase tracking-wider">Quick Presets:</span>
+                {actorType === 'web_content' && (
+                  <>
+                    <button
+                      onClick={() => { setActorInput('https://news.ycombinator.com'); handleRunActorScraper('https://news.ycombinator.com'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      Hacker News
+                    </button>
+                    <button
+                      onClick={() => { setActorInput('https://en.wikipedia.org/wiki/Artificial_intelligence'); handleRunActorScraper('https://en.wikipedia.org/wiki/Artificial_intelligence'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      Wikipedia: AI
+                    </button>
+                    <button
+                      onClick={() => { setActorInput('https://github.blog'); handleRunActorScraper('https://github.blog'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      GitHub Blog
+                    </button>
+                  </>
+                )}
+
+                {actorType === 'instagram' && (
+                  <>
+                    <button
+                      onClick={() => { setActorInput('nike'); handleRunActorScraper('nike', 'instagram'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      @nike
+                    </button>
+                    <button
+                      onClick={() => { setActorInput('natgeo'); handleRunActorScraper('natgeo', 'instagram'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      @natgeo
+                    </button>
+                    <button
+                      onClick={() => { setActorInput('zara'); handleRunActorScraper('zara', 'instagram'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      @zara
+                    </button>
+                  </>
+                )}
+
+                {actorType === 'linkedin' && (
+                  <>
+                    <button
+                      onClick={() => { setActorInput('stripe'); handleRunActorScraper('stripe', 'linkedin'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      Stripe
+                    </button>
+                    <button
+                      onClick={() => { setActorInput('nvidia'); handleRunActorScraper('nvidia', 'linkedin'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      NVIDIA
+                    </button>
+                    <button
+                      onClick={() => { setActorInput('airbnb'); handleRunActorScraper('airbnb', 'linkedin'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      Airbnb
+                    </button>
+                  </>
+                )}
+
+                {actorType === 'facebook' && (
+                  <>
+                    <button
+                      onClick={() => { setActorInput('nike'); handleRunActorScraper('nike', 'facebook'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      Nike
+                    </button>
+                    <button
+                      onClick={() => { setActorInput('cardekho'); handleRunActorScraper('cardekho', 'facebook'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      CarDekho
+                    </button>
+                    <button
+                      onClick={() => { setActorInput('shopify'); handleRunActorScraper('shopify', 'facebook'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      Shopify
+                    </button>
+                  </>
+                )}
+
+                {actorType === 'meta_ads' && (
+                  <>
+                    <button
+                      onClick={() => { setActorInput('nike'); handleRunActorScraper('nike', 'meta_ads'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      Nike (Active Ads)
+                    </button>
+                    <button
+                      onClick={() => { setActorInput('shopify'); handleRunActorScraper('shopify', 'meta_ads'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      Shopify (SaaS Ads)
+                    </button>
+                    <button
+                      onClick={() => { setActorInput('cardekho'); handleRunActorScraper('cardekho', 'meta_ads'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      CarDekho (Auto Ads)
+                    </button>
+                    <button
+                      onClick={() => { setActorInput('zara'); handleRunActorScraper('zara', 'meta_ads'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      Zara (Fashion Ads)
+                    </button>
+                  </>
+                )}
+
+                {actorType === 'omnichannel_360' && (
+                  <>
+                    <button
+                      onClick={() => { setActorInput('nike.com'); handleRunActorScraper('nike.com', 'omnichannel_360'); }}
+                      className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-200 transition font-medium"
+                    >
+                      ⚡ Nike (Global 360°)
+                    </button>
+                    <button
+                      onClick={() => { setActorInput('cardekho.com'); handleRunActorScraper('cardekho.com', 'omnichannel_360'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      CarDekho (Auto 360°)
+                    </button>
+                    <button
+                      onClick={() => { setActorInput('shopify.com'); handleRunActorScraper('shopify.com', 'omnichannel_360'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      Shopify (SaaS 360°)
+                    </button>
+                    <button
+                      onClick={() => { setActorInput('zara.com'); handleRunActorScraper('zara.com', 'omnichannel_360'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      Zara (Fashion 360°)
+                    </button>
+                  </>
+                )}
+
+                <div className="ml-auto flex items-center gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer text-slate-400 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={actorRenderJs}
+                      onChange={(e) => setActorRenderJs(e.target.checked)}
+                      className="rounded border-slate-700 bg-slate-900 text-violet-500 focus:ring-0"
+                    />
+                    <span>Render JS (Stealth Browser)</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Dynamic /pages Discovery Strip (Web Content Crawler) */}
+              {actorType === 'web_content' && (
+                <div className="pt-3 border-t border-white/[0.07] space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-300 font-mono text-[11px] uppercase tracking-wider flex items-center gap-1.5 font-semibold">
+                      <FolderTree className="w-3.5 h-3.5 text-violet-400" />
+                      <span>Target Site /Pages ({parsedWebTarget ? parsedWebTarget.hostname : 'Target Domain'}):</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono hidden sm:inline">Click any sub-path to crawl immediately</span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {[
+                      { slug: '/about', icon: 'ℹ️' },
+                      { slug: '/contact', icon: '📞' },
+                      { slug: '/blog', icon: '✍️' },
+                      { slug: '/feed', icon: '📡' },
+                      { slug: '/pricing', icon: '💳' },
+                      { slug: '/team', icon: '👥' },
+                      { slug: '/careers', icon: '💼' },
+                      { slug: '/docs', icon: '📖' },
+                      { slug: '/terms', icon: '📜' },
+                      { slug: '/privacy', icon: '🔒' },
+                    ].map((item) => {
+                      const origin = parsedWebTarget ? parsedWebTarget.origin : 'https://news.ycombinator.com';
+                      const targetUrl = `${origin}${item.slug}`;
+                      const isCurrent = actorInput.trim().replace(/\/$/, '').toLowerCase() === targetUrl.replace(/\/$/, '').toLowerCase();
+                      return (
+                        <button
+                          key={item.slug}
+                          type="button"
+                          onClick={() => {
+                            setActorInput(targetUrl);
+                            handleRunActorScraper(targetUrl);
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-mono transition border flex items-center gap-1.5 ${
+                            isCurrent
+                              ? 'bg-violet-600 text-white border-violet-500 shadow-sm shadow-violet-500/30'
+                              : 'bg-white/[0.04] text-slate-300 border-white/[0.08] hover:bg-white/[0.10] hover:text-white hover:border-violet-500/30'
+                          }`}
+                          title={`Crawl ${targetUrl}`}
+                        >
+                          <span className="text-[11px]">{item.icon}</span>
+                          <span>{item.slug}</span>
+                        </button>
+                      );
+                    })}
+
+                    {/* Additional Sub-pages Discovered From Live Crawl */}
+                    {discoveredSubPages.map((slug) => {
+                      const origin = parsedWebTarget ? parsedWebTarget.origin : 'https://news.ycombinator.com';
+                      const targetUrl = `${origin}${slug}`;
+                      const isCurrent = actorInput.trim().replace(/\/$/, '').toLowerCase() === targetUrl.replace(/\/$/, '').toLowerCase();
+                      return (
+                        <button
+                          key={slug}
+                          type="button"
+                          onClick={() => {
+                            setActorInput(targetUrl);
+                            handleRunActorScraper(targetUrl);
+                          }}
+                          className={`px-2 py-0.5 rounded-lg text-xs font-mono transition border flex items-center gap-1 ${
+                            isCurrent
+                              ? 'bg-cyan-600 text-white border-cyan-500 shadow-sm'
+                              : 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20 hover:bg-cyan-500/20 hover:text-white'
+                          }`}
+                          title={`Discovered link: ${targetUrl}`}
+                        >
+                          <span className="text-[9px] uppercase font-bold text-cyan-400">Found</span>
+                          <span>{slug}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ============================================================== */}
+            {/* LIVE PROGRESS CONTEXT COMPONENT (Step Telemetry Stream) */}
+            {/* ============================================================== */}
+            {(actorLoading || actorLogs.length > 0) && (
+              <div className="glass-panel p-5 rounded-2xl space-y-4 border border-violet-500/20 bg-slate-950/70">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex h-2.5 w-2.5">
+                      {actorLoading ? (
+                        <>
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-violet-500"></span>
+                        </>
+                      ) : actorError ? (
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                      ) : (
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                      )}
+                    </span>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono">
+                      Live Scraping Progress Context
+                    </span>
+                  </div>
+
+                  <span className="text-xs font-mono text-slate-400">
+                    {actorLoading ? `${actorProgress}% active` : actorError ? 'Crawl halted' : '100% complete'}
+                  </span>
+                </div>
+
+                {/* Progress Bar with Shimmer */}
+                <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-white/10">
+                  <div
+                    className={`h-full transition-all duration-300 ${actorError ? 'bg-rose-500' : 'progress-shimmer'}`}
+                    style={{ width: `${actorProgress}%` }}
+                  />
+                </div>
+
+                {/* 5-Stage Execution Breadcrumb */}
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[11px] font-mono">
+                  <div className={`p-2 rounded-lg border ${actorProgress >= 20 ? 'bg-violet-500/10 border-violet-500/30 text-violet-300' : 'bg-slate-900/40 border-white/[0.05] text-slate-500'}`}>
+                    1. Engine Init
+                  </div>
+                  <div className={`p-2 rounded-lg border ${actorProgress >= 45 ? 'bg-violet-500/10 border-violet-500/30 text-violet-300' : 'bg-slate-900/40 border-white/[0.05] text-slate-500'}`}>
+                    2. Target Resolve
+                  </div>
+                  <div className={`p-2 rounded-lg border ${actorProgress >= 70 ? 'bg-violet-500/10 border-violet-500/30 text-violet-300' : 'bg-slate-900/40 border-white/[0.05] text-slate-500'}`}>
+                    3. DOM Extraction
+                  </div>
+                  <div className={`p-2 rounded-lg border ${actorProgress >= 90 ? 'bg-violet-500/10 border-violet-500/30 text-violet-300' : 'bg-slate-900/40 border-white/[0.05] text-slate-500'}`}>
+                    4. Data Format
+                  </div>
+                  <div className={`p-2 rounded-lg border ${actorProgress >= 100 && !actorError ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : actorError ? 'bg-rose-500/10 border-rose-500/30 text-rose-300' : 'bg-slate-900/40 border-white/[0.05] text-slate-500'}`}>
+                    5. Verified Ready
+                  </div>
+                </div>
+
+                {/* Real-time Telemetry Terminal Box */}
+                <div className="rounded-xl bg-slate-950 p-3.5 border border-white/[0.08] font-mono text-xs space-y-1.5 max-h-36 overflow-y-auto scrollbar-thin">
+                  {actorLogs.map((log, i) => (
+                    <div key={i} className="flex items-start gap-2 leading-relaxed">
+                      <span className="text-slate-500 shrink-0 text-[10px]">[{log.time}]</span>
+                      <span
+                        className={
+                          log.status === 'success'
+                            ? 'text-emerald-400'
+                            : log.status === 'error'
+                            ? 'text-rose-400'
+                            : log.status === 'warn'
+                            ? 'text-amber-400'
+                            : 'text-slate-300'
+                        }
+                      >
+                        {log.stage}
+                      </span>
+                    </div>
+                  ))}
+                  {actorLoading && (
+                    <div className="flex items-center gap-2 text-violet-400 text-[11px] animate-pulse">
+                      <RefreshCw className="w-3 h-3 animate-spin" />
+                      <span>{actorCurrentStage || 'Processing DOM evaluation...'}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {actorError && (
+              <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 shrink-0" />
+                <span>{actorError}</span>
+              </div>
+            )}
+
+            {/* ============================================================== */}
+            {/* RICH RESULTS VIEW: WEB CONTENT CRAWLER */}
+            {/* ============================================================== */}
+            {actorResult && actorType === 'web_content' && (actorResult.actorType === 'web_content' || actorResult.markdown) && (
+              <div className="space-y-6">
+                {/* Result Top Summary Card */}
+                <div className="glass-panel p-6 rounded-2xl relative">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-white/[0.07]">
+                    <div>
+                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <span>{actorResult.title || 'Extracted Web Page'}</span>
+                        <a
+                          href={actorResult.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-slate-400 hover:text-white"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">
+                        {actorResult.description || actorResult.url}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Smart Enrich Button */}
+                      <button
+                        onClick={handleEnrichWebContent}
+                        disabled={enrichingContent}
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-500 via-pink-600 to-violet-600 hover:from-amber-400 hover:via-pink-500 hover:to-violet-500 text-white transition flex items-center gap-1.5 shadow-md shadow-pink-600/30"
+                        title="Synthesize and refine raw page text into structured executive intelligence"
+                      >
+                        {enrichingContent ? (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            <span>Refining Content...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+                            <span>{actorResult.refinedData ? '✨ Re-Refine Content' : '✨ Smart Enrich & Refine'}</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => handleCopyMarkdown(actorResult.markdown)}
+                        className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-violet-600/90 hover:bg-violet-600 text-white transition flex items-center gap-1.5 shadow-sm shadow-violet-500/20"
+                      >
+                        {actorMarkdownCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{actorMarkdownCopied ? 'Copied Markdown!' : 'Copy Markdown'}</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDownloadMarkdown(actorResult.markdown, actorResult.title || 'crawl')}
+                        className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-slate-200 transition flex items-center gap-1.5"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Download .md</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleSaveActorToProfiles(actorResult, 'web_content')}
+                        className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-600/90 hover:bg-cyan-600 text-white transition flex items-center gap-1.5"
+                      >
+                        <Bookmark className="w-3.5 h-3.5" />
+                        <span>Save to Profiles</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Metadata Chips */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div className="p-3 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+                      <div className="text-slate-400 text-[10px] font-mono uppercase">Word Count</div>
+                      <div className="text-lg font-bold text-white font-mono-tight">{actorResult.wordCount.toLocaleString()} words</div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+                      <div className="text-slate-400 text-[10px] font-mono uppercase">Reading Time</div>
+                      <div className="text-lg font-bold text-white font-mono-tight">~{actorResult.readTimeMinutes} min</div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+                      <div className="text-slate-400 text-[10px] font-mono uppercase">Headings Found</div>
+                      <div className="text-lg font-bold text-white font-mono-tight">{actorResult.headings?.length || 0} headings</div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+                      <div className="text-slate-400 text-[10px] font-mono uppercase">Crawl Engine</div>
+                      <div className="text-lg font-bold text-emerald-400 font-mono-tight uppercase text-xs pt-1">{actorResult.crawlMode}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Content View Tabs & Markdown Split/Preview Workspace */}
+                <div className="glass-panel p-6 rounded-2xl space-y-4">
+                  <div className="flex items-center justify-between border-b border-white/[0.07] pb-3 flex-wrap gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={() => {
+                          if (!actorResult.refinedData) {
+                            handleEnrichWebContent();
+                          } else {
+                            setActorViewTab('refined');
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
+                          actorViewTab === 'refined'
+                            ? 'bg-gradient-to-r from-amber-500 to-pink-600 text-white shadow-md shadow-pink-500/25'
+                            : 'text-amber-300 hover:text-white bg-amber-500/10 border border-amber-500/20'
+                        }`}
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                        <span>✨ Refined Intelligence {actorResult.refinedData ? '✓' : ''}</span>
+                      </button>
+                      <button
+                        onClick={() => setActorViewTab('preview')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${actorViewTab === 'preview' ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                      >
+                        Formatted Markdown & Preview
+                      </button>
+                      <button
+                        onClick={() => setActorViewTab('headings')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${actorViewTab === 'headings' ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                      >
+                        Heading Outline ({actorResult.headings?.length || 0})
+                      </button>
+                      <button
+                        onClick={() => setActorViewTab('json')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${actorViewTab === 'json' ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                      >
+                        Raw JSON Payload
+                      </button>
+                    </div>
+
+                    {/* Corner Controls for Formatted Markdown & Preview */}
+                    {actorViewTab === 'preview' && (
+                      <div className="flex items-center gap-1.5 bg-slate-950/80 p-1 rounded-xl border border-white/[0.08]">
+                        <button
+                          type="button"
+                          onClick={() => setMarkdownPreviewMode('source_only')}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-mono transition ${
+                            markdownPreviewMode === 'source_only'
+                              ? 'bg-violet-600 text-white shadow-sm'
+                              : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
+                          }`}
+                          title="Markdown Editor only"
+                        >
+                          Markdown Editor
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMarkdownPreviewMode('split')}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-mono transition flex items-center gap-1.5 ${
+                            markdownPreviewMode === 'split'
+                              ? 'bg-violet-600 text-white shadow-sm'
+                              : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
+                          }`}
+                          title="Side-by-side Split View"
+                        >
+                          <Columns className="w-3 h-3" />
+                          <span>Split View</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMarkdownPreviewMode('preview_only')}
+                          className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition flex items-center gap-1.5 ${
+                            markdownPreviewMode === 'preview_only'
+                              ? 'bg-emerald-600 text-white shadow-sm'
+                              : 'bg-white/[0.06] text-white hover:bg-violet-600/60 border border-white/10'
+                          }`}
+                          title="Full Rendered Preview"
+                        >
+                          <Maximize2 className="w-3 h-3" />
+                          <span>Full Preview</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Formatted Markdown Split & Full Preview Modes */}
+                  {actorViewTab === 'preview' && (
+                    <div className="space-y-3">
+                      {/* Sub-header Bar with Corner Switch matching user mock */}
+                      <div className="flex items-center justify-between px-1 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400 font-mono text-[11px]">
+                            {markdownPreviewMode === 'split' && 'Side-by-Side Editor & Live Rendered Preview'}
+                            {markdownPreviewMode === 'preview_only' && 'Full Rendered Document Preview'}
+                            {markdownPreviewMode === 'source_only' && 'Raw Markdown Source Editor'}
+                          </span>
+                        </div>
+
+                        {/* Direct Corner Switch Action */}
+                        <div className="flex items-center gap-2">
+                          {markdownPreviewMode === 'split' ? (
+                            <button
+                              type="button"
+                              onClick={() => setMarkdownPreviewMode('preview_only')}
+                              className="px-3 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-mono font-semibold flex items-center gap-1.5 shadow-sm shadow-violet-500/30 border border-violet-400/30 transition"
+                            >
+                              <Maximize2 className="w-3.5 h-3.5" />
+                              <span>Full Preview</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setMarkdownPreviewMode('split')}
+                              className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-mono font-semibold flex items-center gap-1.5 border border-white/10 transition"
+                            >
+                              <Columns className="w-3.5 h-3.5 text-violet-400" />
+                              <span>Split View</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Mode 1: Split View */}
+                      {markdownPreviewMode === 'split' && (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+                          {/* Left Column: Markdown Editor / Source */}
+                          <div className="flex flex-col rounded-xl border border-white/[0.08] bg-slate-950/90 overflow-hidden shadow-sm">
+                            <div className="flex items-center justify-between px-4 py-2.5 bg-slate-900/80 border-b border-white/[0.08] text-xs">
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 rounded bg-violet-500/10 text-violet-300 font-mono text-[11px] font-semibold border border-violet-500/20">
+                                  Markdown Editor
+                                </span>
+                                <span className="text-slate-400 font-mono text-[10px]">
+                                  {actorResult.markdown?.length || 0} chars
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyMarkdown(actorResult.markdown)}
+                                className="text-[11px] font-mono text-slate-400 hover:text-white flex items-center gap-1 transition"
+                              >
+                                {actorMarkdownCopied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                                <span>{actorMarkdownCopied ? 'Copied' : 'Copy'}</span>
+                              </button>
+                            </div>
+                            <div className="p-4 flex-1 max-h-[640px] overflow-y-auto scrollbar-thin text-xs font-mono text-violet-200/90 leading-relaxed whitespace-pre-wrap select-text selection:bg-violet-500/30">
+                              {actorResult.markdown}
+                            </div>
+                            <div className="px-4 py-2 bg-slate-900/60 border-t border-white/[0.06] text-[10px] text-slate-500 font-mono flex items-center justify-between">
+                              <span>Tip: Use corner button to switch to Full Preview</span>
+                              <span>{actorResult.markdown?.split('\n').length || 0} lines</span>
+                            </div>
+                          </div>
+
+                          {/* Right Column: Rendered Preview */}
+                          <div className="flex flex-col rounded-xl border border-white/[0.08] bg-slate-900/60 overflow-hidden shadow-sm">
+                            <div className="flex items-center justify-between px-4 py-2.5 bg-slate-900/90 border-b border-white/[0.08] text-xs">
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 font-mono text-[11px] font-semibold border border-emerald-500/20">
+                                  Preview
+                                </span>
+                                <span className="text-slate-400 font-mono text-[10px]">
+                                  {actorResult.wordCount?.toLocaleString()} words
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setMarkdownPreviewMode('preview_only')}
+                                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-[10px] font-mono flex items-center gap-1 border border-white/10 transition"
+                                title="Expand to Full Preview"
+                              >
+                                <Maximize2 className="w-3 h-3 text-violet-400" />
+                                <span>Full Preview</span>
+                              </button>
+                            </div>
+                            <div className="p-6 flex-1 max-h-[640px] overflow-y-auto scrollbar-thin text-slate-200 selection:bg-violet-500/30">
+                              <RenderedMarkdownView markdown={actorResult.markdown} />
+                            </div>
+                            <div className="px-4 py-2 bg-slate-900/40 border-t border-white/[0.06] text-[10px] text-slate-500 font-mono flex items-center justify-between">
+                              <span>~{actorResult.readTimeMinutes} min read</span>
+                              <span>{actorResult.headings?.length || 0} headings detected</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Mode 2: Full Preview Only */}
+                      {markdownPreviewMode === 'preview_only' && (
+                        <div className="flex flex-col rounded-xl border border-white/[0.08] bg-slate-900/70 overflow-hidden shadow-sm">
+                          <div className="flex items-center justify-between px-5 py-3 bg-slate-900/90 border-b border-white/[0.08] text-xs">
+                            <div className="flex items-center gap-2.5">
+                              <span className="px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 font-mono text-xs font-semibold border border-emerald-500/20 flex items-center gap-1.5">
+                                <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>Full Rendered Web Preview</span>
+                              </span>
+                              <span className="text-slate-400 font-mono text-xs">
+                                {actorResult.wordCount?.toLocaleString()} words · ~{actorResult.readTimeMinutes} min read · {actorResult.headings?.length || 0} headings
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setMarkdownPreviewMode('split')}
+                              className="px-3.5 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-mono font-semibold flex items-center gap-1.5 shadow-sm shadow-violet-500/30 border border-violet-400/30 transition"
+                            >
+                              <Columns className="w-3.5 h-3.5" />
+                              <span>Split View</span>
+                            </button>
+                          </div>
+                          <div className="p-8 max-h-[750px] overflow-y-auto scrollbar-thin text-slate-200 selection:bg-violet-500/30">
+                            <RenderedMarkdownView markdown={actorResult.markdown} />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Mode 3: Source / Editor Only */}
+                      {markdownPreviewMode === 'source_only' && (
+                        <div className="flex flex-col rounded-xl border border-white/[0.08] bg-slate-950/95 overflow-hidden shadow-sm">
+                          <div className="flex items-center justify-between px-5 py-3 bg-slate-900/90 border-b border-white/[0.08] text-xs">
+                            <div className="flex items-center gap-2.5">
+                              <span className="px-2.5 py-0.5 rounded bg-violet-500/10 text-violet-300 font-mono text-xs font-semibold border border-violet-500/20 flex items-center gap-1.5">
+                                <Code className="w-3.5 h-3.5 text-violet-400" />
+                                <span>Markdown Source Editor</span>
+                              </span>
+                              <span className="text-slate-400 font-mono text-xs">
+                                {actorResult.markdown?.length || 0} characters · {actorResult.markdown?.split('\n').length || 0} lines
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleCopyMarkdown(actorResult.markdown)}
+                                className="px-2.5 py-1 rounded bg-white/[0.05] hover:bg-white/[0.10] text-slate-300 hover:text-white text-xs font-mono flex items-center gap-1 border border-white/10 transition"
+                              >
+                                {actorMarkdownCopied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                                <span>{actorMarkdownCopied ? 'Copied' : 'Copy'}</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setMarkdownPreviewMode('split')}
+                                className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-mono flex items-center gap-1.5 border border-white/10 transition"
+                              >
+                                <Columns className="w-3 h-3 text-violet-400" />
+                                <span>Split View</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setMarkdownPreviewMode('preview_only')}
+                                className="px-3 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-mono font-semibold flex items-center gap-1.5 shadow-sm shadow-violet-500/30 border border-violet-400/30 transition"
+                              >
+                                <Maximize2 className="w-3.5 h-3.5" />
+                                <span>Full Preview</span>
+                              </button>
+                            </div>
+                          </div>
+                          <div className="p-6 max-h-[750px] overflow-y-auto scrollbar-thin text-xs font-mono text-violet-200/90 leading-relaxed whitespace-pre-wrap select-text selection:bg-violet-500/30">
+                            {actorResult.markdown}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Headings Hierarchy Outline */}
+                  {actorViewTab === 'headings' && (
+                    <div className="p-5 rounded-xl bg-slate-950/80 border border-white/[0.06] max-h-[600px] overflow-y-auto space-y-2 scrollbar-thin">
+                      {actorResult.headings?.length > 0 ? (
+                        actorResult.headings.map((h: any, idx: number) => (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-2 text-xs"
+                            style={{ paddingLeft: `${(h.level - 1) * 16}px` }}
+                          >
+                            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] text-violet-300">
+                              H{h.level}
+                            </span>
+                            <span className="text-white font-medium">{h.text}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-slate-400 text-xs">No explicit H1-H4 headings found.</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Raw JSON */}
+                  {actorViewTab === 'json' && (
+                    <div className="p-5 rounded-xl bg-slate-950/90 border border-white/[0.06] max-h-[600px] overflow-y-auto scrollbar-thin">
+                      <pre className="font-mono text-xs text-emerald-300 whitespace-pre-wrap select-text">
+                        {JSON.stringify(actorResult, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+
+                  {/* ========================================================== */}
+                  {/* Refined Intelligence Dossier View */}
+                  {/* ========================================================== */}
+                  {actorViewTab === 'refined' && (
+                    <div className="space-y-5">
+                      {actorResult.refinedData ? (
+                        <div className="space-y-5">
+                          {/* Executive Overview Header Card */}
+                          <div className="p-5 rounded-2xl bg-gradient-to-br from-violet-950/50 via-slate-900/80 to-pink-950/30 border border-violet-500/30 space-y-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.08]">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-pink-600 flex items-center justify-center text-white shadow-md">
+                                  <Sparkles className="w-5 h-5 text-yellow-200" />
+                                </div>
+                                <div>
+                                  <h4 className="text-base font-bold text-white flex items-center gap-2">
+                                    <span>Executive Intelligence Briefing</span>
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                                      {actorResult.refinedData.refinementSource === 'ai_synthesis' ? '🤖 Live AI Synthesis' : '⚡ Smart NLP Refined'}
+                                    </span>
+                                  </h4>
+                                  <div className="text-xs text-slate-400 font-mono mt-0.5">
+                                    Synthesized from {actorResult.wordCount?.toLocaleString()} words • {actorResult.refinedData.industrySector}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyRefinedBriefing(actorResult.refinedData)}
+                                  className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition flex items-center gap-1.5"
+                                >
+                                  {refinedBriefingCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                                  <span>{refinedBriefingCopied ? 'Copied Briefing!' : 'Copy Briefing'}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSaveActorToProfiles(actorResult, 'web_content')}
+                                  className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white transition flex items-center gap-1.5 shadow-md shadow-violet-600/30"
+                                >
+                                  <Bookmark className="w-3.5 h-3.5" />
+                                  <span>Save Refined Intel to CRM</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenPitchModal({
+                                    companyName: actorResult.refinedData?.brandName || actorResult.title || 'Web Lead',
+                                    domain: actorResult.url,
+                                    valueProposition: actorResult.refinedData?.valueProposition,
+                                    industry: actorResult.refinedData?.industrySector,
+                                    coreOfferings: actorResult.refinedData?.coreOfferings,
+                                    refinedData: actorResult.refinedData,
+                                  })}
+                                  className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-500 via-rose-500 to-pink-600 hover:from-amber-400 hover:to-pink-500 text-white transition flex items-center gap-1.5 shadow-md shadow-pink-500/20"
+                                >
+                                  <Send className="w-3.5 h-3.5" />
+                                  <span>⚡ AI Sales Pitch</span>
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Core Value Proposition Quote Box */}
+                            <div className="p-4 rounded-xl bg-slate-950/70 border border-amber-500/20">
+                              <div className="text-[10px] font-mono uppercase text-amber-400 tracking-wider font-semibold mb-1">
+                                Core Value Proposition:
+                              </div>
+                              <p className="text-sm text-amber-100 font-medium leading-relaxed italic">
+                                &quot;{actorResult.refinedData.valueProposition}&quot;
+                              </p>
+                            </div>
+
+                            {/* Executive Summary */}
+                            <div className="space-y-1.5">
+                              <div className="text-xs font-mono uppercase text-slate-400 tracking-wider">Executive Summary:</div>
+                              <p className="text-xs text-slate-200 leading-relaxed max-w-4xl">
+                                {actorResult.refinedData.executiveSummary}
+                              </p>
+                            </div>
+
+                            {/* Target Audience & Industry Chips */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                              <div className="p-3 rounded-xl bg-slate-900/60 border border-white/[0.06] flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold">
+                                  🎯
+                                </div>
+                                <div>
+                                  <div className="text-[10px] font-mono uppercase text-slate-400">Target Audience / ICP</div>
+                                  <div className="text-xs font-bold text-white mt-0.5">{actorResult.refinedData.targetAudience}</div>
+                                </div>
+                              </div>
+                              <div className="p-3 rounded-xl bg-slate-900/60 border border-white/[0.06] flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold">
+                                  🏢
+                                </div>
+                                <div>
+                                  <div className="text-[10px] font-mono uppercase text-slate-400">Industry Sector</div>
+                                  <div className="text-xs font-bold text-white mt-0.5">{actorResult.refinedData.industrySector}</div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 2-Column Grid: Offerings & Commercial Signals */}
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            {/* Core Offerings & Features */}
+                            <div className="p-5 rounded-2xl bg-slate-900/60 border border-white/[0.07] space-y-3">
+                              <div className="text-xs font-mono uppercase text-slate-400 tracking-wider flex items-center gap-1.5 font-bold">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                <span>Core Products & Offerings ({actorResult.refinedData.coreOfferings?.length || 0})</span>
+                              </div>
+                              <div className="space-y-2">
+                                {actorResult.refinedData.coreOfferings?.map((item: string, idx: number) => (
+                                  <div key={idx} className="p-2.5 rounded-xl bg-slate-950/60 border border-white/[0.05] text-xs text-slate-200 flex items-start gap-2">
+                                    <span className="text-emerald-400 font-bold shrink-0">✓</span>
+                                    <span>{item}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Pricing & Commercial Signals */}
+                            <div className="p-5 rounded-2xl bg-slate-900/60 border border-white/[0.07] space-y-3">
+                              <div className="text-xs font-mono uppercase text-slate-400 tracking-wider flex items-center gap-1.5 font-bold">
+                                <DollarSign className="w-4 h-4 text-amber-400" />
+                                <span>Pricing & Commercial Signals</span>
+                              </div>
+                              <div className="space-y-2">
+                                {actorResult.refinedData.pricingSignals?.map((sig: string, idx: number) => (
+                                  <div key={idx} className="p-2.5 rounded-xl bg-slate-950/60 border border-white/[0.05] text-xs text-amber-200 flex items-center gap-2">
+                                    <span className="text-amber-400 font-bold font-mono">💳</span>
+                                    <span className="font-mono text-xs">{sig}</span>
+                                  </div>
+                                ))}
+                                {actorResult.refinedData.technologySignals?.length > 0 && (
+                                  <div className="pt-2 border-t border-white/[0.06]">
+                                    <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-1.5">Detected Technology Stack:</div>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {actorResult.refinedData.technologySignals.map((tech: string, idx: number) => (
+                                        <span key={idx} className="px-2 py-0.5 rounded-md text-[11px] font-mono bg-violet-500/10 text-violet-300 border border-violet-500/20">
+                                          {tech}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Contacts & Strategic Takeaways */}
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            {/* Extracted Contact Footprint */}
+                            <div className="p-5 rounded-2xl bg-slate-900/60 border border-white/[0.07] space-y-3">
+                              <div className="text-xs font-mono uppercase text-slate-400 tracking-wider flex items-center gap-1.5 font-bold">
+                                <Mail className="w-4 h-4 text-cyan-400" />
+                                <span>Discovered Contact Footprint</span>
+                              </div>
+                              <div className="space-y-2 text-xs">
+                                {actorResult.refinedData.contacts?.emails?.length > 0 ? (
+                                  actorResult.refinedData.contacts.emails.map((em: string, idx: number) => (
+                                    <div key={idx} className="p-2.5 rounded-xl bg-slate-950/60 border border-white/[0.05] flex items-center justify-between">
+                                      <a href={`mailto:${em}`} className="text-cyan-400 hover:underline flex items-center gap-1.5 truncate">
+                                        <Mail className="w-3.5 h-3.5 shrink-0" />
+                                        <span>{em}</span>
+                                      </a>
+                                      <button
+                                        onClick={() => navigator.clipboard.writeText(em)}
+                                        className="text-[10px] font-mono text-slate-400 hover:text-white px-2 py-0.5 rounded bg-white/[0.05]"
+                                      >
+                                        Copy
+                                      </button>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="text-slate-400 text-xs italic">No explicit email addresses found on this page.</div>
+                                )}
+
+                                {actorResult.refinedData.contacts?.phones?.map((ph: string, idx: number) => (
+                                  <div key={idx} className="p-2.5 rounded-xl bg-slate-950/60 border border-white/[0.05] flex items-center justify-between">
+                                    <a href={`tel:${ph}`} className="text-slate-200 hover:text-white flex items-center gap-1.5 font-mono">
+                                      <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                      <span>{ph}</span>
+                                    </a>
+                                  </div>
+                                ))}
+
+                                {actorResult.refinedData.contacts?.locations?.map((loc: string, idx: number) => (
+                                  <div key={idx} className="p-2.5 rounded-xl bg-slate-950/60 border border-white/[0.05] flex items-center gap-1.5 text-slate-300">
+                                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                    <span>{loc}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Strategic Takeaways for RevOps / Research */}
+                            <div className="p-5 rounded-2xl bg-slate-900/60 border border-white/[0.07] space-y-3">
+                              <div className="text-xs font-mono uppercase text-slate-400 tracking-wider flex items-center gap-1.5 font-bold">
+                                <TrendingUp className="w-4 h-4 text-pink-400" />
+                                <span>Actionable Strategic Takeaways</span>
+                              </div>
+                              <div className="space-y-2">
+                                {actorResult.refinedData.keyTakeaways?.map((takeaway: string, idx: number) => (
+                                  <div key={idx} className="p-2.5 rounded-xl bg-slate-950/60 border border-white/[0.05] text-xs text-slate-300 flex items-start gap-2">
+                                    <span className="text-pink-400 font-bold shrink-0">💡</span>
+                                    <span>{takeaway}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        /* Empty State prompt to trigger refinement */
+                        <div className="p-8 rounded-2xl bg-slate-900/50 border border-dashed border-white/10 text-center space-y-4">
+                          <div className="w-12 h-12 rounded-2xl bg-violet-600/20 text-violet-300 mx-auto flex items-center justify-center">
+                            <Sparkles className="w-6 h-6 text-yellow-300 animate-pulse" />
+                          </div>
+                          <div className="max-w-md mx-auto space-y-1">
+                            <h4 className="text-base font-bold text-white">Smart Content Refinery</h4>
+                            <p className="text-xs text-slate-400 leading-relaxed">
+                              Transform the {actorResult.wordCount?.toLocaleString()} words of raw crawled content into an executive intelligence briefing with core value proposition, key offerings, ICP, pricing, and strategic takeaways.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleEnrichWebContent}
+                            disabled={enrichingContent}
+                            className="px-5 py-2.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-500 via-pink-600 to-violet-600 hover:from-amber-400 hover:via-pink-500 hover:to-violet-500 text-white transition inline-flex items-center gap-2 shadow-lg shadow-pink-600/30"
+                          >
+                            {enrichingContent ? (
+                              <>
+                                <RefreshCw className="w-4 h-4 animate-spin" />
+                                <span>Refining Content...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="w-4 h-4 text-yellow-300" />
+                                <span>Enrich & Refine This Page Now</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ============================================================== */}
+            {/* RICH RESULTS VIEW: INSTAGRAM SCRAPER */}
+            {/* ============================================================== */}
+            {actorResult && actorType === 'instagram' && (actorResult.actorType === 'instagram' || actorResult.username) && (
+              <div className="space-y-6">
+                {/* Profile Card */}
+                <div className="glass-panel p-6 sm:p-7 rounded-2xl relative overflow-hidden">
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 pb-5 border-b border-white/[0.07]">
+                    <div className="flex items-center gap-4">
+                      {actorResult.profilePicUrl ? (
+                        <img
+                          src={actorResult.profilePicUrl}
+                          alt={actorResult.username || 'Instagram Profile'}
+                          className="w-16 h-16 rounded-full object-cover border-2 border-pink-500/40 shadow-lg"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-yellow-500 via-pink-600 to-purple-700 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                          {actorResult.username ? actorResult.username.charAt(0).toUpperCase() : 'IG'}
+                        </div>
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xl font-bold text-white">{actorResult.fullName || actorResult.username || 'Instagram Profile'}</h3>
+                          {actorResult.isVerified && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3 text-blue-400" />
+                              <span>Verified</span>
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm font-mono text-pink-400 mt-0.5">@{actorResult.username || 'user'}</div>
+                        <p className="text-xs text-slate-300 mt-1 max-w-xl">{actorResult.biography}</p>
+                        {actorResult.externalUrl && (
+                          <a
+                            href={actorResult.externalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-sky-400 hover:underline mt-1 font-mono"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            <span>{actorResult.externalUrl}</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={actorResult.username ? `https://www.instagram.com/${actorResult.username}/` : '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition flex items-center gap-1.5"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Instagram Page</span>
+                      </a>
+
+                      <button
+                        onClick={() => handleSaveActorToProfiles(actorResult, 'instagram')}
+                        className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-pink-600 hover:bg-pink-500 text-white transition flex items-center gap-1.5 shadow-md shadow-pink-600/30"
+                      >
+                        <Bookmark className="w-3.5 h-3.5" />
+                        <span>Save to CRM Profiles</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 3 Metric Counters */}
+                  <div className="grid grid-cols-3 gap-3 mt-5">
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center">
+                      <div className="text-slate-400 text-xs font-mono uppercase">Followers</div>
+                      <div className="text-2xl font-bold text-white font-mono-tight mt-1">{actorResult.followersFormatted || '0'}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">({actorResult.followersCount?.toLocaleString ? actorResult.followersCount.toLocaleString() : (actorResult.followersCount || 0)} exact)</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center">
+                      <div className="text-slate-400 text-xs font-mono uppercase">Following</div>
+                      <div className="text-2xl font-bold text-white font-mono-tight mt-1">{actorResult.followingFormatted || '0'}</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center">
+                      <div className="text-slate-400 text-xs font-mono uppercase">Total Posts</div>
+                      <div className="text-2xl font-bold text-white font-mono-tight mt-1">{actorResult.postsCount?.toLocaleString ? actorResult.postsCount.toLocaleString() : (actorResult.postsCount || 0)}</div>
+                    </div>
+                  </div>
+
+                  {/* Hashtags Cloud */}
+                  {actorResult.hashtags?.length > 0 && (
+                    <div className="mt-5 pt-4 border-t border-white/[0.07]">
+                      <div className="text-xs font-mono text-slate-400 uppercase tracking-wider mb-2">Extracted Brand Hashtags:</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {actorResult.hashtags.map((tag: string, i: number) => (
+                          <span key={i} className="px-2 py-0.5 rounded-full text-xs font-mono bg-pink-500/10 text-pink-300 border border-pink-500/20">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Recent Posts Grid */}
+                {actorResult.posts?.length > 0 && (
+                  <div className="glass-panel p-6 rounded-2xl space-y-4">
+                    <h4 className="text-base font-bold text-white flex items-center gap-2">
+                      <InstagramIcon className="w-4 h-4 text-pink-400" />
+                      <span>Recent Public Posts & Media ({actorResult.posts.length})</span>
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {actorResult.posts.map((post: any) => (
+                        <div
+                          key={post.id}
+                          className="rounded-xl bg-slate-900/70 border border-white/[0.07] overflow-hidden flex flex-col justify-between hover:border-pink-500/30 transition group"
+                        >
+                          <div>
+                            {post.thumbnailUrl && (
+                              <div className="relative h-44 bg-slate-950 overflow-hidden">
+                                <img
+                                  src={post.thumbnailUrl}
+                                  alt={post.caption || 'Instagram Post'}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                                />
+                                <span className="absolute top-2 right-2 px-2 py-0.5 rounded text-[10px] font-mono bg-slate-950/80 text-pink-300 uppercase">
+                                  {post.type}
+                                </span>
+                              </div>
+                            )}
+                            <div className="p-3.5">
+                              <p className="text-xs text-slate-200 line-clamp-3 leading-relaxed">
+                                {post.caption || 'Public Instagram post update'}
+                              </p>
+                              {post.hashtags?.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {post.hashtags.slice(0, 3).map((h: string, idx: number) => (
+                                    <span key={idx} className="text-[10px] font-mono text-pink-400">
+                                      {h}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="p-3.5 pt-0">
+                            <a
+                              href={post.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-slate-400 hover:text-white flex items-center gap-1 font-mono"
+                            >
+                              <span>View on Instagram</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ============================================================== */}
+            {/* RICH RESULTS VIEW: LINKEDIN COMPANY SCANNER */}
+            {/* ============================================================== */}
+            {actorResult && actorType === 'linkedin' && (actorResult.actorType === 'linkedin' || actorResult.companyName) && (
+              <div className="space-y-6">
+                <div className="glass-panel p-6 sm:p-7 rounded-2xl relative overflow-hidden">
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 pb-5 border-b border-white/[0.07]">
+                    <div className="flex items-center gap-4">
+                      {actorResult.logoUrl ? (
+                        <img
+                          src={actorResult.logoUrl}
+                          alt={actorResult.companyName || 'Company'}
+                          className="w-16 h-16 rounded-xl object-contain bg-white p-2 border border-sky-500/30 shadow-lg"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-xl bg-gradient-to-tr from-sky-600 to-blue-800 flex items-center justify-center text-white font-bold text-2xl shadow-lg">
+                          <LinkedinIcon className="w-8 h-8" />
+                        </div>
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xl font-bold text-white">{actorResult.companyName || 'Company Profile'}</h3>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                            LinkedIn Company
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-400 mt-1">{actorResult.industry || 'Business Services'}</div>
+                        <p className="text-xs text-slate-300 mt-1 max-w-xl leading-relaxed">{actorResult.tagline || ''}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={actorResult.linkedinUrl || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition flex items-center gap-1.5"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>LinkedIn Page</span>
+                      </a>
+
+                      <button
+                        onClick={() => handleSaveActorToProfiles(actorResult, 'linkedin')}
+                        className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white transition flex items-center gap-1.5 shadow-md shadow-sky-600/30"
+                      >
+                        <Bookmark className="w-3.5 h-3.5" />
+                        <span>Save to CRM Profiles</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Company Metrics Row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5">
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+                      <div className="text-slate-400 text-xs font-mono uppercase">Headcount / Size</div>
+                      <div className="text-lg font-bold text-sky-300 font-mono-tight mt-1">{actorResult.companySize}</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+                      <div className="text-slate-400 text-xs font-mono uppercase">Headquarters</div>
+                      <div className="text-lg font-bold text-white font-mono-tight mt-1 truncate">{actorResult.headquarters}</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+                      <div className="text-slate-400 text-xs font-mono uppercase">Industry Sector</div>
+                      <div className="text-lg font-bold text-white font-mono-tight mt-1 truncate">{actorResult.industry}</div>
+                    </div>
+                  </div>
+
+                  {/* About Summary & Specialties */}
+                  <div className="mt-5 pt-4 border-t border-white/[0.07] space-y-3">
+                    <div className="text-xs font-mono text-slate-400 uppercase tracking-wider">About Company:</div>
+                    <p className="text-xs text-slate-300 leading-relaxed max-w-3xl">{actorResult.aboutSummary}</p>
+
+                    {actorResult.specialties?.length > 0 && (
+                      <div className="pt-2">
+                        <div className="text-xs font-mono text-slate-400 uppercase tracking-wider mb-2">Specialties:</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {actorResult.specialties.map((s: string, idx: number) => (
+                            <span key={idx} className="px-2.5 py-0.5 rounded-full text-xs font-mono bg-sky-500/10 text-sky-300 border border-sky-500/20">
+                              {s}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ============================================================== */}
+            {/* RICH RESULTS VIEW: FACEBOOK PAGE HARVESTER */}
+            {/* ============================================================== */}
+            {actorResult && actorType === 'facebook' && (actorResult.actorType === 'facebook' || actorResult.pageName) && (
+              <div className="space-y-6">
+                <div className="glass-panel p-6 sm:p-7 rounded-2xl relative overflow-hidden">
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 pb-5 border-b border-white/[0.07]">
+                    <div className="flex items-center gap-4">
+                      {actorResult.profilePicUrl ? (
+                        <img
+                          src={actorResult.profilePicUrl}
+                          alt={actorResult.pageName || 'Facebook Page'}
+                          className="w-16 h-16 rounded-full object-cover border-2 border-blue-500/40 shadow-lg"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg">
+                          <FacebookIcon className="w-8 h-8" />
+                        </div>
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xl font-bold text-white">{actorResult.pageName}</h3>
+                          {actorResult.isVerified && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3 text-blue-400" />
+                              <span>Verified Page</span>
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs font-mono text-blue-400 mt-0.5">{actorResult.category || 'Facebook Business Page'}</div>
+                        <p className="text-xs text-slate-300 mt-1 max-w-xl line-clamp-2 leading-relaxed">{actorResult.about || actorResult.intro}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <a
+                        href={actorResult.pageUrl || `https://www.facebook.com/${actorResult.pageSlug}/`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition flex items-center gap-1.5"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>View on Facebook</span>
+                      </a>
+
+                      <button
+                        onClick={() => handleSaveActorToProfiles(actorResult, 'facebook')}
+                        className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition flex items-center gap-1.5 shadow-md shadow-blue-600/30"
+                      >
+                        <Bookmark className="w-3.5 h-3.5" />
+                        <span>Save to CRM Profiles</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 4 Metric Counters */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center">
+                      <div className="text-slate-400 text-xs font-mono uppercase">Page Likes</div>
+                      <div className="text-2xl font-bold text-white font-mono-tight mt-1">{actorResult.likesFormatted || '0'}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">({actorResult.likesCount?.toLocaleString() || 0} exact)</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center">
+                      <div className="text-slate-400 text-xs font-mono uppercase">Followers</div>
+                      <div className="text-2xl font-bold text-blue-400 font-mono-tight mt-1">{actorResult.followersFormatted || '0'}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">({actorResult.followersCount?.toLocaleString() || 0} exact)</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center">
+                      <div className="text-slate-400 text-xs font-mono uppercase">Public Posts</div>
+                      <div className="text-2xl font-bold text-white font-mono-tight mt-1">{actorResult.posts?.length || 0}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Recent Analyzed</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center">
+                      <div className="text-slate-400 text-xs font-mono uppercase">Business Type</div>
+                      <div className="text-sm font-bold text-white font-mono-tight mt-2 truncate">{actorResult.category || 'Commercial'}</div>
+                    </div>
+                  </div>
+
+                  {/* Contact & Location Strip */}
+                  {(actorResult.website || actorResult.address || actorResult.phone || actorResult.email) && (
+                    <div className="mt-5 pt-4 border-t border-white/[0.07] flex flex-wrap gap-4 text-xs">
+                      {actorResult.website && (
+                        <a href={actorResult.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-blue-400 hover:underline">
+                          <Globe className="w-3.5 h-3.5" />
+                          <span>{actorResult.website}</span>
+                        </a>
+                      )}
+                      {actorResult.address && (
+                        <div className="flex items-center gap-1.5 text-slate-300">
+                          <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{actorResult.address}</span>
+                        </div>
+                      )}
+                      {actorResult.email && (
+                        <div className="flex items-center gap-1.5 text-slate-300">
+                          <Mail className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{actorResult.email}</span>
+                        </div>
+                      )}
+                      {actorResult.phone && (
+                        <div className="flex items-center gap-1.5 text-slate-300">
+                          <Phone className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{actorResult.phone}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Recent Public Posts with View Telemetry */}
+                {actorResult.posts?.length > 0 && (
+                  <div className="glass-panel p-6 rounded-2xl space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-base font-bold text-white flex items-center gap-2">
+                        <FacebookIcon className="w-4 h-4 text-blue-400" />
+                        <span>Recent Public Posts & Video Views ({actorResult.posts.length})</span>
+                      </h4>
+                      <span className="text-xs text-slate-400 font-mono">Engagement & Reach Telemetry</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {actorResult.posts.map((post: any) => (
+                        <div
+                          key={post.id}
+                          className="rounded-xl bg-slate-900/70 border border-white/[0.07] p-4 flex flex-col justify-between hover:border-blue-500/30 transition group space-y-3"
+                        >
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 font-mono text-[10px] uppercase font-semibold">
+                              {post.type}
+                            </span>
+                            <span className="text-slate-400 font-mono text-[10px] flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              <span>{post.timestamp}</span>
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-slate-200 line-clamp-3 leading-relaxed">
+                            {post.content}
+                          </p>
+
+                          {/* Engagement & Views Counters */}
+                          <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-xs font-mono">
+                            <div className="flex items-center gap-3 text-slate-300 text-[11px]">
+                              <span>👍 {post.likesCount?.toLocaleString()}</span>
+                              <span>💬 {post.commentsCount?.toLocaleString()}</span>
+                              <span>🔁 {post.sharesCount?.toLocaleString()}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-emerald-400 font-bold text-[11px] bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                              <Eye className="w-3 h-3" />
+                              <span>~{post.viewsCount?.toLocaleString()} views</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ============================================================== */}
+            {/* RICH RESULTS VIEW: META AD LIBRARY (FB & IG ADS) */}
+            {/* ============================================================== */}
+            {actorResult && actorType === 'meta_ads' && (actorResult.actorType === 'meta_ads' || actorResult.ads) && (
+              <div className="space-y-6">
+                {/* Advertiser Top Overview Banner */}
+                <div className="glass-panel p-6 sm:p-7 rounded-2xl relative overflow-hidden">
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 pb-5 border-b border-white/[0.07]">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-pink-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg border border-white/20">
+                        <MetaIcon className="w-8 h-8" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xl font-bold text-white">{actorResult.pageName || actorResult.query}</h3>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            <span>Active Meta Advertiser</span>
+                          </span>
+                        </div>
+                        <div className="text-xs font-mono text-slate-400 mt-1 flex items-center gap-2">
+                          <span>Ad Library Query: &quot;{actorResult.query}&quot;</span>
+                          <span>·</span>
+                          <span>Platforms: {actorResult.platformsDetected?.join(', ')}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <a
+                        href={actorResult.adLibraryUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition flex items-center gap-1.5"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Inspect in Meta Ad Library</span>
+                      </a>
+
+                      <button
+                        onClick={() => handleSaveActorToProfiles(actorResult, 'meta_ads')}
+                        className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition flex items-center gap-1.5 shadow-md shadow-blue-600/30"
+                      >
+                        <Bookmark className="w-3.5 h-3.5" />
+                        <span>Save to CRM Profiles</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 3 Metric Counters */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5">
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+                      <div className="text-slate-400 text-xs font-mono uppercase">Total Active Campaigns</div>
+                      <div className="text-2xl font-bold text-white font-mono-tight mt-1">~{actorResult.totalActiveAds} active ads</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+                      <div className="text-slate-400 text-xs font-mono uppercase">Omnichannel Distribution</div>
+                      <div className="text-lg font-bold text-pink-400 font-mono-tight mt-1 flex items-center gap-2">
+                        <FacebookIcon className="w-4 h-4 text-blue-400" />
+                        <InstagramIcon className="w-4 h-4 text-pink-400" />
+                        <span className="text-xs text-white">FB + Instagram</span>
+                      </div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+                      <div className="text-slate-400 text-xs font-mono uppercase">Ad Creative Transparency</div>
+                      <div className="text-lg font-bold text-emerald-400 font-mono-tight mt-1">Zero Platform Fees (Public)</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Active Ad Cards Grid */}
+                {actorResult.ads?.length > 0 && (
+                  <div className="glass-panel p-6 rounded-2xl space-y-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-white/[0.07] pb-3">
+                      <h4 className="text-base font-bold text-white flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-amber-400" />
+                        <span>Active Facebook & Instagram Ad Creatives ({actorResult.ads.length})</span>
+                      </h4>
+
+                      {/* Filter Pills */}
+                      <div className="flex items-center gap-1.5 bg-slate-950/80 p-1 rounded-xl border border-white/[0.08] text-xs font-mono">
+                        <button
+                          type="button"
+                          onClick={() => setAdPlatformFilter('all')}
+                          className={`px-2.5 py-1 rounded-lg transition ${adPlatformFilter === 'all' ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                        >
+                          All ({actorResult.ads.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAdPlatformFilter('facebook')}
+                          className={`px-2.5 py-1 rounded-lg transition flex items-center gap-1 ${adPlatformFilter === 'facebook' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                        >
+                          <FacebookIcon className="w-3 h-3" />
+                          <span>Facebook</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAdPlatformFilter('instagram')}
+                          className={`px-2.5 py-1 rounded-lg transition flex items-center gap-1 ${adPlatformFilter === 'instagram' ? 'bg-pink-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                        >
+                          <InstagramIcon className="w-3 h-3" />
+                          <span>Instagram</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {actorResult.ads
+                        .filter((ad: any) => {
+                          if (adPlatformFilter === 'facebook') return ad.platforms?.includes('facebook');
+                          if (adPlatformFilter === 'instagram') return ad.platforms?.includes('instagram');
+                          return true;
+                        })
+                        .map((ad: any) => (
+                          <div
+                            key={ad.adId}
+                            className="rounded-2xl bg-slate-900/80 border border-white/[0.08] overflow-hidden flex flex-col justify-between hover:border-violet-500/40 transition group shadow-md"
+                          >
+                            {/* Card Top: Page Info & Platforms */}
+                            <div className="p-4 border-b border-white/[0.06] bg-slate-950/40">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-7 h-7 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-[10px] font-bold text-white">
+                                    {ad.pageName?.charAt(0) || 'M'}
+                                  </div>
+                                  <div>
+                                    <div className="text-xs font-bold text-white leading-tight">{ad.pageName}</div>
+                                    <div className="text-[10px] text-slate-400 font-mono">Started {ad.startDate}</div>
+                                  </div>
+                                </div>
+                                <span className="px-2 py-0.5 rounded text-[9px] font-mono bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-bold uppercase">
+                                  Active
+                                </span>
+                              </div>
+
+                              {/* Platform badges */}
+                              <div className="flex items-center gap-1.5 mt-2.5">
+                                {ad.platforms?.map((p: string) => (
+                                  <span
+                                    key={p}
+                                    className={`px-2 py-0.5 rounded-full text-[9px] font-mono font-medium flex items-center gap-1 border ${
+                                      p === 'facebook'
+                                        ? 'bg-blue-500/10 text-blue-300 border-blue-500/20'
+                                        : p === 'instagram'
+                                        ? 'bg-pink-500/10 text-pink-300 border-pink-500/20'
+                                        : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20'
+                                    }`}
+                                  >
+                                    {p === 'facebook' && <FacebookIcon className="w-2.5 h-2.5" />}
+                                    {p === 'instagram' && <InstagramIcon className="w-2.5 h-2.5" />}
+                                    <span className="capitalize">{p}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Card Middle: Ad Creative & Copy */}
+                            <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                              <div className="space-y-2">
+                                <p className="text-xs text-slate-200 leading-relaxed font-normal">
+                                  {ad.adCreative?.body}
+                                </p>
+                              </div>
+
+                              {/* Creative Media / Graphic Placeholder */}
+                              <div className="p-3 rounded-xl bg-slate-950/80 border border-white/[0.06] space-y-1.5">
+                                <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
+                                  {ad.adCreative?.caption || 'advertiser.com'}
+                                </div>
+                                <div className="text-xs font-bold text-white line-clamp-1">
+                                  {ad.adCreative?.headline}
+                                </div>
+                                <a
+                                  href={ad.adCreative?.linkUrl || '#'}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="mt-2 w-full py-1.5 px-3 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold flex items-center justify-between transition"
+                                >
+                                  <span>{ad.adCreative?.ctaText || 'Learn More'}</span>
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              </div>
+
+                              {/* Telemetry Footer: Impressions & Ad ID */}
+                              <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[10px] font-mono text-slate-400">
+                                <span className="flex items-center gap-1 text-amber-300 font-medium">
+                                  <Eye className="w-3 h-3" />
+                                  <span>{ad.reachOrViews?.impressionsRange}</span>
+                                </span>
+                                <a
+                                  href={ad.adArchiveUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-slate-400 hover:text-white underline underline-offset-2"
+                                >
+                                  Ad ID: {ad.adId.slice(-8)}
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Engine 6: 360° Omnichannel Lead Fusion Results */}
+            {actorResult && actorType === 'omnichannel_360' && (actorResult.actorType === 'omnichannel_360' || actorResult.digitalPresenceScore !== undefined) && (
+              <div className="space-y-6">
+                {/* 360° Command Center Hero Header */}
+                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-950/40 via-violet-950/50 to-slate-900 border border-amber-500/30 p-6 sm:p-8 shadow-2xl shadow-amber-950/20">
+                  <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-gradient-to-br from-amber-500/10 via-pink-500/10 to-violet-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                  <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-amber-500/20 to-pink-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
+                          <Radio className="w-3.5 h-3.5" />
+                          <span>360° Omnichannel Command Dossier</span>
+                        </span>
+                        <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                          {actorResult.industrySector || 'Commercial Enterprise'}
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          ● Zero-Cost Headless Live
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-violet-600 flex items-center justify-center text-white font-extrabold text-2xl shadow-lg shadow-amber-500/20">
+                          {actorResult.brandName?.charAt(0)?.toUpperCase() || '3'}
+                        </div>
+                        <div>
+                          <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
+                            <span>{actorResult.brandName}</span>
+                            {actorResult.facebookIntel?.isVerified || actorResult.instagramIntel?.isVerified ? (
+                              <CheckCircle2 className="w-5 h-5 text-sky-400 fill-sky-400/20" />
+                            ) : null}
+                          </h3>
+                          <div className="flex items-center gap-3 text-xs text-slate-400 font-mono mt-1">
+                            <span className="text-slate-300">{actorResult.domain}</span>
+                            <span>•</span>
+                            <span>Swept at {new Date(actorResult.sweptAt || Date.now()).toLocaleTimeString()}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Channels Detected Pills */}
+                      <div className="flex items-center gap-2 flex-wrap pt-1">
+                        <span className="text-xs text-slate-400 font-mono uppercase">Detected:</span>
+                        {actorResult.channelsDetected?.map((ch: string) => (
+                          <span
+                            key={ch}
+                            className="px-2.5 py-0.5 rounded-lg text-xs font-medium bg-slate-900/90 border border-white/10 text-slate-200 flex items-center gap-1.5"
+                          >
+                            {ch === 'web' && <Globe className="w-3 h-3 text-violet-400" />}
+                            {ch === 'facebook' && <FacebookIcon className="w-3 h-3 text-blue-400" />}
+                            {ch === 'meta_ads' && <MetaIcon className="w-3 h-3 text-pink-400" />}
+                            {ch === 'instagram' && <InstagramIcon className="w-3 h-3 text-pink-400" />}
+                            {ch === 'linkedin' && <LinkedinIcon className="w-3 h-3 text-sky-400" />}
+                            <span className="capitalize">{ch.replace('_', ' ')}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Right side: Radial Score + CTA Actions */}
+                    <div className="flex flex-col sm:flex-row lg:flex-col items-center sm:items-center lg:items-end gap-4 shrink-0">
+                      {/* Radial Digital Presence Score */}
+                      <div className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 flex items-center gap-4 shadow-inner">
+                        <div className="relative w-16 h-16 flex items-center justify-center">
+                          <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
+                            <path
+                              className="text-slate-800"
+                              strokeWidth="3.5"
+                              stroke="currentColor"
+                              fill="none"
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                            <path
+                              className={
+                                actorResult.digitalPresenceScore >= 80
+                                  ? 'text-emerald-400'
+                                  : actorResult.digitalPresenceScore >= 50
+                                  ? 'text-amber-400'
+                                  : 'text-violet-400'
+                              }
+                              strokeDasharray={`${actorResult.digitalPresenceScore}, 100`}
+                              strokeWidth="3.5"
+                              strokeLinecap="round"
+                              stroke="currentColor"
+                              fill="none"
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                          </svg>
+                          <div className="absolute flex flex-col items-center">
+                            <span className="text-lg font-black text-white font-mono-tight leading-none">
+                              {actorResult.digitalPresenceScore}
+                            </span>
+                            <span className="text-[8px] text-slate-400 uppercase font-mono">Score</span>
+                          </div>
+                        </div>
+                        <div className="text-left">
+                          <div className="text-xs font-bold text-white">Digital Footprint</div>
+                          <div className="text-[11px] font-mono text-amber-300">
+                            {actorResult.digitalPresenceScore >= 80
+                              ? 'Omnichannel Dominant'
+                              : actorResult.digitalPresenceScore >= 50
+                              ? 'High Market Footprint'
+                              : 'Emerging Brand'}
+                          </div>
+                          <div className="text-[10px] text-slate-400">Weighted Multi-Platform</div>
+                        </div>
+                      </div>
+
+                      {/* Primary CTAs */}
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenPitchModal(actorResult)}
+                          className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-amber-500 via-rose-500 to-pink-600 hover:from-amber-400 hover:to-pink-500 text-white shadow-lg shadow-pink-500/20 transition flex items-center justify-center gap-1.5"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>⚡ Generate AI Sales Pitch</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSaveActorToProfiles(actorResult, 'omnichannel_360')}
+                          className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl font-bold text-xs bg-violet-600 hover:bg-violet-500 text-white shadow-md shadow-violet-600/30 transition flex items-center justify-center gap-1.5"
+                        >
+                          <Bookmark className="w-3.5 h-3.5" />
+                          <span>Save to CRM</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4-Metric High-Velocity Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="glass-panel p-5 rounded-2xl border-white/[0.08] relative overflow-hidden">
+                    <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
+                      <span className="font-mono uppercase text-[10px] tracking-wider">Total Omnichannel Reach</span>
+                      <Users className="w-4 h-4 text-violet-400" />
+                    </div>
+                    <div className="text-2xl font-black text-white font-mono-tight">
+                      {actorResult.totalAudienceReach || '0'}
+                    </div>
+                    <div className="text-[11px] text-violet-300 mt-1">Aggregated FB + IG Followers</div>
+                  </div>
+
+                  <div className="glass-panel p-5 rounded-2xl border-white/[0.08] relative overflow-hidden">
+                    <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
+                      <span className="font-mono uppercase text-[10px] tracking-wider">Active Paid Meta Ads</span>
+                      <MetaIcon className="w-4 h-4 text-pink-400" />
+                    </div>
+                    <div className="text-2xl font-black text-white font-mono-tight">
+                      {actorResult.activePaidAdsCount > 0 ? `${actorResult.activePaidAdsCount} Campaigns` : '0 Active'}
+                    </div>
+                    <div className="text-[11px] text-pink-300 mt-1">
+                      {actorResult.adPlatforms?.length > 0 ? actorResult.adPlatforms.join(', ') : 'Organic Focus'}
+                    </div>
+                  </div>
+
+                  <div className="glass-panel p-5 rounded-2xl border-white/[0.08] relative overflow-hidden">
+                    <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
+                      <span className="font-mono uppercase text-[10px] tracking-wider">Channel Density</span>
+                      <Layers className="w-4 h-4 text-amber-400" />
+                    </div>
+                    <div className="text-2xl font-black text-white font-mono-tight">
+                      {actorResult.channelsDetected?.length || 0} / 5 Platforms
+                    </div>
+                    <div className="text-[11px] text-amber-300 mt-1">Web, FB, Meta Ads, IG, LI</div>
+                  </div>
+
+                  <div className="glass-panel p-5 rounded-2xl border-white/[0.08] relative overflow-hidden">
+                    <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
+                      <span className="font-mono uppercase text-[10px] tracking-wider">Verified Contact Points</span>
+                      <Mail className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <div className="text-2xl font-black text-white font-mono-tight">
+                      {(actorResult.unifiedContacts?.emails?.length || 0) + (actorResult.unifiedContacts?.phones?.length || 0)} Direct
+                    </div>
+                    <div className="text-[11px] text-emerald-300 mt-1">
+                      {actorResult.unifiedContacts?.emails?.length || 0} Emails • {actorResult.unifiedContacts?.phones?.length || 0} Phones
+                    </div>
+                  </div>
+                </div>
+
+                {/* Value Proposition & Executive Overview */}
+                <div className="glass-panel p-6 rounded-2xl border-white/[0.08] space-y-4">
+                  {/* Golden Value Proposition Quote */}
+                  <div className="p-4 rounded-xl bg-slate-950/70 border border-amber-500/20">
+                    <div className="text-[10px] font-mono uppercase text-amber-400 tracking-wider font-semibold mb-1">
+                      Core Value Proposition:
+                    </div>
+                    <p className="text-sm sm:text-base text-amber-100 font-medium italic leading-relaxed">
+                      &quot;{actorResult.valueProposition}&quot;
+                    </p>
+                  </div>
+
+                  {/* Executive Summary & Strategic Takeaways */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 pt-2">
+                    <div className="space-y-2">
+                      <div className="text-xs font-mono uppercase text-slate-400 tracking-wider">Executive Summary:</div>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        {actorResult.executiveSummary}
+                      </p>
+                      {actorResult.targetAudience && (
+                        <div className="pt-2 text-xs text-slate-400">
+                          <span className="font-semibold text-slate-300">Target Segment: </span>
+                          <span>{actorResult.targetAudience}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="text-xs font-mono uppercase text-slate-400 tracking-wider">Strategic Sourcing Insights:</div>
+                      <div className="space-y-1.5">
+                        {actorResult.strategicTakeaways?.map((takeaway: string, idx: number) => (
+                          <div key={idx} className="flex items-start gap-2 text-xs text-slate-300">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                            <span>{takeaway}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4-Channel Deep Intel Breakdown */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Channel 1: Facebook Page */}
+                  <div className="glass-panel p-5 rounded-2xl border-white/[0.08] space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400">
+                          <FacebookIcon className="w-4 h-4" />
+                        </div>
+                        <span className="font-bold text-white text-xs">Facebook Page Intelligence</span>
+                      </div>
+                      {actorResult.facebookIntel?.isVerified && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/20 text-blue-300">Verified</span>
+                      )}
+                    </div>
+
+                    {actorResult.facebookIntel ? (
+                      <div className="space-y-2.5 text-xs">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="p-2 rounded-lg bg-slate-900/60 border border-white/[0.04]">
+                            <div className="text-[10px] text-slate-400 font-mono">Followers</div>
+                            <div className="text-sm font-bold text-white font-mono">
+                              {actorResult.facebookIntel.followersCount?.toLocaleString() || 'N/A'}
+                            </div>
+                          </div>
+                          <div className="p-2 rounded-lg bg-slate-900/60 border border-white/[0.04]">
+                            <div className="text-[10px] text-slate-400 font-mono">Page Likes</div>
+                            <div className="text-sm font-bold text-white font-mono">
+                              {actorResult.facebookIntel.likesCount?.toLocaleString() || 'N/A'}
+                            </div>
+                          </div>
+                        </div>
+
+                        {actorResult.facebookIntel.samplePost && (
+                          <div className="p-2.5 rounded-lg bg-slate-950/60 border border-white/[0.06] space-y-1">
+                            <div className="text-[10px] font-mono text-slate-400 flex items-center justify-between">
+                              <span>Latest Post Content:</span>
+                              {actorResult.facebookIntel.samplePost.viewsCount && (
+                                <span className="text-amber-300 font-semibold">
+                                  👁️ {actorResult.facebookIntel.samplePost.viewsCount.toLocaleString()} views
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-300 line-clamp-2 italic">
+                              &quot;{actorResult.facebookIntel.samplePost.content}&quot;
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-slate-500 py-3 text-center font-mono">No direct Facebook Page record detected</div>
+                    )}
+                  </div>
+
+                  {/* Channel 2: Meta Ad Library */}
+                  <div className="glass-panel p-5 rounded-2xl border-white/[0.08] space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-gradient-to-r from-blue-500/20 to-pink-500/20 text-pink-400">
+                          <MetaIcon className="w-4 h-4" />
+                        </div>
+                        <span className="font-bold text-white text-xs">Meta Ad Campaigns (FB & IG)</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-pink-500/20 text-pink-300">
+                        {actorResult.activePaidAdsCount > 0 ? `${actorResult.activePaidAdsCount} Active` : '0 Active'}
+                      </span>
+                    </div>
+
+                    {actorResult.metaAdsIntel ? (
+                      <div className="space-y-2.5 text-xs">
+                        <div className="p-2.5 rounded-lg bg-slate-900/60 border border-white/[0.04] space-y-1">
+                          <div className="text-[10px] text-slate-400 font-mono">Top Ad Creative Headline:</div>
+                          <div className="text-xs font-bold text-white line-clamp-2">
+                            {actorResult.metaAdsIntel.topCreativeHeadline || 'Omnichannel promotional creative'}
+                          </div>
+                          {actorResult.metaAdsIntel.topCreativeCta && (
+                            <div className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-violet-600/30 text-violet-300 border border-violet-500/30">
+                              CTA: {actorResult.metaAdsIntel.topCreativeCta}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono pt-1">
+                          <span>Ad Platforms:</span>
+                          <span className="text-white">{actorResult.metaAdsIntel.platforms?.join(', ') || 'Facebook, Instagram'}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-slate-500 py-3 text-center font-mono">No active paid ad campaigns detected</div>
+                    )}
+                  </div>
+
+                  {/* Channel 3: Instagram Profile */}
+                  <div className="glass-panel p-5 rounded-2xl border-white/[0.08] space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-pink-500/20 text-pink-400">
+                          <InstagramIcon className="w-4 h-4" />
+                        </div>
+                        <span className="font-bold text-white text-xs">Instagram Profile Presence</span>
+                      </div>
+                      {actorResult.instagramIntel?.isVerified && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-pink-500/20 text-pink-300">Verified</span>
+                      )}
+                    </div>
+
+                    {actorResult.instagramIntel ? (
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="p-2.5 rounded-lg bg-slate-900/60 border border-white/[0.04]">
+                          <div className="text-[10px] text-slate-400 font-mono">Handle</div>
+                          <div className="text-xs font-bold text-pink-400 truncate">
+                            @{actorResult.instagramIntel.username}
+                          </div>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-slate-900/60 border border-white/[0.04]">
+                          <div className="text-[10px] text-slate-400 font-mono">Audience</div>
+                          <div className="text-xs font-bold text-white font-mono">
+                            {actorResult.instagramIntel.followersFormatted || 'N/A'}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-slate-500 py-3 text-center font-mono">No direct Instagram match detected</div>
+                    )}
+                  </div>
+
+                  {/* Channel 4: LinkedIn Company */}
+                  <div className="glass-panel p-5 rounded-2xl border-white/[0.08] space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-sky-500/20 text-sky-400">
+                          <LinkedinIcon className="w-4 h-4" />
+                        </div>
+                        <span className="font-bold text-white text-xs">LinkedIn Enterprise Profile</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-sky-500/20 text-sky-300">Corporate</span>
+                    </div>
+
+                    {actorResult.linkedinIntel ? (
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between text-slate-300">
+                          <span className="text-slate-400">Company Size:</span>
+                          <span className="font-semibold text-white">{actorResult.linkedinIntel.companySize || 'Enterprise'}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-slate-300">
+                          <span className="text-slate-400">Headquarters:</span>
+                          <span className="font-semibold text-white">{actorResult.linkedinIntel.headquarters || 'Global'}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-slate-300">
+                          <span className="text-slate-400">Industry:</span>
+                          <span className="font-semibold text-white">{actorResult.linkedinIntel.industry || actorResult.industrySector}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-slate-500 py-3 text-center font-mono">No direct LinkedIn record detected</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Unified Deduplicated Contact Footprint */}
+                <div className="glass-panel p-6 rounded-2xl border-white/[0.08] space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
+                        <ShieldCheck className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold text-white text-sm">Unified Deduplicated Contact Footprint</span>
+                    </div>
+                    <span className="text-xs text-slate-400 font-mono">Aggregated across all channels</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Emails */}
+                    <div className="p-4 rounded-xl bg-slate-950/60 border border-white/[0.06] space-y-2">
+                      <div className="text-xs font-mono uppercase text-slate-400 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5 text-emerald-400">
+                          <Mail className="w-3.5 h-3.5" />
+                          <span>Direct Emails</span>
+                        </span>
+                        <span>{actorResult.unifiedContacts?.emails?.length || 0} found</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {actorResult.unifiedContacts?.emails && actorResult.unifiedContacts.emails.length > 0 ? (
+                          actorResult.unifiedContacts.emails.map((em: string, i: number) => (
+                            <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-slate-900 text-xs font-mono text-slate-200">
+                              <a href={`mailto:${em}`} className="hover:text-emerald-400 truncate max-w-[180px]">{em}</a>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(em);
+                                  setSaveSuccessMsg(`Copied ${em}!`);
+                                  setTimeout(() => setSaveSuccessMsg(null), 2000);
+                                }}
+                                className="text-slate-400 hover:text-white"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-xs text-slate-500 italic py-2">No public emails scraped</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Phones */}
+                    <div className="p-4 rounded-xl bg-slate-950/60 border border-white/[0.06] space-y-2">
+                      <div className="text-xs font-mono uppercase text-slate-400 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5 text-cyan-400">
+                          <Phone className="w-3.5 h-3.5" />
+                          <span>Direct Phones</span>
+                        </span>
+                        <span>{actorResult.unifiedContacts?.phones?.length || 0} found</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {actorResult.unifiedContacts?.phones && actorResult.unifiedContacts.phones.length > 0 ? (
+                          actorResult.unifiedContacts.phones.map((ph: string, i: number) => (
+                            <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-slate-900 text-xs font-mono text-slate-200">
+                              <a href={`tel:${ph}`} className="hover:text-cyan-400">{ph}</a>
+                              <a
+                                href={getWhatsAppUrl(ph, actorResult.brandName)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"
+                              >
+                                WhatsApp
+                              </a>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-xs text-slate-500 italic py-2">No public phone numbers scraped</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Social Channels & Website */}
+                    <div className="p-4 rounded-xl bg-slate-950/60 border border-white/[0.06] space-y-2">
+                      <div className="text-xs font-mono uppercase text-slate-400 flex items-center gap-1.5 text-violet-400">
+                        <Globe className="w-3.5 h-3.5" />
+                        <span>Verified Social Profiles</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {actorResult.unifiedContacts?.socialProfiles?.website && (
+                          <a
+                            href={actorResult.unifiedContacts.socialProfiles.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between p-2 rounded-lg bg-slate-900 text-xs text-slate-200 hover:bg-slate-800 transition"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <Globe className="w-3.5 h-3.5 text-violet-400" />
+                              <span>Official Website</span>
+                            </span>
+                            <ExternalLink className="w-3 h-3 text-slate-400" />
+                          </a>
+                        )}
+                        {actorResult.unifiedContacts?.socialProfiles?.facebook && (
+                          <a
+                            href={actorResult.unifiedContacts.socialProfiles.facebook}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between p-2 rounded-lg bg-slate-900 text-xs text-slate-200 hover:bg-slate-800 transition"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <FacebookIcon className="w-3.5 h-3.5 text-blue-400" />
+                              <span>Facebook Page</span>
+                            </span>
+                            <ExternalLink className="w-3 h-3 text-slate-400" />
+                          </a>
+                        )}
+                        {actorResult.unifiedContacts?.socialProfiles?.instagram && (
+                          <a
+                            href={actorResult.unifiedContacts.socialProfiles.instagram}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between p-2 rounded-lg bg-slate-900 text-xs text-slate-200 hover:bg-slate-800 transition"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <InstagramIcon className="w-3.5 h-3.5 text-pink-400" />
+                              <span>Instagram</span>
+                            </span>
+                            <ExternalLink className="w-3 h-3 text-slate-400" />
+                          </a>
+                        )}
+                        {actorResult.unifiedContacts?.socialProfiles?.linkedin && (
+                          <a
+                            href={actorResult.unifiedContacts.socialProfiles.linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between p-2 rounded-lg bg-slate-900 text-xs text-slate-200 hover:bg-slate-800 transition"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <LinkedinIcon className="w-3.5 h-3.5 text-sky-400" />
+                              <span>LinkedIn</span>
+                            </span>
+                            <ExternalLink className="w-3 h-3 text-slate-400" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ============================================================== */}
         {/* Tab 2: Saved Profiles Workspace (Filter, Search, Merge, Rate, Remarks) */}
         {/* ============================================================== */}
         {activeTab === 'saved' && (
@@ -4761,9 +8464,8 @@ export default function EnrichmentDashboard() {
                   return (
                     <div
                       key={prof.id}
-                      className={`glass-panel p-5 rounded-2xl border transition relative flex flex-col justify-between ${
-                        isMergeSelected ? 'border-cyan-400 bg-cyan-950/20' : 'border-slate-800'
-                      }`}
+                      className={`glass-panel p-5 rounded-2xl border transition relative flex flex-col justify-between ${isMergeSelected ? 'border-cyan-400 bg-cyan-950/20' : 'border-slate-800'
+                        }`}
                     >
                       <div>
                         {/* Card Header */}
@@ -4795,15 +8497,14 @@ export default function EnrichmentDashboard() {
                                 </span>
                                 {prof.sourceOrigin && (
                                   <span
-                                    className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded border font-semibold ${
-                                      prof.sourceOrigin === 'product_spec_matrix'
-                                        ? 'bg-amber-950/40 text-amber-300 border-amber-800/40'
-                                        : prof.sourceOrigin === 'gmaps_seller'
+                                    className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded border font-semibold ${prof.sourceOrigin === 'product_spec_matrix'
+                                      ? 'bg-amber-950/40 text-amber-300 border-amber-800/40'
+                                      : prof.sourceOrigin === 'gmaps_seller'
                                         ? 'bg-emerald-950/40 text-emerald-300 border-emerald-800/40'
                                         : prof.sourceOrigin === 'bullmq_queue'
-                                        ? 'bg-violet-950/40 text-violet-300 border-violet-800/40'
-                                        : 'bg-slate-800 text-slate-300 border-slate-700'
-                                    }`}
+                                          ? 'bg-violet-950/40 text-violet-300 border-violet-800/40'
+                                          : 'bg-slate-800 text-slate-300 border-slate-700'
+                                      }`}
                                   >
                                     {prof.sourceOrigin === 'product_spec_matrix' && '📦 Spec Matrix'}
                                     {prof.sourceOrigin === 'gmaps_seller' && '📍 Maps B2B'}
@@ -4826,9 +8527,8 @@ export default function EnrichmentDashboard() {
                                   className="text-amber-400 hover:scale-110 transition"
                                 >
                                   <Star
-                                    className={`w-3.5 h-3.5 ${
-                                      star <= prof.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-600'
-                                    }`}
+                                    className={`w-3.5 h-3.5 ${star <= prof.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-600'
+                                      }`}
                                   />
                                 </button>
                               ))}
@@ -5290,12 +8990,28 @@ export default function EnrichmentDashboard() {
                     <div className="text-slate-500">
                       Saved on {new Date(inspectingProfile.savedAt).toLocaleDateString()}
                     </div>
-                    <button
-                      onClick={() => setInspectingProfile(null)}
-                      className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-medium transition"
-                    >
-                      Close Dossier
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleOpenPitchModal({
+                          companyName: inspectingProfile.companyName,
+                          domain: inspectingProfile.domain,
+                          valueProposition: inspectingProfile.description,
+                          industry: inspectingProfile.category,
+                          techStack: inspectingProfile.technographics?.technologies?.map((t: any) => t.name),
+                          contactName: inspectingProfile.contactInfo?.emails?.[0]?.split('@')[0] || 'there',
+                        })}
+                        className="px-4 py-2 bg-gradient-to-r from-amber-500 via-rose-500 to-pink-600 hover:from-amber-400 hover:to-pink-500 text-white rounded-xl font-bold flex items-center gap-1.5 shadow-md shadow-pink-500/20 transition"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>⚡ Generate AI Sales Pitch</span>
+                      </button>
+                      <button
+                        onClick={() => setInspectingProfile(null)}
+                        className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-medium transition"
+                      >
+                        Close Dossier
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -5837,11 +9553,10 @@ export default function EnrichmentDashboard() {
                                 <button
                                   onClick={() => handleSaveQueueJobToProfiles(job)}
                                   disabled={alreadySaved}
-                                  className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1 transition ${
-                                    alreadySaved
-                                      ? 'bg-slate-800 text-emerald-400 border border-emerald-500/30 cursor-default'
-                                      : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20'
-                                  }`}
+                                  className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1 transition ${alreadySaved
+                                    ? 'bg-slate-800 text-emerald-400 border border-emerald-500/30 cursor-default'
+                                    : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20'
+                                    }`}
                                 >
                                   {alreadySaved ? (
                                     <>
@@ -5973,28 +9688,26 @@ export default function EnrichmentDashboard() {
                               {new Date(log.timestamp).toLocaleTimeString()}
                             </span>
                             <span
-                              className={`flex-shrink-0 px-1.5 py-0.2 rounded text-[10px] font-bold ${
-                                log.domain === 'system'
-                                  ? 'bg-slate-800 text-slate-300'
-                                  : 'bg-violet-950 text-violet-300'
-                              }`}
+                              className={`flex-shrink-0 px-1.5 py-0.2 rounded text-[10px] font-bold ${log.domain === 'system'
+                                ? 'bg-slate-800 text-slate-300'
+                                : 'bg-violet-950 text-violet-300'
+                                }`}
                             >
                               {log.domain}
                             </span>
                             <span
-                              className={`break-all ${
-                                isSuccess
-                                  ? 'text-emerald-400 font-semibold'
-                                  : isError
+                              className={`break-all ${isSuccess
+                                ? 'text-emerald-400 font-semibold'
+                                : isError
                                   ? 'text-rose-400'
                                   : isLaunch
-                                  ? 'text-cyan-300'
-                                  : isMeta
-                                  ? 'text-amber-300'
-                                  : isTech
-                                  ? 'text-violet-300'
-                                  : 'text-slate-300'
-                              }`}
+                                    ? 'text-cyan-300'
+                                    : isMeta
+                                      ? 'text-amber-300'
+                                      : isTech
+                                        ? 'text-violet-300'
+                                        : 'text-slate-300'
+                                }`}
                             >
                               {log.message}
                             </span>
@@ -6094,6 +9807,298 @@ export default function EnrichmentDashboard() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* Global AI Multi-Channel Outreach Pitch Synthesizer Modal */}
+        {/* ============================================================== */}
+        {pitchModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+            <div className="relative w-full max-w-3xl rounded-3xl bg-slate-900 border border-violet-500/30 shadow-2xl shadow-violet-950/50 flex flex-col max-h-[90vh] overflow-hidden">
+              {/* Modal Header */}
+              <div className="p-6 bg-gradient-to-r from-violet-950/60 via-slate-900 to-pink-950/40 border-b border-white/[0.08] flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-pink-600 flex items-center justify-center text-white shadow-lg shadow-pink-500/30">
+                    <Send className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                      <span>AI Multi-Channel Outreach Pitch Synthesizer</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        Zero-Cost Live
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-400 font-mono mt-0.5">
+                      Personalized for: <span className="text-slate-200 font-semibold">{pitchTargetData?.brandName || pitchTargetData?.companyName || pitchTargetData?.domain}</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setPitchModalOpen(false)}
+                  className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.10] text-slate-400 hover:text-white transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Tone Selection Bar */}
+              <div className="px-6 py-3 bg-slate-950/60 border-b border-white/[0.06] flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-mono uppercase text-slate-400">Outreach Tone:</span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {(['direct', 'executive', 'challenger', 'warm'] as PitchTone[]).map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => {
+                          setPitchTone(t);
+                          if (pitchTargetData) handleGeneratePitch(pitchTargetData, t);
+                        }}
+                        className={`px-3 py-1 rounded-xl text-xs font-semibold capitalize transition ${
+                          pitchTone === t
+                            ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-md shadow-pink-600/20'
+                            : 'bg-white/[0.05] hover:bg-white/[0.10] text-slate-300'
+                        }`}
+                      >
+                        {t === 'direct' && '⚡ Direct & Value'}
+                        {t === 'executive' && '👔 Executive C-Suite'}
+                        {t === 'challenger' && '🎯 Challenger'}
+                        {t === 'warm' && '🤝 Warm & Consultative'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {pitchGenerating && (
+                  <span className="flex items-center gap-1.5 text-xs text-violet-300 font-mono">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-violet-400" />
+                    <span>Synthesizing angles...</span>
+                  </span>
+                )}
+              </div>
+
+              {/* Channel Tabs (Email / LinkedIn / WhatsApp) */}
+              <div className="px-6 pt-3 flex items-center gap-2 border-b border-white/[0.06] bg-slate-900/50">
+                <button
+                  onClick={() => setPitchTab('email')}
+                  className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition ${
+                    pitchTab === 'email'
+                      ? 'border-violet-500 text-white'
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Mail className="w-4 h-4" />
+                  <span>Cold Email (Dual Subject)</span>
+                </button>
+                <button
+                  onClick={() => setPitchTab('linkedin')}
+                  className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition ${
+                    pitchTab === 'linkedin'
+                      ? 'border-sky-500 text-white'
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <LinkedinIcon className="w-4 h-4" />
+                  <span>LinkedIn InMail & Note (&lt;300 chars)</span>
+                </button>
+                <button
+                  onClick={() => setPitchTab('whatsapp')}
+                  className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition ${
+                    pitchTab === 'whatsapp'
+                      ? 'border-emerald-500 text-white'
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>WhatsApp B2B (1-Click Launch)</span>
+                </button>
+              </div>
+
+              {/* Modal Body Content */}
+              <div className="p-6 overflow-y-auto space-y-4 flex-1">
+                {generatedPitch ? (
+                  <div className="space-y-4">
+                    {/* Personalization Anchors */}
+                    <div className="p-3 rounded-xl bg-slate-950/60 border border-white/[0.06] flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] font-mono text-slate-400 uppercase">Anchors:</span>
+                      {generatedPitch.keyPersonalizationAngles?.map((angle: string, i: number) => (
+                        <span
+                          key={i}
+                          className="px-2 py-0.5 rounded text-[11px] bg-violet-500/10 text-violet-300 border border-violet-500/20"
+                        >
+                          ✓ {angle}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Email Tab */}
+                    {pitchTab === 'email' && (
+                      <div className="space-y-4">
+                        {/* Subject Lines Choices */}
+                        <div className="space-y-2">
+                          <div className="text-xs font-mono uppercase text-slate-400">Subject Line Options:</div>
+                          <div className="space-y-2">
+                            {generatedPitch.emailPitch.subjectLines.map((subj: string, i: number) => (
+                              <div
+                                key={i}
+                                className="p-3 rounded-xl bg-slate-950 border border-white/[0.08] flex items-center justify-between text-xs text-white group hover:border-violet-500/50 transition"
+                              >
+                                <span className="font-medium font-mono text-slate-200">&quot;{subj}&quot;</span>
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(subj);
+                                    setPitchCopiedSubject(true);
+                                    setTimeout(() => setPitchCopiedSubject(false), 2000);
+                                  }}
+                                  className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.15] text-slate-300 text-[11px] flex items-center gap-1.5 transition"
+                                >
+                                  {pitchCopiedSubject ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                                  <span>{pitchCopiedSubject ? 'Copied' : 'Copy'}</span>
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Email Body */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-mono uppercase text-slate-400">Email Pitch Body:</span>
+                            <span className="font-mono text-[11px] text-slate-500">
+                              {generatedPitch.emailPitch.wordCount} words
+                            </span>
+                          </div>
+                          <div className="p-4 rounded-xl bg-slate-950 border border-white/[0.08] text-xs text-slate-200 whitespace-pre-wrap font-sans leading-relaxed">
+                            {generatedPitch.emailPitch.body}
+                          </div>
+                          <div className="flex items-center justify-end">
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(generatedPitch.emailPitch.body);
+                                setPitchCopiedBody(true);
+                                setTimeout(() => setPitchCopiedBody(false), 2000);
+                              }}
+                              className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-md shadow-violet-600/30"
+                            >
+                              {pitchCopiedBody ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
+                              <span>{pitchCopiedBody ? 'Copied Body!' : 'Copy Email Body'}</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* LinkedIn Tab */}
+                    {pitchTab === 'linkedin' && (
+                      <div className="space-y-4">
+                        {/* Connection Request Note */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-mono uppercase text-slate-400">LinkedIn Connection Note (&lt;300 chars):</span>
+                            <span className={`font-mono text-[11px] ${generatedPitch.linkedinPitch.connectionNote.length <= 300 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {generatedPitch.linkedinPitch.connectionNote.length} / 300 chars
+                            </span>
+                          </div>
+                          <div className="p-3.5 rounded-xl bg-slate-950 border border-white/[0.08] text-xs text-slate-200">
+                            {generatedPitch.linkedinPitch.connectionNote}
+                          </div>
+                          <div className="flex justify-end">
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(generatedPitch.linkedinPitch.connectionNote);
+                                setPitchCopiedBody(true);
+                                setTimeout(() => setPitchCopiedBody(false), 2000);
+                              }}
+                              className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold flex items-center gap-1.5 transition"
+                            >
+                              <Copy className="w-3 h-3" />
+                              <span>Copy Connection Note</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* InMail */}
+                        <div className="space-y-2 pt-2 border-t border-white/[0.06]">
+                          <div className="text-xs font-mono uppercase text-slate-400">InMail Subject & Body:</div>
+                          <div className="p-3 rounded-xl bg-slate-950 border border-white/[0.08] text-xs text-slate-200 font-semibold">
+                            Subject: {generatedPitch.linkedinPitch.inmailSubject}
+                          </div>
+                          <div className="p-4 rounded-xl bg-slate-950 border border-white/[0.08] text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">
+                            {generatedPitch.linkedinPitch.inmailBody}
+                          </div>
+                          <div className="flex justify-end">
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(
+                                  `Subject: ${generatedPitch.linkedinPitch.inmailSubject}\n\n${generatedPitch.linkedinPitch.inmailBody}`
+                                );
+                                setPitchCopiedBody(true);
+                                setTimeout(() => setPitchCopiedBody(false), 2000);
+                              }}
+                              className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold flex items-center gap-1.5 transition"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>Copy InMail Full Copy</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* WhatsApp Tab */}
+                    {pitchTab === 'whatsapp' && (
+                      <div className="space-y-4">
+                        <div className="text-xs font-mono uppercase text-slate-400">Direct WhatsApp B2B Pitch:</div>
+                        <div className="p-4 rounded-xl bg-slate-950 border border-white/[0.08] text-xs text-slate-200 whitespace-pre-wrap leading-relaxed font-mono">
+                          {generatedPitch.whatsappPitch.messageText}
+                        </div>
+                        <div className="flex items-center justify-between pt-2">
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(generatedPitch.whatsappPitch.messageText);
+                              setPitchCopiedBody(true);
+                              setTimeout(() => setPitchCopiedBody(false), 2000);
+                            }}
+                            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Copy Message Text</span>
+                          </button>
+
+                          <a
+                            href={generatedPitch.whatsappPitch.whatsappWebUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-2 transition shadow-lg shadow-emerald-600/30"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                            <span>Open in WhatsApp Web ⚡</span>
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="py-12 text-center text-slate-400 text-xs">
+                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-violet-400" />
+                    <span>Generating personalized pitch copy...</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 bg-slate-950/80 border-t border-white/[0.08] flex items-center justify-between text-xs">
+                <div className="text-slate-500 font-mono text-[11px]">
+                  Targeted with verified domain signals & active campaign data
+                </div>
+                <button
+                  onClick={() => setPitchModalOpen(false)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-medium transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
