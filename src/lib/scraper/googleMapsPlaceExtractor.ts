@@ -110,7 +110,7 @@ async function resolveBusinessWebsite(title: string, location: string): Promise<
 /**
  * Accurately extracts official website, phone, and address from a Google Maps place detail page
  */
-async function inspectPlaceDetails(context: any, placeUrl: string): Promise<{
+export async function inspectPlaceDetails(context: any, placeUrl: string): Promise<{
   website?: string;
   phone?: string;
   address?: string;

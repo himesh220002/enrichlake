@@ -4301,11 +4301,14 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
               {mapsMode === 'keywords' && (
                 <div className="space-y-4 pt-1">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                      Keywords (Separated by Commas)
-                    </label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                        Hardware Specs & Components (Separated by Commas)
+                      </label>
+                      <span className="text-[10px] text-amber-400 font-mono">Component Spec Matrix Active</span>
+                    </div>
                     <div className="relative">
-                      <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <Cpu className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input
                         type="text"
                         placeholder="e.g. 16gb ram, i5, rtx3050, 144hz display, under 1 lakh"
@@ -4316,28 +4319,88 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                       />
                     </div>
 
-                    <div className="flex flex-wrap gap-1.5 mt-2.5">
-                      <span className="text-[11px] text-slate-500 py-0.5 mr-1">Parsed Specs:</span>
+                    {/* Quick Hardware Presets */}
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                      <span className="text-[10px] text-slate-500 font-semibold uppercase mr-0.5">Presets:</span>
+                      {[
+                        { label: '🎮 Mid-Range Gaming (i5 + RTX 3050)', val: '16gb ram, i5, rtx3050, 144hz display, under 1 lakh' },
+                        { label: '🚀 Creator Workstation (i7 + RTX 4070)', val: '32gb ddr5, i7 13700h, rtx4070, 1tb nvme ssd, under 1.8 lakh' },
+                        { label: '💼 Productivity Laptop (i5)', val: '16gb ram, i5 12th gen, 512gb ssd, fhd ips, under 55000' },
+                        { label: '🖥️ Custom Desktop Rig (Ryzen 7)', val: 'ryzen 7 7800x3d, rtx4070 ti super, 32gb ddr5, 850w psu' },
+                      ].map((preset, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setMapsKeywordsInput(preset.val)}
+                          className="px-2 py-0.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-[10px] font-mono border border-slate-700/60 hover:text-white transition"
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Parsed Hardware Component Badges */}
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+                      <span className="text-[11px] text-slate-500 py-0.5 mr-1 font-mono">Parsed Components:</span>
                       {mapsKeywordsInput
                         .split(',')
                         .map((k) => k.trim())
                         .filter(Boolean)
-                        .map((kw, i) => (
-                          <span
-                            key={i}
-                            className="px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 rounded-md text-[11px] font-mono"
-                          >
-                            {kw}
-                          </span>
-                        ))}
+                        .map((kw, i) => {
+                          const lkw = kw.toLowerCase();
+                          let badgeStyle = 'bg-slate-800 text-slate-300 border-slate-700';
+                          let prefix = '⚙️';
+                          if (/\b(i[3579]|core|ryzen|xeon)\b/i.test(lkw)) {
+                            badgeStyle = 'bg-blue-500/15 border-blue-500/40 text-blue-300';
+                            prefix = '💻 CPU:';
+                          } else if (/\b(rtx|gtx|radeon|gpu|graphics)\b/i.test(lkw)) {
+                            badgeStyle = 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300';
+                            prefix = '🎮 GPU:';
+                          } else if (/\b(ram|ddr|memory)\b/i.test(lkw) || /\d+\s*gb\b/i.test(lkw)) {
+                            badgeStyle = 'bg-purple-500/15 border-purple-500/40 text-purple-300';
+                            prefix = '🧠 RAM:';
+                          } else if (/\b(hz|display|screen|oled|ips)\b/i.test(lkw)) {
+                            badgeStyle = 'bg-amber-500/15 border-amber-500/40 text-amber-300';
+                            prefix = '🖥️ Display:';
+                          } else if (/\b(ssd|nvme|hdd|tb)\b/i.test(lkw)) {
+                            badgeStyle = 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300';
+                            prefix = '💾 Storage:';
+                          } else if (/\b(under|budget|lakh|below|\$|₹)\b/i.test(lkw)) {
+                            badgeStyle = 'bg-rose-500/15 border-rose-500/40 text-rose-300';
+                            prefix = '💰 Budget:';
+                          }
+                          return (
+                            <span
+                              key={i}
+                              className={`px-2 py-0.5 border rounded-md text-[11px] font-mono flex items-center gap-1 ${badgeStyle}`}
+                            >
+                              <span className="opacity-75">{prefix}</span>
+                              <span className="font-semibold">{kw}</span>
+                            </span>
+                          );
+                        })}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                        Location / Region
-                      </label>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                          Location / Region
+                        </label>
+                        <div className="flex gap-1 text-[9px] text-slate-400">
+                          {['Austin, TX', 'Bangalore', 'New York'].map((city) => (
+                            <button
+                              key={city}
+                              type="button"
+                              onClick={() => setMapsLocation(city)}
+                              className="hover:text-amber-400 underline font-mono"
+                            >
+                              {city.split(',')[0]}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                       <input
                         type="text"
                         placeholder="e.g. Bangalore, Austin, London, Mumbai"
@@ -5463,20 +5526,22 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                               className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
                             />
                           </th>
-                          <th className="p-3 font-semibold min-w-[180px]">Vendor / Store</th>
-                          <th className="p-3 font-semibold min-w-[120px]">Website</th>
-                          <th className="p-3 font-semibold min-w-[140px]">Matched Specs</th>
-                          <th className="p-3 font-semibold min-w-[145px]">Phone</th>
-                          <th className="p-3 font-semibold min-w-[160px]">Email</th>
-                          <th className="p-3 font-semibold min-w-[200px]">Address</th>
-                          <th className="p-3 font-semibold min-w-[110px]">Coordinates</th>
+                          <th className="p-3 font-semibold min-w-[200px]">Hardware Dealer / Store</th>
+                          <th className="p-3 font-semibold min-w-[130px]">Website Status</th>
+                          <th className="p-3 font-semibold min-w-[220px]">Hardware Spec Compatibility</th>
+                          <th className="p-3 font-semibold min-w-[180px]">Direct Phone & WhatsApp</th>
+                          <th className="p-3 font-semibold min-w-[170px]">Verified Email</th>
+                          <th className="p-3 font-semibold min-w-[180px]">Physical Store Address</th>
                           <th className="p-3 font-semibold min-w-[100px]">Rating</th>
-                          <th className="p-3 font-semibold min-w-[100px]">Budget</th>
+                          <th className="p-3 font-semibold min-w-[130px]">Target Budget & RFQ</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800/60">
                         {mapsResults.map((item) => {
                           const isSelected = selectedMapItems.includes(item.id);
+                          const hasWebsite = Boolean(item.websiteUrl && item.websiteUrl.startsWith('http'));
+                          const dealerType = item.dealerType || 'Hardware Retailer';
+
                           return (
                             <tr key={item.id} className="hover:bg-slate-800/40 transition">
                               <td className="p-3.5 text-center">
@@ -5488,22 +5553,33 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                                 />
                               </td>
                               <td className="p-3 align-top">
-                                <div className="font-semibold text-white text-xs">{item.name}</div>
-                                <div className="text-[11px] text-slate-400">{item.siteName}</div>
+                                <div className="font-bold text-white text-xs flex items-center gap-1.5">
+                                  <span>{item.name}</span>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-1 mt-1">
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                                    {dealerType}
+                                  </span>
+                                  {item.category && (
+                                    <span className="text-[10px] text-slate-400">
+                                      • {item.category}
+                                    </span>
+                                  )}
+                                </div>
                                 {item.mapUrl && (
                                   <a
                                     href={item.mapUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-[10px] text-cyan-400 hover:underline inline-flex items-center gap-0.5 mt-0.5"
+                                    className="text-[10px] text-cyan-400 hover:underline inline-flex items-center gap-0.5 mt-1"
                                   >
-                                    <span>Google Maps</span>
+                                    <span>Google Maps Pin</span>
                                     <ExternalLink className="w-2.5 h-2.5" />
                                   </a>
                                 )}
                               </td>
                               <td className="p-3 align-top">
-                                {item.websiteUrl ? (
+                                {hasWebsite ? (
                                   <a
                                     href={item.websiteUrl}
                                     target="_blank"
@@ -5511,48 +5587,113 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                                     className="text-xs text-cyan-400 hover:underline inline-flex items-center gap-1 max-w-[150px] truncate"
                                   >
                                     <Globe className="w-3 h-3 shrink-0" />
-                                    <span className="truncate">{item.websiteUrl.replace(/^https?:\/\//, '')}</span>
+                                    <span className="truncate">{item.websiteUrl.replace(/^https?:\/\/(www\.)?/, '')}</span>
                                   </a>
                                 ) : (
-                                  <span className="text-slate-600">—</span>
-                                )}
-                              </td>
-                              <td className="p-3 align-top">
-                                <div className="text-xs text-slate-200 font-medium">{item.itemName}</div>
-                                {item.itemSpecs && item.itemSpecs.length > 0 && (
-                                  <div className="flex flex-wrap gap-1 mt-1">
-                                    {item.itemSpecs.map((spec, si) => (
-                                      <span key={si} className="px-1.5 py-0.5 text-[9px] rounded bg-slate-800 text-slate-300 font-mono">
-                                        {spec}
-                                      </span>
-                                    ))}
+                                  <div className="space-y-1">
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-bold">
+                                      ⚡ No Website (Lead)
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenPitchModal({
+                                        id: item.id,
+                                        companyName: item.name,
+                                        domain: item.name.toLowerCase().replace(/[^a-z0-9]/g, '') + '.hardware.local',
+                                        description: `Local Computer Hardware Store: ${item.name}. Phone: ${item.phone || 'N/A'}. Needs professional web presence and online inventory catalog.`,
+                                        category: item.category || 'Computer Hardware Store',
+                                        contactInfo: {
+                                          phones: item.phone ? [item.phone] : [],
+                                          emails: item.email ? [item.email] : [],
+                                          addresses: [item.address],
+                                        },
+                                      })}
+                                      className="text-[10px] text-amber-400 hover:text-amber-300 underline block"
+                                    >
+                                      Pitch Web Services →
+                                    </button>
                                   </div>
                                 )}
                               </td>
-                              <td className="p-3 align-top text-slate-300 text-xs font-mono">
-                                {item.phone || <span className="text-slate-600">—</span>}
+                              <td className="p-3 align-top">
+                                <div className="flex items-center gap-1.5 mb-1">
+                                  <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-bold font-mono text-[10px] border border-emerald-500/30">
+                                    ✓ {item.matchScore}% Match
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 font-mono">
+                                    {item.stockStatus || 'In Stock'}
+                                  </span>
+                                </div>
+                                <div className="flex flex-wrap gap-1">
+                                  {item.itemSpecs && item.itemSpecs.map((spec, si) => (
+                                    <span key={si} className="px-1.5 py-0.5 text-[9px] rounded bg-slate-800 text-slate-200 font-mono border border-slate-700">
+                                      {spec}
+                                    </span>
+                                  ))}
+                                </div>
                               </td>
                               <td className="p-3 align-top text-slate-300 text-xs font-mono">
-                                {item.email || <span className="text-slate-600">—</span>}
-                              </td>
-                              <td className="p-3 align-top text-slate-300 text-xs max-w-[200px]">
-                                {item.address || <span className="text-slate-600">—</span>}
-                              </td>
-
-                              {/* Coordinates */}
-                              <td className="p-3 align-top font-mono text-[11px] whitespace-nowrap">
-                                {item.latitude !== null && item.longitude !== null ? (
-                                  <a
-                                    href={`https://www.google.com/maps?q=${item.latitude},${item.longitude}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center space-x-1 px-2 py-1 bg-slate-900/80 text-cyan-300 rounded-lg border border-cyan-800/30 hover:border-cyan-400/50 transition-all"
-                                  >
-                                    <Navigation className="w-2.5 h-2.5 text-cyan-400" />
-                                    <span>{item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}</span>
-                                  </a>
+                                {item.phone ? (
+                                  <div className="space-y-1">
+                                    <a
+                                      href={`tel:${item.phone.replace(/[^\d+]/g, '')}`}
+                                      className="text-cyan-400 hover:underline flex items-center gap-1"
+                                    >
+                                      <Phone className="w-3 h-3 text-cyan-400" />
+                                      <span>{item.phone}</span>
+                                    </a>
+                                    {item.whatsappInquiryUrl && (
+                                      <a
+                                        href={item.whatsappInquiryUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-2 py-0.5 rounded-lg bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 text-[10px] font-semibold inline-flex items-center gap-1 transition"
+                                      >
+                                        <MessageCircle className="w-3 h-3 text-emerald-400" />
+                                        <span>WhatsApp RFQ</span>
+                                      </a>
+                                    )}
+                                  </div>
                                 ) : (
                                   <span className="text-slate-600">—</span>
+                                )}
+                              </td>
+                              <td className="p-3 align-top text-slate-300 text-xs font-mono">
+                                {item.email ? (
+                                  <div className="space-y-0.5">
+                                    <div className="flex items-center gap-1">
+                                      <Mail className="w-3 h-3 text-purple-400 shrink-0" />
+                                      <span className="truncate max-w-[140px] text-purple-200">{item.email}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(item.email);
+                                          setSaveSuccessMsg(`Copied email: ${item.email}`);
+                                          setTimeout(() => setSaveSuccessMsg(null), 2000);
+                                        }}
+                                        className="text-slate-400 hover:text-white"
+                                        title="Copy Email"
+                                      >
+                                        <Copy className="w-2.5 h-2.5" />
+                                      </button>
+                                    </div>
+                                    <a
+                                      href={`mailto:${item.email}?subject=Commercial%20Hardware%20RFQ%20Inquiry&body=${encodeURIComponent(item.rfqInquiryText || `Hi ${item.name},\nWe are looking to source ${mapsKeywordsInput}. Please share your quote.`)}`}
+                                      className="text-[10px] text-purple-400 hover:underline block"
+                                    >
+                                      Draft Email RFQ →
+                                    </a>
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-600">—</span>
+                                )}
+                              </td>
+                              <td className="p-3 align-top text-slate-300 text-xs max-w-[200px]">
+                                <div>{item.address || <span className="text-slate-600">—</span>}</div>
+                                {item.latitude !== null && item.longitude !== null && (
+                                  <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                                    {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
+                                  </div>
                                 )}
                               </td>
 
@@ -5569,11 +5710,24 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                                 </div>
                               </td>
 
-                              {/* Price Estimate */}
+                              {/* Budget & Actions */}
                               <td className="p-3 align-top whitespace-nowrap">
-                                <span className="font-mono text-[11px] text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/8 border border-emerald-500/15">
+                                <span className="font-mono text-[11px] text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/8 border border-emerald-500/15 block mb-1">
                                   {item.priceEstimate || '—'}
                                 </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const rfq = item.rfqInquiryText || `Hello ${item.name},\nWe are looking for: ${mapsKeywordsInput}.\nPlease share your best commercial quote.`;
+                                    navigator.clipboard.writeText(rfq);
+                                    setSaveSuccessMsg(`Copied Commercial RFQ for ${item.name}!`);
+                                    setTimeout(() => setSaveSuccessMsg(null), 3000);
+                                  }}
+                                  className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-medium border border-slate-700 flex items-center gap-1 transition"
+                                >
+                                  <Copy className="w-2.5 h-2.5" />
+                                  <span>Copy RFQ Pitch</span>
+                                </button>
                               </td>
                             </tr>
                           );

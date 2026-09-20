@@ -1,5 +1,12 @@
 // Pure client-safe interfaces and utilities for scrapers and product spec finder
 
+export interface HardwareComponentSpec {
+  name: string;
+  value: string;
+  matched: boolean;
+  type: 'cpu' | 'ram' | 'gpu' | 'display' | 'storage' | 'budget' | 'other';
+}
+
 export interface KeywordScrapedItem {
   id: string;
   name: string;
@@ -18,10 +25,20 @@ export interface KeywordScrapedItem {
   reviewsCount?: number;
   snippet?: string;
   websiteUrl: string;
+  hasWebsite?: boolean;
   mapUrl: string;
   priceEstimate?: string;
   scrapedAt: string;
   location?: string;
+
+  // Enhanced Hardware Spec Fields
+  category?: string;
+  componentsMatched?: HardwareComponentSpec[];
+  rfqInquiryText?: string;
+  whatsappInquiryUrl?: string;
+  dealerType?: 'Authorized Brand Dealer' | 'Custom PC Builder' | 'Hardware Wholesaler' | 'Retail Store' | 'Hardware Retailer';
+  warrantyTerms?: string;
+  stockStatus?: 'In Stock' | 'Available to Order' | 'Quote on Request' | string;
 }
 
 export interface RefinedDataReport {
