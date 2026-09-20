@@ -66,7 +66,7 @@ function decodeSerpUrl(rawUrl: string): string {
 }
 
 /**
- * Constructs Google Search SERP URL
+ * Constructs Google Search SERP URL — respects target country domain & hardening params
  */
 function buildGoogleSearchUrl(
   query: string,
@@ -81,12 +81,32 @@ function buildGoogleSearchUrl(
   } = options;
 
   const start = (pageNumber - 1) * resultsPerPage;
-  const baseUrl = `https://www.google.com/search`;
+  // Use country-specific Google domain for geo relevance (India -> google.co.in, UK -> google.co.uk, etc.)
+  const domainMap: Record<string, string> = {
+    in: 'co.in',
+    uk: 'co.uk',
+    gb: 'co.uk',
+    ca: 'ca',
+    au: 'com.au',
+    de: 'de',
+    fr: 'fr',
+    jp: 'co.jp',
+    br: 'com.br',
+    us: 'com',
+  };
+  const tld = domainMap[countryCode.toLowerCase()] || 'com';
+  const baseUrl = `https://www.google.${tld}/search`;
   const params = new URLSearchParams({
     q: query,
     hl: languageCode,
     gl: countryCode.toLowerCase(),
     start: String(start),
+    num: String(resultsPerPage),
+    pws: '0',
+    filter: '0',
+    complete: '0',
+    nfpr: '1',
+    brd: '1',
   });
 
   if (locationUule) {
@@ -94,6 +114,34 @@ function buildGoogleSearchUrl(
   }
 
   return `${baseUrl}?${params.toString()}`;
+}
+
+/**
+ * Query relevance validator — prevents returning wrong SERP (e.g. "5" Wikipedia for hotel query)
+ * Returns average relevance 0-100 and top-3 relevance
+ */
+function computeQueryRelevance(query: string, results: { title: string; description: string }[]): { avg: number; top3: number } {
+  if (!results.length) return { avg: 0, top3: 0 };
+  const stop = new Set(['in', 'the', 'a', 'an', 'and', 'or', 'for', 'of', 'to', 'on', 'at', 'is', 'are']);
+  const tokens = query.toLowerCase().split(/[\s_]+/).map(t => t.replace(/[^a-z0-9]/g, '')).filter(t => t.length > 1 && !stop.has(t));
+  // Expand with city alias
+  const expanded = new Set(tokens);
+  if (tokens.includes('bengaluru')) expanded.add('bangalore');
+  if (tokens.includes('bangalore')) expanded.add('bengaluru');
+  // Core terms are longer tokens (>=4 chars) plus hotel/5 etc
+  const coreTerms = Array.from(expanded).filter(t => t.length >= 3);
+
+  const scores = results.map(r => {
+    const hay = `${r.title} ${r.description}`.toLowerCase();
+    let hits = 0;
+    for (const tok of coreTerms) {
+      if (hay.includes(tok)) hits++;
+    }
+    return coreTerms.length ? Math.round((hits / coreTerms.length) * 100) : 0;
+  });
+  const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+  const top3 = Math.round(scores.slice(0, 3).reduce((a, b) => a + b, 0) / Math.min(3, scores.length) || 0);
+  return { avg, top3 };
 }
 
 /**
@@ -269,65 +317,45 @@ async function extractGoogleDom(
 }
 
 /**
- * Fallback SERP Extractor (Multi-Engine Resilience when direct IP faces Google bot challenge)
+ * Fallback SERP Extractor — DuckDuckGo HTML (zero-JS, zero-bot, high-accuracy)
+ * Used when Google triggers bot challenge; far more reliable than Bing JS-rendered SERP
  */
-async function extractFallbackSerp(
+async function extractDuckDuckGoSerp(
   page: any,
   query: string,
   pageNumber: number,
   options: GoogleSearchQueryOptions
 ): Promise<GoogleSearchResultPage> {
-  console.log(`[GoogleSearch Engine] Using multi-engine fallback for query: "${query}"`);
-  const serpUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}&first=${(pageNumber - 1) * 10 + 1}`;
-
+  console.log(`[GoogleSearch Engine] DuckDuckGo HTML fallback for query: "${query}" (Page ${pageNumber})`);
+  const offset = (pageNumber - 1) * 30;
+  const serpUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}${offset ? `&s=${offset}` : ''}`;
   await page.goto(serpUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(1500);
 
   const data = await page.evaluate(() => {
     const items: any[] = [];
-    const containers = Array.from(document.querySelectorAll('li.b_algo'));
+    const containers = Array.from(document.querySelectorAll('.result'));
     let pos = 1;
-
     for (const el of containers) {
-      const titleEl = el.querySelector('h2 a');
+      const titleEl = el.querySelector('.result__title a');
       const title = titleEl?.textContent?.trim() || '';
-      const rawUrl = titleEl?.getAttribute('href') || '';
-      const descEl = el.querySelector('.b_caption p, .b_algoSlug, p');
+      let rawUrl = titleEl?.getAttribute('href') || '';
+      const m = rawUrl.match(/uddg=([^&]+)/);
+      if (m) {
+        try { rawUrl = decodeURIComponent(m[1]); } catch {}
+      } else if (rawUrl.startsWith('/l/?')) {
+        try { rawUrl = decodeURIComponent(rawUrl.split('uddg=')[1]?.split('&')[0] || rawUrl); } catch {}
+      }
+      if (rawUrl.startsWith('//')) rawUrl = 'https:' + rawUrl;
+      const descEl = el.querySelector('.result__snippet');
       const description = descEl?.textContent?.trim() || '';
-      const citeEl = el.querySelector('cite');
+      const citeEl = el.querySelector('.result__url');
       const displayedUrl = citeEl?.textContent?.trim() || '';
-
-      if (title && rawUrl) {
+      if (title && rawUrl && rawUrl.startsWith('http')) {
         items.push({ position: pos++, title, url: rawUrl, displayedUrl, description });
       }
     }
-
-    // PAA
-    const paa: any[] = [];
-    const paaEls = Array.from(document.querySelectorAll('div.df_c, div.b_ans, .b_expansion_wrapper'));
-    for (const p of paaEls) {
-      const q = p.querySelector('h2, h3, .b_hide')?.textContent?.trim();
-      const a = p.querySelector('.b_rich, p')?.textContent?.trim();
-      if (q && q.length > 5) paa.push({ question: q, answer: a });
-    }
-
-    // Related
-    const rel: any[] = [];
-    const relEls = Array.from(document.querySelectorAll('div.b_rs ul li a, ul.b_vList li a'));
-    for (const r of relEls) {
-      const t = r.textContent?.trim();
-      const u = r.getAttribute('href');
-      if (t) rel.push({ title: t, url: u ? `https://www.bing.com${u}` : '' });
-    }
-
-    // AI / Smart Answer
-    let aiText = '';
-    const aiEl = document.querySelector('.b_ans .rwrl, .b_ans .b_focusTextExtra, .b_ans .b_entityTitle');
-    if (aiEl) {
-      aiText = aiEl.textContent?.trim() || '';
-    }
-
-    return { items, paa, rel, aiText };
+    return { items, paa: [], rel: [], aiText: '' };
   });
 
   const formattedOrganic: GoogleOrganicResult[] = data.items.map((r: any) => ({
@@ -336,6 +364,79 @@ async function extractFallbackSerp(
     type: 'organic',
   }));
 
+  return {
+    searchQuery: {
+      term: query,
+      url: serpUrl,
+      device: options.mobileResults ? 'MOBILE' : 'DESKTOP',
+      page: pageNumber,
+      type: 'SEARCH',
+      domain: 'duckduckgo.com',
+      countryCode: (options.countryCode || 'us').toUpperCase(),
+      languageCode: options.languageCode || 'en',
+      locationUule: null,
+    },
+    organicResults: formattedOrganic,
+    paidResults: [],
+    paidProducts: [],
+    aiModeResult: null,
+    peopleAlsoAsk: [],
+    relatedQueries: [],
+    scrapedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Legacy Bing Fallback — kept as last resort if DuckDuckGo also fails
+ */
+async function extractBingSerp(
+  page: any,
+  query: string,
+  pageNumber: number,
+  options: GoogleSearchQueryOptions
+): Promise<GoogleSearchResultPage> {
+  console.log(`[GoogleSearch Engine] Bing fallback (last resort) for query: "${query}"`);
+  const serpUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}&first=${(pageNumber - 1) * 10 + 1}`;
+  await page.goto(serpUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
+  await page.waitForTimeout(2000);
+  const data = await page.evaluate(() => {
+    const items: any[] = [];
+    const containers = Array.from(document.querySelectorAll('li.b_algo'));
+    let pos = 1;
+    for (const el of containers) {
+      const titleEl = el.querySelector('h2 a');
+      const title = titleEl?.textContent?.trim() || '';
+      const rawUrl = titleEl?.getAttribute('href') || '';
+      const descEl = el.querySelector('.b_caption p, .b_algoSlug, p');
+      const description = descEl?.textContent?.trim() || '';
+      const citeEl = el.querySelector('cite');
+      const displayedUrl = citeEl?.textContent?.trim() || '';
+      if (title && rawUrl) items.push({ position: pos++, title, url: rawUrl, displayedUrl, description });
+    }
+    const paa: any[] = [];
+    const paaEls = Array.from(document.querySelectorAll('div.df_c, div.b_ans, .b_expansion_wrapper'));
+    for (const p of paaEls) {
+      const q = p.querySelector('h2, h3, .b_hide')?.textContent?.trim();
+      const a = p.querySelector('.b_rich, p')?.textContent?.trim();
+      if (q && q.length > 5) paa.push({ question: q, answer: a });
+    }
+    const rel: any[] = [];
+    const relEls = Array.from(document.querySelectorAll('div.b_rs ul li a, ul.b_vList li a'));
+    for (const r of relEls) {
+      const t = r.textContent?.trim();
+      const u = r.getAttribute('href');
+      if (t) rel.push({ title: t, url: u ? `https://www.bing.com${u}` : '' });
+    }
+    let aiText = '';
+    const aiEl = document.querySelector('.b_ans .rwrl, .b_ans .b_focusTextExtra, .b_ans .b_entityTitle');
+    if (aiEl) aiText = aiEl.textContent?.trim() || '';
+    return { items, paa, rel, aiText };
+  });
+  const formattedOrganic: GoogleOrganicResult[] = data.items.map((r: any) => ({
+    ...r,
+    url: decodeSerpUrl(r.url),
+    type: 'organic',
+  }));
   const aiModeResult: GoogleAiModeResult | null = data.aiText
     ? {
         engine: 'Search AI Overview',
@@ -348,7 +449,6 @@ async function extractFallbackSerp(
         })),
       }
     : null;
-
   return {
     searchQuery: {
       term: query,
@@ -369,6 +469,11 @@ async function extractFallbackSerp(
     relatedQueries: data.rel,
     scrapedAt: new Date().toISOString(),
   };
+}
+
+// Back-compat alias
+async function extractFallbackSerp(page: any, query: string, pageNumber: number, options: GoogleSearchQueryOptions): Promise<GoogleSearchResultPage> {
+  return extractDuckDuckGoSerp(page, query, pageNumber, options);
 }
 
 /**
@@ -429,15 +534,33 @@ export async function scrapeGoogleSearchResults(
 
           // Check if Google triggered bot challenge or /sorry/index
           if (currentUrl.includes('sorry/index') || currentUrl.includes('recaptcha')) {
-            console.log(`[GoogleSearch Engine] Notice: Google bot challenge detected on IP. Engaging high-accuracy multi-engine fallback.`);
-            pageData = await extractFallbackSerp(page, query, p, options);
+            console.log(`[GoogleSearch Engine] Notice: Google bot challenge detected on IP. Engaging DuckDuckGo fallback.`);
+            pageData = await extractDuckDuckGoSerp(page, query, p, options);
+            // If DDG also low relevance, try Bing as last resort
+            const relFallback = computeQueryRelevance(query, pageData.organicResults.map(r => ({ title: r.title, description: r.description })));
+            if (relFallback.avg < 25 && pageData.organicResults.length) {
+              console.log(`[GoogleSearch Engine] DDG fallback relevance low (avg ${relFallback.avg}%). Trying Bing last resort.`);
+              const bingData = await extractBingSerp(page, query, p, options);
+              const bingRel = computeQueryRelevance(query, bingData.organicResults.map(r => ({ title: r.title, description: r.description })));
+              if (bingRel.avg > relFallback.avg) pageData = bingData;
+            }
           } else {
             await page.waitForSelector('div#search, div.g, div.tF2Cxc, div#rso', { timeout: 6000 }).catch(() => null);
             pageData = await extractGoogleDom(page, query, p, serpUrl, options);
-            // If primary DOM had 0 results, trigger seamless fallback
+            // Validate query relevance — discard generic "5" Wikipedia noise for hotel queries
+            const googleRel = computeQueryRelevance(query, pageData.organicResults.map(r => ({ title: r.title, description: r.description })));
             if (pageData.organicResults.length === 0) {
-              console.log(`[GoogleSearch Engine] Primary DOM yielded 0 results. Triggering multi-engine fallback.`);
-              pageData = await extractFallbackSerp(page, query, p, options);
+              console.log(`[GoogleSearch Engine] Primary DOM yielded 0 results. Triggering DDG fallback.`);
+              pageData = await extractDuckDuckGoSerp(page, query, p, options);
+            } else if (googleRel.avg < 35 || googleRel.top3 < 40) {
+              console.log(`[GoogleSearch Engine] Google relevance low (avg ${googleRel.avg}%, top3 ${googleRel.top3}%) for "${query}". Switching to DuckDuckGo which respects query integrity.`);
+              const ddgData = await extractDuckDuckGoSerp(page, query, p, options);
+              const ddgRel = computeQueryRelevance(query, ddgData.organicResults.map(r => ({ title: r.title, description: r.description })));
+              console.log(`[GoogleSearch Engine] DDG relevance avg ${ddgRel.avg}%, top3 ${ddgRel.top3}%`);
+              if (ddgRel.avg > googleRel.avg) {
+                pageData = ddgData;
+                addQueueLog({ domain: 'serp-engine', type: 'info', message: `🔄 Relevance gate switched to DuckDuckGo (Google avg ${googleRel.avg}% → DDG ${ddgRel.avg}%)` });
+              }
             }
           }
 
@@ -445,7 +568,7 @@ export async function scrapeGoogleSearchResults(
           addQueueLog({
             domain: 'serp-engine',
             type: 'info',
-            message: `📊 Extracted ${pageData.organicResults.length} organic rankings, ${pageData.paidResults?.length || 0} ads, and ${pageData.peopleAlsoAsk?.length || 0} PAA questions for "${query}".`,
+            message: `📊 Extracted ${pageData.organicResults.length} organic rankings, ${pageData.paidResults?.length || 0} ads, and ${pageData.peopleAlsoAsk?.length || 0} PAA questions for "${query}"${pageData.searchQuery.domain !== 'google.com' ? ` via ${pageData.searchQuery.domain}` : ''}.`,
           });
 
           if (p < maxPagesPerQuery) {

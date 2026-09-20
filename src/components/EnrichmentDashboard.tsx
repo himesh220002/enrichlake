@@ -677,6 +677,7 @@ export default function EnrichmentDashboard({
   ]);
   const [autoScrollLogs, setAutoScrollLogs] = useState(true);
   const logsTerminalEndRef = useRef<HTMLDivElement | null>(null);
+  const logsContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Universal Product & Specs Finder State (User-specified Category, Product, Spec, Price Range, and Scope)
   const [productCategoryInput, setProductCategoryInput] = useState('Electronics & Computers (IT)');
@@ -979,10 +980,16 @@ export default function EnrichmentDashboard({
     return () => clearInterval(interval);
   }, [mapsLoading, serpLoading, showScraperConsole]);
 
-  // Auto-scroll terminal to bottom when new logs arrive
+  // Auto-scroll terminal to bottom when new logs arrive — confined to log container only (no page jump)
   useEffect(() => {
-    if (autoScrollLogs && logsTerminalEndRef.current) {
-      logsTerminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (!autoScrollLogs) return;
+    const container = logsContainerRef.current;
+    if (container) {
+      // Contained scroll — never forces page/window scroll
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    } else if (logsTerminalEndRef.current) {
+      // Fallback: nearest block prevents page-level force scroll
+      logsTerminalEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
     }
   }, [scraperLogs, autoScrollLogs]);
 
@@ -4672,7 +4679,7 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                   </div>
                 </div>
 
-                {/* macOS styled Terminal Window */}
+                {/* macOS styled Terminal Window — fixed height, contained scroll */}
                 <div className="rounded-2xl border border-slate-800 bg-[#090d16] shadow-2xl overflow-hidden flex flex-col h-[340px]">
                   {/* Window Bar */}
                   <div className="px-4 py-2.5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs">
@@ -4691,8 +4698,8 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                     </div>
                   </div>
 
-                  {/* Terminal Log Output */}
-                  <div className="p-4 font-mono text-[11px] space-y-2 overflow-y-auto flex-1 leading-relaxed">
+                  {/* Terminal Log Output — contained scroll, no page force */}
+                  <div ref={logsContainerRef} className="p-4 font-mono text-[11px] space-y-2 overflow-y-auto flex-1 leading-relaxed overscroll-contain scroll-smooth">
                     <div className="text-slate-500">
                       [System] BullMQ Redis Queue initialized. Concurrency cap: 3 slots.
                     </div>
