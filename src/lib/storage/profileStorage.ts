@@ -4,6 +4,8 @@ export type ProfileSourceOrigin =
   | 'domain_crawler'
   | 'product_spec_matrix'
   | 'gmaps_seller'
+  | 'google_maps_enterprise'
+  | 'search_intelligence'
   | 'bullmq_queue'
   | 'manual_entry';
 
