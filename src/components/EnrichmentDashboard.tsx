@@ -605,6 +605,7 @@ export default function EnrichmentDashboard({
   const [actorRenderJs, setActorRenderJs] = useState<boolean>(true);
   const [actorMarkdownCopied, setActorMarkdownCopied] = useState<boolean>(false);
   const [markdownPreviewMode, setMarkdownPreviewMode] = useState<'split' | 'preview_only' | 'source_only'>('split');
+  const [facebookPostTab, setFacebookPostTab] = useState<'all' | 'weekly' | 'monthly'>('all');
 
   // AI Outreach Pitch Synthesizer State
   const [pitchModalOpen, setPitchModalOpen] = useState<boolean>(false);
@@ -6925,7 +6926,7 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
 
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-white/[0.06]">
                 <div>
-                  <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white text-slate-900 text-[11px] font-bold tracking-widest uppercase">
+                  <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-800/80 to-blue-900/30 text-slate-100 text-[11px] font-bold tracking-widest uppercase">
                     <Terminal className="w-3.5 h-3.5" />
                     <span>Internet-Wide Product & Specs Extraction Engine</span>
                   </div>
@@ -8110,13 +8111,12 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                                       href={item.websiteUrl}
                                       target="_blank"
                                       rel="noreferrer"
-                                      className={`text-[10px] inline-flex items-center gap-1 font-mono font-medium rounded px-1.5 py-0.5 border transition ${
-                                        item.urlType === 'direct_scraped'
-                                          ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/20'
-                                          : item.urlType === 'verified_domain'
-                                            ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/20'
-                                            : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
-                                      }`}
+                                      className={`text-[10px] inline-flex items-center gap-1 font-mono font-medium rounded px-1.5 py-0.5 border transition ${item.urlType === 'direct_scraped'
+                                        ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/20'
+                                        : item.urlType === 'verified_domain'
+                                          ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/20'
+                                          : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
+                                        }`}
                                       title={
                                         item.urlType === 'direct_scraped'
                                           ? 'Direct scraped product listing'
@@ -8549,13 +8549,12 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                                     <ExternalLink className="w-2.5 h-2.5 shrink-0" />
                                   </a>
                                   {seller.urlType && (
-                                    <span className={`text-[9px] font-sans font-semibold rounded px-1 py-0.2 w-fit ${
-                                      seller.urlType === 'direct_scraped'
-                                        ? 'text-cyan-400 bg-cyan-950/40 border border-cyan-500/30'
-                                        : seller.urlType === 'verified_domain'
-                                          ? 'text-indigo-300 bg-indigo-950/40 border border-indigo-500/30'
-                                          : 'text-slate-400 bg-slate-800 border border-slate-700'
-                                    }`}>
+                                    <span className={`text-[9px] font-sans font-semibold rounded px-1 py-0.2 w-fit ${seller.urlType === 'direct_scraped'
+                                      ? 'text-cyan-400 bg-cyan-950/40 border border-cyan-500/30'
+                                      : seller.urlType === 'verified_domain'
+                                        ? 'text-indigo-300 bg-indigo-950/40 border border-indigo-500/30'
+                                        : 'text-slate-400 bg-slate-800 border border-slate-700'
+                                      }`}>
                                       {seller.urlType === 'direct_scraped'
                                         ? 'Direct Scraped'
                                         : seller.urlType === 'verified_domain'
@@ -10469,151 +10468,268 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
             {/* ============================================================== */}
             {actorResult && actorType === 'facebook' && (actorResult.actorType === 'facebook' || actorResult.pageName) && (
               <div className="space-y-6">
-                <div className="glass-panel p-6 sm:p-7 rounded-2xl relative overflow-hidden">
-                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 pb-5 border-b border-white/[0.07]">
-                    <div className="flex items-center gap-4">
-                      {actorResult.profilePicUrl ? (
-                        <img
-                          src={actorResult.profilePicUrl}
-                          alt={actorResult.pageName || 'Facebook Page'}
-                          className="w-16 h-16 rounded-full object-cover border-2 border-blue-500/40 shadow-lg"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg">
-                          <FacebookIcon className="w-8 h-8" />
+                <div className="glass-panel rounded-2xl relative overflow-hidden border border-white/[0.08]">
+                  {/* Cover Photo Banner (if available) */}
+                  {actorResult.coverPicUrl && (
+                    <div className="h-32 sm:h-44 w-full relative overflow-hidden bg-slate-900 border-b border-white/[0.08]">
+                      <img
+                        src={actorResult.coverPicUrl}
+                        alt="Facebook Cover"
+                        referrerPolicy="no-referrer"
+                        crossOrigin="anonymous"
+                        loading="lazy"
+                        onError={(e) => {
+                          const t = e.currentTarget;
+                          if (!t.dataset.proxy) {
+                            t.dataset.proxy = 'true';
+                            t.src = `/api/image-proxy?url=${encodeURIComponent(actorResult.coverPicUrl)}`;
+                          }
+                        }}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent pointer-events-none" />
+                      <div className="absolute top-3 right-3">
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-mono bg-slate-950/70 text-slate-300 border border-white/10 backdrop-blur-md flex items-center gap-1.5">
+                          <FacebookIcon className="w-3 h-3 text-blue-400" />
+                          <span>Facebook Official Intel</span>
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="p-6 sm:p-7">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 pb-5 border-b border-white/[0.07]">
+                      <div className="flex items-center gap-4">
+                        {actorResult.profilePicUrl ? (
+                          <div className="relative">
+                            <img
+                              src={actorResult.profilePicUrl}
+                              alt={actorResult.pageName || 'Facebook Page'}
+                              referrerPolicy="no-referrer"
+                              crossOrigin="anonymous"
+                              onError={(e) => {
+                                const t = e.currentTarget;
+                                if (!t.dataset.proxy) {
+                                  t.dataset.proxy = 'true';
+                                  t.src = `/api/image-proxy?url=${encodeURIComponent(actorResult.profilePicUrl)}`;
+                                }
+                              }}
+                              className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-blue-500/50 shadow-xl bg-slate-800"
+                            />
+                            {actorResult.isVerified && (
+                              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-blue-600 border-2 border-slate-950 flex items-center justify-center text-white shadow-md">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-bold text-3xl shadow-xl">
+                            <FacebookIcon className="w-8 h-8" />
+                          </div>
+                        )}
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="text-xl sm:text-2xl font-bold text-white">{actorResult.pageName}</h3>
+                            {actorResult.isVerified && (
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-1 shadow-sm">
+                                <CheckCircle2 className="w-3 h-3 text-blue-400" />
+                                <span>Verified Page</span>
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs font-mono text-blue-400 mt-1">{actorResult.category || 'Facebook Business Page'}</div>
+                          <p className="text-xs text-slate-300 mt-1 max-w-2xl line-clamp-2 leading-relaxed">{actorResult.about || actorResult.intro}</p>
                         </div>
-                      )}
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-xl font-bold text-white">{actorResult.pageName}</h3>
-                          {actorResult.isVerified && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-1">
-                              <CheckCircle2 className="w-3 h-3 text-blue-400" />
-                              <span>Verified Page</span>
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs font-mono text-blue-400 mt-0.5">{actorResult.category || 'Facebook Business Page'}</div>
-                        <p className="text-xs text-slate-300 mt-1 max-w-xl line-clamp-2 leading-relaxed">{actorResult.about || actorResult.intro}</p>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <a
+                          href={actorResult.pageUrl || `https://www.facebook.com/${actorResult.pageSlug}/`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition flex items-center gap-1.5 shadow-sm"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>View on Facebook</span>
+                        </a>
+
+                        <button
+                          onClick={() => handleSaveActorToProfiles(actorResult, 'facebook')}
+                          className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition flex items-center gap-1.5 shadow-md shadow-blue-600/30"
+                        >
+                          <Bookmark className="w-3.5 h-3.5" />
+                          <span>Save to CRM Profiles</span>
+                        </button>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <a
-                        href={actorResult.pageUrl || `https://www.facebook.com/${actorResult.pageSlug}/`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition flex items-center gap-1.5"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        <span>View on Facebook</span>
-                      </a>
-
-                      <button
-                        onClick={() => handleSaveActorToProfiles(actorResult, 'facebook')}
-                        className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition flex items-center gap-1.5 shadow-md shadow-blue-600/30"
-                      >
-                        <Bookmark className="w-3.5 h-3.5" />
-                        <span>Save to CRM Profiles</span>
-                      </button>
+                    {/* 5 Precision Metric Telemetry Tiles */}
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-5">
+                      <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center hover:border-blue-500/30 transition">
+                        <div className="text-slate-400 text-xs font-mono uppercase">Page Likes</div>
+                        <div className="text-2xl font-bold text-white font-mono-tight mt-1">{actorResult.likesFormatted || '0'}</div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">({actorResult.likesCount?.toLocaleString() || 0} exact)</div>
+                      </div>
+                      <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center hover:border-blue-500/30 transition">
+                        <div className="text-slate-400 text-xs font-mono uppercase">Followers</div>
+                        <div className="text-2xl font-bold text-blue-400 font-mono-tight mt-1">{actorResult.followersFormatted || '0'}</div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">({actorResult.followersCount?.toLocaleString() || 0} exact)</div>
+                      </div>
+                      <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center hover:border-emerald-500/30 transition">
+                        <div className="text-slate-400 text-xs font-mono uppercase">Talking About</div>
+                        <div className="text-2xl font-bold text-emerald-400 font-mono-tight mt-1">{actorResult.talkingAboutFormatted || 'Active'}</div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">Weekly Engagement</div>
+                      </div>
+                      <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center hover:border-amber-500/30 transition">
+                        <div className="text-slate-400 text-xs font-mono uppercase">Recent Posts</div>
+                        <div className="text-2xl font-bold text-amber-400 font-mono-tight mt-1">{actorResult.posts?.length || 0}</div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">Last Recent Analyzed</div>
+                      </div>
+                      <div className="col-span-2 sm:col-span-1 p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center hover:border-violet-500/30 transition">
+                        <div className="text-slate-400 text-xs font-mono uppercase">Feed Status</div>
+                        <div className="text-sm font-bold text-violet-300 font-mono-tight mt-2 truncate">Live Timeline</div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">Real Scraped Stream</div>
+                      </div>
                     </div>
+
+                    {/* Contact & Location Strip */}
+                    {(actorResult.website || actorResult.address || actorResult.phone || actorResult.email) && (
+                      <div className="mt-5 pt-4 border-t border-white/[0.07] flex flex-wrap gap-4 text-xs">
+                        {actorResult.website && (
+                          <a href={actorResult.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-blue-400 hover:underline">
+                            <Globe className="w-3.5 h-3.5" />
+                            <span>{actorResult.website}</span>
+                          </a>
+                        )}
+                        {actorResult.address && (
+                          <div className="flex items-center gap-1.5 text-slate-300">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{actorResult.address}</span>
+                          </div>
+                        )}
+                        {actorResult.email && (
+                          <div className="flex items-center gap-1.5 text-slate-300">
+                            <Mail className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{actorResult.email}</span>
+                          </div>
+                        )}
+                        {actorResult.phone && (
+                          <div className="flex items-center gap-1.5 text-slate-300">
+                            <Phone className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{actorResult.phone}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-
-                  {/* 4 Metric Counters */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
-                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center">
-                      <div className="text-slate-400 text-xs font-mono uppercase">Page Likes</div>
-                      <div className="text-2xl font-bold text-white font-mono-tight mt-1">{actorResult.likesFormatted || '0'}</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">({actorResult.likesCount?.toLocaleString() || 0} exact)</div>
-                    </div>
-                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center">
-                      <div className="text-slate-400 text-xs font-mono uppercase">Followers</div>
-                      <div className="text-2xl font-bold text-blue-400 font-mono-tight mt-1">{actorResult.followersFormatted || '0'}</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">({actorResult.followersCount?.toLocaleString() || 0} exact)</div>
-                    </div>
-                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center">
-                      <div className="text-slate-400 text-xs font-mono uppercase">Public Posts</div>
-                      <div className="text-2xl font-bold text-white font-mono-tight mt-1">{actorResult.posts?.length || 0}</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">Recent Analyzed</div>
-                    </div>
-                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center">
-                      <div className="text-slate-400 text-xs font-mono uppercase">Business Type</div>
-                      <div className="text-sm font-bold text-white font-mono-tight mt-2 truncate">{actorResult.category || 'Commercial'}</div>
-                    </div>
-                  </div>
-
-                  {/* Contact & Location Strip */}
-                  {(actorResult.website || actorResult.address || actorResult.phone || actorResult.email) && (
-                    <div className="mt-5 pt-4 border-t border-white/[0.07] flex flex-wrap gap-4 text-xs">
-                      {actorResult.website && (
-                        <a href={actorResult.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-blue-400 hover:underline">
-                          <Globe className="w-3.5 h-3.5" />
-                          <span>{actorResult.website}</span>
-                        </a>
-                      )}
-                      {actorResult.address && (
-                        <div className="flex items-center gap-1.5 text-slate-300">
-                          <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{actorResult.address}</span>
-                        </div>
-                      )}
-                      {actorResult.email && (
-                        <div className="flex items-center gap-1.5 text-slate-300">
-                          <Mail className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{actorResult.email}</span>
-                        </div>
-                      )}
-                      {actorResult.phone && (
-                        <div className="flex items-center gap-1.5 text-slate-300">
-                          <Phone className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{actorResult.phone}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
 
                 {/* Recent Public Posts with View Telemetry */}
                 {actorResult.posts?.length > 0 && (
-                  <div className="glass-panel p-6 rounded-2xl space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-base font-bold text-white flex items-center gap-2">
-                        <FacebookIcon className="w-4 h-4 text-blue-400" />
-                        <span>Recent Public Posts & Video Views ({actorResult.posts.length})</span>
-                      </h4>
-                      <span className="text-xs text-slate-400 font-mono">Engagement & Reach Telemetry</span>
+                  <div className="glass-panel p-6 sm:p-7 rounded-2xl space-y-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.07]">
+                      <div>
+                        <h4 className="text-base font-bold text-white flex items-center gap-2">
+                          <FacebookIcon className="w-4 h-4 text-blue-400" />
+                          <span>Last Recent Public Posts ({actorResult.posts.length})</span>
+                        </h4>
+                        <div className="text-xs text-slate-400 font-mono mt-1 flex items-center gap-2">
+                          <span className="text-blue-400 font-semibold">⚡ Direct Page Timeline Stream</span>
+                          <span>•</span>
+                          <span className="text-emerald-400 font-semibold">Real-Time Published Engagement</span>
+                        </div>
+                      </div>
+
+                      <div className="px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold bg-slate-900/80 text-slate-300 border border-white/10 flex items-center gap-2 self-start sm:self-auto">
+                        <Clock className="w-3.5 h-3.5 text-blue-400" />
+                        <span>Chronological Feed</span>
+                      </div>
                     </div>
 
+                    {/* Posts Grid with Rich Media and Badging */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {actorResult.posts.map((post: any) => (
+                      {actorResult.posts.map((post: any, idx: number) => (
                         <div
-                          key={post.id}
-                          className="rounded-xl bg-slate-900/70 border border-white/[0.07] p-4 flex flex-col justify-between hover:border-blue-500/30 transition group space-y-3"
+                          key={post.id || idx}
+                          className="rounded-xl bg-slate-900/70 border border-white/[0.08] hover:border-blue-500/40 p-4 flex flex-col justify-between transition group space-y-3.5 shadow-sm"
                         >
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 font-mono text-[10px] uppercase font-semibold">
-                              {post.type}
-                            </span>
+                          {/* Top Header: Badges & Timestamp */}
+                          <div className="flex items-center justify-between text-xs gap-2 flex-wrap">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-semibold flex items-center gap-1 ${
+                                  idx === 0
+                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                    : 'bg-blue-500/15 text-blue-300 border border-blue-500/30'
+                                }`}
+                              >
+                                <span>{post.badge || (idx === 0 ? 'Latest Post' : `Recent Post #${idx + 1}`)}</span>
+                              </span>
+
+                              <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-[10px] uppercase font-medium border border-white/10">
+                                {post.type}
+                              </span>
+                            </div>
+
                             <span className="text-slate-400 font-mono text-[10px] flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              <span>{post.timestamp}</span>
+                              <Clock className="w-3 h-3 text-slate-500" />
+                              <span>{post.publishedDate || post.timestamp}</span>
                             </span>
                           </div>
 
+                          {/* Post Media Image (Loads Reliably with No-Referrer and Fallback Proxy) */}
+                          {post.mediaUrl && (
+                            <div className="relative w-full h-44 sm:h-48 rounded-xl overflow-hidden bg-slate-950 border border-white/[0.08] group/img">
+                              <img
+                                src={post.mediaUrl}
+                                alt={post.content?.slice(0, 60) || 'Post media'}
+                                referrerPolicy="no-referrer"
+                                crossOrigin="anonymous"
+                                loading="lazy"
+                                onError={(e) => {
+                                  const t = e.currentTarget;
+                                  if (!t.dataset.proxy) {
+                                    t.dataset.proxy = 'true';
+                                    t.src = `/api/image-proxy?url=${encodeURIComponent(post.mediaUrl)}`;
+                                  } else {
+                                    t.src = 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80';
+                                  }
+                                }}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
+                            </div>
+                          )}
+
+                          {/* Content Body */}
                           <p className="text-xs text-slate-200 line-clamp-3 leading-relaxed">
                             {post.content}
                           </p>
 
-                          {/* Engagement & Views Counters */}
-                          <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-xs font-mono">
+                          {/* Engagement & Views Telemetry Counters */}
+                          <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-xs font-mono gap-2 flex-wrap">
                             <div className="flex items-center gap-3 text-slate-300 text-[11px]">
-                              <span>👍 {post.likesCount?.toLocaleString()}</span>
+                              <span className="font-semibold text-white">👍 {post.likesCount?.toLocaleString()}</span>
                               <span>💬 {post.commentsCount?.toLocaleString()}</span>
                               <span>🔁 {post.sharesCount?.toLocaleString()}</span>
                             </div>
-                            <div className="flex items-center gap-1 text-emerald-400 font-bold text-[11px] bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                              <Eye className="w-3 h-3" />
-                              <span>~{post.viewsCount?.toLocaleString()} views</span>
+
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1 text-emerald-400 font-bold text-[11px] bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                                <Eye className="w-3 h-3" />
+                                <span>~{post.viewsCount?.toLocaleString()} views</span>
+                              </div>
+                              {post.url && (
+                                <a
+                                  href={post.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/10 transition"
+                                  title="Open post"
+                                >
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              )}
                             </div>
                           </div>
                         </div>
