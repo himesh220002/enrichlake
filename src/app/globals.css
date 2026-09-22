@@ -41,6 +41,7 @@ body {
   background-repeat: no-repeat;
   color: var(--fg);
   min-height: 100vh;
+  width: 100%;
   font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -255,6 +256,8 @@ body::before {
 /* Marketing home — a spacious, layered entry point separate from the research UI. */
 .home-page {
   isolation: isolate;
+  position: relative;
+  width: 100%;
   background-image:
     radial-gradient(900px 560px at 75% 6%, rgba(45, 212, 191, 0.09), transparent 62%),
     radial-gradient(780px 560px at 10% 32%, rgba(99, 102, 241, 0.13), transparent 65%),
@@ -267,22 +270,23 @@ body::before {
   pointer-events: none;
   border-radius: 999px;
   filter: blur(4px);
+  max-width: 100vw;
 }
 
 .home-halo-one {
-  width: min(52vw, 760px);
+  width: min(50vw, 720px);
   aspect-ratio: 1;
   top: 60px;
-  right: -16vw;
+  right: -2vw;
   opacity: 0.24;
   background: radial-gradient(circle, rgba(34, 211, 238, 0.27), rgba(99, 102, 241, 0.11) 34%, transparent 68%);
 }
 
 .home-halo-two {
-  width: min(48vw, 650px);
+  width: min(45vw, 620px);
   aspect-ratio: 1;
   top: 220px;
-  left: -22vw;
+  left: -2vw;
   opacity: 0.26;
   background: radial-gradient(circle, rgba(99, 102, 241, 0.25), transparent 68%);
 }
@@ -359,8 +363,8 @@ body::before {
 }
 
 .home-console-float strong { color: #fff; }
-.home-float-one { left: -4%; bottom: 11%; }
-.home-float-two { right: -5%; top: 18%; }
+.home-float-one { left: 0%; bottom: 11%; }
+.home-float-two { right: 0%; top: 18%; }
 
 .home-tool-card {
   background: linear-gradient(150deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018));
