@@ -96,6 +96,15 @@ export const KEYWORD_TAXONOMY: TaxonomyEntry[] = [
 
 export function detectIndustryGroup(text: string): IndustryGroup {
   const t = (text || '').toLowerCase();
+  if (/\b(construction|building|cement|opc|ppc|aggregate|concrete|mortar|rcc)\b/i.test(t)) return 'construction';
+  if (/\b(steel|tmt|rebar|iron|metal|fe\s*500|pipe|flange)\b/i.test(t)) return 'metals';
+  if (/\b(solar|pv|bifacial|inverter|topcon|renewable)\b/i.test(t)) return 'solar';
+  if (/\b(textile|fabric|cotton|yarn|gsm|apparel|garment|cloth)\b/i.test(t)) return 'textiles';
+  if (/\b(chemical|solvent|ipa|isopropyl|acid|polymer)\b/i.test(t)) return 'chemicals';
+  if (/\b(hydraulic|valve|pump|cylinder|actuator|machinery)\b/i.test(t)) return 'machinery';
+  if (/\b(rice|wheat|grain|basmati|agri|agriculture|commodity|pulse|dal|spices)\b/i.test(t)) return 'agri';
+  if (/\b(laptop|computer|server|cpu|gpu|ram|ssd|electronics|monitor|hardware)\b/i.test(t)) return 'it';
+
   for (const entry of KEYWORD_TAXONOMY) {
     if (entry.triggers.some(r => r.test(t))) return entry.group;
   }

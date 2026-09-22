@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       scope,
       centerLocation,
       rangeKm: Number(rangeKm) || 0,
-      maxResults: Math.min(Math.max(Number(maxResults) || 50, 1), 50),
+      maxResults: Math.min(Math.max(Number(maxResults) || 50, 1), 10000),
     });
 
     const coverage = getRegionalCoverageMetadata(

@@ -123,6 +123,11 @@ export interface ProductSpecRecord {
   longitude: number;
   distanceKm: number;
   logistics: string;
+  urlType?: 'direct_scraped' | 'verified_domain' | 'verified_search';
+  sellerPhone?: string;
+  sellerEmail?: string;
+  verificationStatus?: string;
+  procurementTerms?: string;
   statusTag: ProductStatusTag;
   rawUrl: string;
   scrapedAt: string;
@@ -147,6 +152,7 @@ export interface ProductSellerRecord {
   productsServices: string;
   procurementTerms?: string;
   website: string;
+  urlType?: 'direct_scraped' | 'verified_domain' | 'verified_search';
   phone: string;
   email: string;
   address: string;

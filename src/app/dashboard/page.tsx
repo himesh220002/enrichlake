@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import EnrichmentDashboard from '@/components/EnrichmentDashboard';
+import HarvestCommandCenter from '@/components/HarvestCommandCenter';
 
 export const metadata: Metadata = {
-  title: 'All intelligence workspaces | Enricher AI',
-  description: 'The complete Enricher AI research dashboard.',
+  title: 'AI Information Harvesting Command Center | Enricher AI',
+  description: 'Mission-control telemetry, business synergy engine, and multi-workspace harvesting console.',
 };
 
 export default function DashboardPage() {
-  return <EnrichmentDashboard initialTab="products" />;
+  return <HarvestCommandCenter />;
 }
