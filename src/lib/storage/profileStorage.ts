@@ -254,6 +254,35 @@ export class ProfileStorageService {
     return filtered.length !== existing.length;
   }
 
+  static deleteProfiles(ids: string[]): number {
+    const idSet = new Set(ids);
+    const existing = this.getProfiles();
+    const filtered = existing.filter((p) => !idSet.has(p.id));
+    this.schedulePersist(filtered);
+    return existing.length - filtered.length;
+  }
+
+  static bulkUpdateProfiles(ids: string[], updates: Partial<EnrichedProfileRecord>): number {
+    const idSet = new Set(ids);
+    const existing = this.getProfiles();
+    let count = 0;
+    const updated = existing.map((p) => {
+      if (idSet.has(p.id)) {
+        count++;
+        return {
+          ...p,
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return p;
+    });
+    if (count > 0) {
+      this.schedulePersist(updated);
+    }
+    return count;
+  }
+
   static clearAll(): void {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(STORAGE_KEY);

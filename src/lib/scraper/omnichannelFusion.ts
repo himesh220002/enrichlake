@@ -48,7 +48,7 @@ export interface OmnichannelDossier360 {
     samplePost?: {
       content: string;
       viewsCount?: number;
-      likesCount: number;
+      likesCount?: number;
     };
   };
   metaAdsIntel?: {

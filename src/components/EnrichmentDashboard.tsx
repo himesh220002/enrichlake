@@ -82,6 +82,10 @@ import {
   FileCode,
   FolderArchive,
   LayoutGrid,
+  User,
+  Briefcase,
+  GraduationCap,
+  Home,
 } from 'lucide-react';
 import type { PitchTone, GeneratedPitchResult } from '@/lib/ai/pitchGenerator';
 import type { GoogleMapsPlaceRecord } from '@/lib/scraper/googleMapsTypes';
@@ -520,7 +524,7 @@ const AI_PROVIDERS_2026 = [
 
 
 type WorkspaceTab = 'live' | 'maps' | 'products' | 'actors' | 'saved' | 'byok' | 'rules' | 'queue';
-type ActorTool = 'web_content' | 'instagram' | 'linkedin' | 'facebook' | 'meta_ads' | 'omnichannel_360';
+type ActorTool = 'web_content' | 'instagram' | 'linkedin' | 'facebook' | 'meta_ads' | 'instagram_ads' | 'omnichannel_360';
 
 const defaultActorInputs: Record<ActorTool, string> = {
   web_content: 'https://news.ycombinator.com',
@@ -528,6 +532,7 @@ const defaultActorInputs: Record<ActorTool, string> = {
   linkedin: 'stripe',
   facebook: 'nike',
   meta_ads: 'nike',
+  instagram_ads: 'nike',
   omnichannel_360: 'nike.com',
 };
 
@@ -607,6 +612,8 @@ export default function EnrichmentDashboard({
   const [actorMarkdownCopied, setActorMarkdownCopied] = useState<boolean>(false);
   const [markdownPreviewMode, setMarkdownPreviewMode] = useState<'split' | 'preview_only' | 'source_only'>('split');
   const [facebookPostTab, setFacebookPostTab] = useState<'all' | 'weekly' | 'monthly'>('all');
+  const [facebookViewMode, setFacebookViewMode] = useState<'posts' | 'graph_api'>('posts');
+  const [graphApiCopied, setGraphApiCopied] = useState<boolean>(false);
 
   // AI Outreach Pitch Synthesizer State
   const [pitchModalOpen, setPitchModalOpen] = useState<boolean>(false);
@@ -1525,10 +1532,10 @@ ${dossier.connectionOpportunities.map((c) => `• [${c.type}] ${c.title} (Synerg
     handleRefineDomain(result);
   };
 
-  /** Runs Actor scraper (Web Content, Instagram, LinkedIn, Facebook, Meta Ads) with live progress telemetry */
+  /** Runs Actor scraper (Web Content, Instagram, LinkedIn, Facebook, Meta Ads, Instagram Ads) with live progress telemetry */
   const handleRunActorScraper = async (
     overrideTarget?: string,
-    overrideType?: 'web_content' | 'instagram' | 'linkedin' | 'facebook' | 'meta_ads' | 'omnichannel_360'
+    overrideType?: ActorTool
   ) => {
     const targetToUse = (overrideTarget || actorInput).trim();
     const typeToUse = overrideType || actorType;
@@ -1556,7 +1563,9 @@ ${dossier.connectionOpportunities.map((c) => `• [${c.type}] ${c.title} (Synerg
               ? 'Facebook Public Page & Post Harvester'
               : typeToUse === 'meta_ads'
                 ? 'Meta Ad Library & Creative Intelligence Scanner'
-                : '360° Omnichannel Lead Fusion Sweep';
+                : typeToUse === 'instagram_ads'
+                  ? 'Instagram Ad Library Hunter & Creative Intel'
+                  : '360° Omnichannel Lead Fusion Sweep';
 
     setActorLogs([
       {
@@ -1814,7 +1823,7 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
 
   const handleSaveActorToProfiles = (
     record: any,
-    type: 'web_content' | 'instagram' | 'linkedin' | 'facebook' | 'meta_ads' | 'omnichannel_360'
+    type: ActorTool
   ) => {
     let domain = '';
     let url = '';
@@ -1879,6 +1888,14 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
       description = `${record.totalActiveAds} active ad campaigns running across Facebook & Instagram Ad Library.`;
       remarks = `Meta Ad Library: ${record.totalActiveAds} active ads detected across platforms: ${record.platformsDetected?.join(', ')}. Top creatives & CTA tracked.`;
       socialIntel = { metaAds: record };
+    } else if (type === 'instagram_ads') {
+      domain = `${(record.targetBrand || 'advertiser').toLowerCase()}.com`;
+      url = record.adLibraryUrl;
+      companyName = `${record.targetBrand} (Instagram Ads)`;
+      category = 'Instagram Paid Creative & Direct Acquisition';
+      description = `${record.totalActiveAds || record.ads?.length || 0} active Instagram ad campaigns. Winning creatives: ${record.winningAdsCount || 0}. Dominant hook: ${record.topHook || 'Value & Offer'}.`;
+      remarks = `Instagram Ad Hunter: ${record.totalActiveAds || 0} active ads, ${record.winningAdsCount || 0} winning scale creatives (>30d). Dominant format: ${record.dominantFormat || 'Vertical Video'}, CTA: ${record.dominantCta || 'Shop Now'}.`;
+      socialIntel = { instagramAds: record };
     } else if (type === 'omnichannel_360') {
       domain = record.domain;
       url = record.unifiedContacts?.socialProfiles?.website || `https://${record.domain}`;
@@ -2130,14 +2147,53 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
   };
 
   const handleDeleteProfile = (id: string) => {
-    ProfileStorageService.deleteProfile(id);
-    loadProfiles();
+    if (window.confirm('Delete this saved profile?')) {
+      ProfileStorageService.deleteProfile(id);
+      setSelectedProfilesForMerge((prev) => prev.filter((item) => item !== id));
+      loadProfiles();
+    }
   };
 
   const handleToggleMergeSelect = (id: string) => {
     setSelectedProfilesForMerge((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
+  };
+
+  const handleToggleSelectAll = () => {
+    const filteredIds = filteredProfiles.map((p) => p.id);
+    const isAllSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedProfilesForMerge.includes(id));
+    if (isAllSelected) {
+      setSelectedProfilesForMerge((prev) => prev.filter((id) => !filteredIds.includes(id)));
+    } else {
+      setSelectedProfilesForMerge((prev) => Array.from(new Set([...prev, ...filteredIds])));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedProfilesForMerge.length === 0) return;
+    const count = selectedProfilesForMerge.length;
+    if (window.confirm(`Are you sure you want to delete ${count} selected profile(s)? This action cannot be undone.`)) {
+      ProfileStorageService.deleteProfiles(selectedProfilesForMerge);
+      setSelectedProfilesForMerge([]);
+      loadProfiles();
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedProfilesForMerge([]);
+  };
+
+  const handleBulkUpdateMark = (mark: EnrichedProfileRecord['mark']) => {
+    if (selectedProfilesForMerge.length === 0) return;
+    ProfileStorageService.bulkUpdateProfiles(selectedProfilesForMerge, { mark });
+    loadProfiles();
+  };
+
+  const handleBulkAssignList = (listName: string) => {
+    if (selectedProfilesForMerge.length === 0 || !listName.trim()) return;
+    ProfileStorageService.bulkUpdateProfiles(selectedProfilesForMerge, { listName: listName.trim() });
+    loadProfiles();
   };
 
   const handleExecuteMerge = () => {
@@ -2150,7 +2206,11 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
     }
   };
 
-  const handleExportCSV = () => {
+  const handleExportCSV = (onlySelected = false) => {
+    const targetProfiles = (onlySelected && selectedProfilesForMerge.length > 0)
+      ? filteredProfiles.filter((p) => selectedProfilesForMerge.includes(p.id))
+      : filteredProfiles;
+
     const headers = [
       'Company Name',
       'Domain',
@@ -2172,7 +2232,7 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
       'Technologies',
       'Remarks',
     ];
-    const rows = filteredProfiles.map((p) => [
+    const rows = targetProfiles.map((p) => [
       `"${p.companyName.replace(/"/g, '""')}"`,
       `"${p.domain.replace(/"/g, '""')}"`,
       `"${p.category.replace(/"/g, '""')}"`,
@@ -2197,7 +2257,7 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `b2b_profiles_${Date.now()}.csv`);
+    link.setAttribute('download', `${onlySelected ? 'selected' : 'all'}_b2b_profiles_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -9365,8 +9425,8 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                 </div>
               </div>
 
-              {/* 6 Actor Scraper Engine Switchers */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mt-6">
+              {/* 7 Actor Scraper Engine Switchers */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 mt-6">
                 {/* Engine 1: Web Content Crawler */}
                 <button
                   type="button"
@@ -9457,7 +9517,25 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                   <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">Active FB/IG ad creatives, copy, CTA & reach.</p>
                 </button>
 
-                {/* Engine 6: 360° Omnichannel Lead Fusion */}
+                {/* Engine 6: Instagram Ad Hunter */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleSelectActorType('instagram_ads', 'nike');
+                  }}
+                  className={`p-3.5 rounded-xl text-left transition border ${actorType === 'instagram_ads' ? 'bg-gradient-to-br from-pink-950/40 to-purple-950/40 border-pink-500/50 shadow-md shadow-pink-500/10' : 'bg-slate-900/50 border-white/[0.07] hover:border-white/15'}`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="p-1.5 rounded-lg bg-pink-500/20 text-pink-300">
+                      <InstagramIcon className="w-4 h-4" />
+                    </div>
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-pink-500/20 text-pink-300">IG Creative</span>
+                  </div>
+                  <div className="font-semibold text-white text-xs">Instagram Ad Hunter</div>
+                  <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">Reels & Story ads, hook breakdown & scaling status.</p>
+                </button>
+
+                {/* Engine 7: 360° Omnichannel Lead Fusion */}
                 <button
                   type="button"
                   onClick={() => {
@@ -9487,6 +9565,7 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                     {actorType === 'linkedin' && <LinkedinIcon className="w-4 h-4 text-sky-400" />}
                     {actorType === 'facebook' && <FacebookIcon className="w-4 h-4 text-blue-400" />}
                     {actorType === 'meta_ads' && <MetaIcon className="w-4 h-4 text-pink-400" />}
+                    {actorType === 'instagram_ads' && <InstagramIcon className="w-4 h-4 text-pink-400" />}
                     {actorType === 'omnichannel_360' && <Radio className="w-4 h-4 text-amber-400" />}
                   </div>
                   <input
@@ -9502,10 +9581,12 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                           : actorType === 'linkedin'
                             ? 'Enter company name or URL (e.g. stripe, nvidia, airbnb, linkedin.com/company/stripe...)'
                             : actorType === 'facebook'
-                              ? 'Enter Facebook page handle or URL (e.g. nike, cardekho, shopify, facebook.com/nike...)'
+                              ? 'Enter Facebook page handle, profile ID URL (profile.php?id=...), username, or numeric ID...'
                               : actorType === 'meta_ads'
                                 ? 'Enter advertiser brand or domain for Meta Ad Library (e.g. nike, cardekho, shopify, apple...)'
-                                : 'Enter brand name or domain for 360° Omnichannel Sweep (e.g. nike.com, cardekho, shopify, stripe...)'
+                                : actorType === 'instagram_ads'
+                                  ? 'Enter brand name or domain for Instagram Ad Hunter (e.g. nike, gymshark, skims, zara...)'
+                                  : 'Enter brand name or domain for 360° Omnichannel Sweep (e.g. nike.com, cardekho, shopify, stripe...)'
                     }
                     className="w-full pl-10 pr-24 py-3 rounded-xl bg-slate-900/90 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition"
                   />
@@ -9618,19 +9699,43 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                       onClick={() => { setActorInput('nike'); handleRunActorScraper('nike', 'facebook'); }}
                       className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
                     >
-                      Nike
+                      Nike (Page Handle)
                     </button>
                     <button
-                      onClick={() => { setActorInput('cardekho'); handleRunActorScraper('cardekho', 'facebook'); }}
+                      onClick={() => {
+                        const target = 'https://www.facebook.com/profile.php?id=61573426171304';
+                        setActorInput(target);
+                        handleRunActorScraper(target, 'facebook');
+                      }}
                       className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
                     >
-                      CarDekho
+                      Profile ID (61573426171304)
                     </button>
                     <button
-                      onClick={() => { setActorInput('shopify'); handleRunActorScraper('shopify', 'facebook'); }}
+                      onClick={() => {
+                        const target = 'https://www.facebook.com/himesh.satyam.9/';
+                        setActorInput(target);
+                        handleRunActorScraper(target, 'facebook');
+                      }}
                       className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
                     >
-                      Shopify
+                      User Profile (himesh.satyam.9)
+                    </button>
+                    <button
+                      onClick={() => {
+                        const target = 'zuck';
+                        setActorInput(target);
+                        handleRunActorScraper(target, 'facebook');
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      Zuckerberg (zuck)
+                    </button>
+                    <button
+                      onClick={() => { setActorInput('cardekho.com'); handleRunActorScraper('cardekho.com', 'facebook'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      CarDekho (Domain)
                     </button>
                   </>
                 )}
@@ -9660,6 +9765,35 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                       className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
                     >
                       Zara (Fashion Ads)
+                    </button>
+                  </>
+                )}
+
+                {actorType === 'instagram_ads' && (
+                  <>
+                    <button
+                      onClick={() => { setActorInput('nike'); handleRunActorScraper('nike', 'instagram_ads'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      Nike (IG Reels Ads)
+                    </button>
+                    <button
+                      onClick={() => { setActorInput('gymshark'); handleRunActorScraper('gymshark', 'instagram_ads'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      Gymshark (DTC Ads)
+                    </button>
+                    <button
+                      onClick={() => { setActorInput('zara'); handleRunActorScraper('zara', 'instagram_ads'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      Zara (Fashion Stories)
+                    </button>
+                    <button
+                      onClick={() => { setActorInput('skims'); handleRunActorScraper('skims', 'instagram_ads'); }}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-slate-300 transition"
+                    >
+                      SKIMS (Viral Scaling)
                     </button>
                   </>
                 )}
@@ -10842,11 +10976,28 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                             {actorResult.isVerified && (
                               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-1 shadow-sm">
                                 <CheckCircle2 className="w-3 h-3 text-blue-400" />
-                                <span>Verified Page</span>
+                                <span>Verified</span>
                               </span>
                             )}
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono flex items-center gap-1 border shadow-sm ${
+                              actorResult.profileType === 'profile' || actorResult.graphApiData?.businessIdentity?.profileType === 'profile'
+                                ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+                                : 'bg-blue-500/15 text-blue-300 border-blue-500/20'
+                            }`}>
+                              {actorResult.profileType === 'profile' || actorResult.graphApiData?.businessIdentity?.profileType === 'profile' ? (
+                                <>
+                                  <User className="w-3 h-3 text-purple-400" />
+                                  <span>Individual User Profile</span>
+                                </>
+                              ) : (
+                                <>
+                                  <FacebookIcon className="w-3 h-3 text-blue-400" />
+                                  <span>Business Page</span>
+                                </>
+                              )}
+                            </span>
                           </div>
-                          <div className="text-xs font-mono text-blue-400 mt-1">{actorResult.category || 'Facebook Business Page'}</div>
+                          <div className="text-xs font-mono text-blue-400 mt-1">{actorResult.category || (actorResult.profileType === 'profile' ? 'Individual Public Profile' : 'Facebook Business Page')}</div>
                           <p className="text-xs text-slate-300 mt-1 max-w-2xl line-clamp-2 leading-relaxed">{actorResult.about || actorResult.intro}</p>
                         </div>
                       </div>
@@ -10892,14 +11043,46 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                       <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center hover:border-amber-500/30 transition">
                         <div className="text-slate-400 text-xs font-mono uppercase">Recent Posts</div>
                         <div className="text-2xl font-bold text-amber-400 font-mono-tight mt-1">{actorResult.posts?.length || 0}</div>
-                        <div className="text-[10px] text-slate-500 mt-0.5">Last Recent Analyzed</div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">Up to 10 Analyzed</div>
                       </div>
                       <div className="col-span-2 sm:col-span-1 p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center hover:border-violet-500/30 transition">
-                        <div className="text-slate-400 text-xs font-mono uppercase">Feed Status</div>
-                        <div className="text-sm font-bold text-violet-300 font-mono-tight mt-2 truncate">Live Timeline</div>
-                        <div className="text-[10px] text-slate-500 mt-0.5">Real Scraped Stream</div>
+                        <div className="text-slate-400 text-xs font-mono uppercase">Profile Type</div>
+                        <div className="text-sm font-bold text-violet-300 font-mono-tight mt-2 truncate">
+                          {actorResult.profileType === 'profile' || actorResult.graphApiData?.businessIdentity?.profileType === 'profile' ? 'User Profile' : 'Business Page'}
+                        </div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">Direct Intel Stream</div>
                       </div>
                     </div>
+
+                    {/* Personal Career & Education Intel (for user profiles) */}
+                    {(actorResult.workInfo || actorResult.educationInfo || actorResult.livesIn || actorResult.fromLocation) && (
+                      <div className="mt-4 pt-4 border-t border-white/[0.06] flex flex-wrap gap-2.5 text-xs">
+                        {actorResult.workInfo && (
+                          <div className="flex items-center gap-1.5 text-slate-300 bg-white/[0.04] px-3 py-1.5 rounded-xl border border-white/[0.07]">
+                            <Briefcase className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                            <span>Works at <strong className="text-white font-medium">{actorResult.workInfo}</strong></span>
+                          </div>
+                        )}
+                        {actorResult.educationInfo && (
+                          <div className="flex items-center gap-1.5 text-slate-300 bg-white/[0.04] px-3 py-1.5 rounded-xl border border-white/[0.07]">
+                            <GraduationCap className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                            <span>Studied at <strong className="text-white font-medium">{actorResult.educationInfo}</strong></span>
+                          </div>
+                        )}
+                        {actorResult.livesIn && (
+                          <div className="flex items-center gap-1.5 text-slate-300 bg-white/[0.04] px-3 py-1.5 rounded-xl border border-white/[0.07]">
+                            <Home className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            <span>Lives in <strong className="text-white font-medium">{actorResult.livesIn}</strong></span>
+                          </div>
+                        )}
+                        {actorResult.fromLocation && (
+                          <div className="flex items-center gap-1.5 text-slate-300 bg-white/[0.04] px-3 py-1.5 rounded-xl border border-white/[0.07]">
+                            <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <span>From <strong className="text-white font-medium">{actorResult.fromLocation}</strong></span>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Contact & Location Strip */}
                     {(actorResult.website || actorResult.address || actorResult.phone || actorResult.email) && (
@@ -10933,30 +11116,51 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                   </div>
                 </div>
 
-                {/* Recent Public Posts with View Telemetry */}
-                {actorResult.posts?.length > 0 && (
-                  <div className="glass-panel p-6 sm:p-7 rounded-2xl space-y-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.07]">
-                      <div>
-                        <h4 className="text-base font-bold text-white flex items-center gap-2">
-                          <FacebookIcon className="w-4 h-4 text-blue-400" />
-                          <span>Last Recent Public Posts ({actorResult.posts.length})</span>
-                        </h4>
-                        <div className="text-xs text-slate-400 font-mono mt-1 flex items-center gap-2">
-                          <span className="text-blue-400 font-semibold">⚡ Direct Page Timeline Stream</span>
-                          <span>•</span>
-                          <span className="text-emerald-400 font-semibold">Real-Time Published Engagement</span>
-                        </div>
-                      </div>
-
-                      <div className="px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold bg-slate-900/80 text-slate-300 border border-white/10 flex items-center gap-2 self-start sm:self-auto">
-                        <Clock className="w-3.5 h-3.5 text-blue-400" />
-                        <span>Chronological Feed</span>
+                {/* Facebook Intelligence Workspace View: Timeline Posts vs Graph API Schema */}
+                <div className="glass-panel p-6 sm:p-7 rounded-2xl space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.07]">
+                    <div>
+                      <h4 className="text-base font-bold text-white flex items-center gap-2">
+                        <FacebookIcon className="w-4 h-4 text-blue-400" />
+                        <span>Facebook Business Intelligence Hub</span>
+                      </h4>
+                      <div className="text-xs text-slate-400 font-mono mt-1 flex items-center gap-2">
+                        <span className="text-blue-400 font-semibold">⚡ Direct Page Timeline Stream</span>
+                        <span>•</span>
+                        <span className="text-emerald-400 font-semibold">Graph API Business Model Aligned</span>
                       </div>
                     </div>
 
-                    {/* Posts Grid with Rich Media and Badging */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* View Switcher: Posts vs Graph API JSON */}
+                    <div className="flex items-center gap-2 p-1 bg-slate-900/90 rounded-xl border border-white/10 self-start sm:self-auto">
+                      <button
+                        onClick={() => setFacebookViewMode('posts')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
+                          facebookViewMode === 'posts'
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
+                        }`}
+                      >
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>Timeline Posts ({actorResult.posts?.length || 0})</span>
+                      </button>
+                      <button
+                        onClick={() => setFacebookViewMode('graph_api')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
+                          facebookViewMode === 'graph_api'
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
+                        }`}
+                      >
+                        <Code className="w-3.5 h-3.5 text-blue-300" />
+                        <span>Graph API Schema (JSON)</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Mode 1: Timeline Posts Grid (3-column on lg, 4-column on 2xl) */}
+                  {facebookViewMode === 'posts' && actorResult.posts?.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4.5">
                       {actorResult.posts.map((post: any, idx: number) => (
                         <div
                           key={post.id || idx}
@@ -10986,9 +11190,9 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                             </span>
                           </div>
 
-                          {/* Post Media Image (Loads Reliably with No-Referrer and Fallback Proxy) */}
-                          {post.mediaUrl && (
-                            <div className="relative w-full h-44 sm:h-48 rounded-xl overflow-hidden bg-slate-950 border border-white/[0.08] group/img">
+                          {/* Post Media: 4:3 Aspect Ratio (Square on 2xl) with Fallback to Brand Banner */}
+                          {post.mediaUrl ? (
+                            <div className="relative w-full aspect-[4/3] 2xl:aspect-square rounded-xl overflow-hidden bg-slate-950 border border-white/[0.08] group/img">
                               <img
                                 src={post.mediaUrl}
                                 alt={post.content?.slice(0, 60) || 'Post media'}
@@ -11001,12 +11205,27 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                                     t.dataset.proxy = 'true';
                                     t.src = `/api/image-proxy?url=${encodeURIComponent(post.mediaUrl)}`;
                                   } else {
-                                    t.src = 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80';
+                                    t.style.display = 'none';
+                                    const fallbackEl = t.parentElement?.querySelector('.post-brand-fallback') as HTMLElement;
+                                    if (fallbackEl) fallbackEl.style.display = 'flex';
                                   }
                                 }}
                                 className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105"
                               />
+                              <div className="post-brand-fallback hidden absolute inset-0 bg-gradient-to-br from-blue-950/60 via-slate-900 to-slate-950 items-center justify-center p-4 text-center">
+                                <div className="space-y-1">
+                                  <div className="text-sm font-bold text-white tracking-wide">{actorResult.pageName || 'Facebook Post'}</div>
+                                  <div className="text-[10px] font-mono text-blue-400 uppercase tracking-wider">{post.type || 'Published Post'}</div>
+                                </div>
+                              </div>
                               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
+                            </div>
+                          ) : (
+                            <div className="w-full aspect-[4/3] 2xl:aspect-square rounded-xl bg-gradient-to-br from-blue-950/40 via-slate-900 to-slate-950 border border-white/[0.08] flex items-center justify-center p-4 text-center">
+                              <div className="space-y-1">
+                                <div className="text-sm font-bold text-white tracking-wide">{actorResult.pageName || 'Facebook Post'}</div>
+                                <div className="text-[10px] font-mono text-blue-400 uppercase tracking-wider">{post.type || 'Published Post'}</div>
+                              </div>
                             </div>
                           )}
 
@@ -11015,27 +11234,36 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                             {post.content}
                           </p>
 
-                          {/* Engagement & Views Telemetry Counters */}
+                          {/* Engagement & Real Post Link Telemetry */}
                           <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-xs font-mono gap-2 flex-wrap">
-                            <div className="flex items-center gap-3 text-slate-300 text-[11px]">
-                              <span className="font-semibold text-white">👍 {post.likesCount?.toLocaleString()}</span>
-                              <span>💬 {post.commentsCount?.toLocaleString()}</span>
-                              <span>🔁 {post.sharesCount?.toLocaleString()}</span>
-                            </div>
+                            {post.likesCount || post.commentsCount || post.sharesCount ? (
+                              <div className="flex items-center gap-3 text-slate-300 text-[11px]">
+                                {post.likesCount ? <span className="font-semibold text-white">👍 {post.likesCount?.toLocaleString()}</span> : null}
+                                {post.commentsCount ? <span>💬 {post.commentsCount?.toLocaleString()}</span> : null}
+                                {post.sharesCount ? <span>🔁 {post.sharesCount?.toLocaleString()}</span> : null}
+                              </div>
+                            ) : (
+                              <span className="text-[10px] font-mono text-slate-400 flex items-center gap-1.5">
+                                <CheckCircle2 className="w-3 h-3 text-blue-400" />
+                                <span>Verified Page Post</span>
+                              </span>
+                            )}
 
                             <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1 text-emerald-400 font-bold text-[11px] bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                                <Eye className="w-3 h-3" />
-                                <span>~{post.viewsCount?.toLocaleString()} views</span>
-                              </div>
+                              {post.id && (
+                                <span className="text-[10px] text-slate-500 font-mono hidden sm:inline">
+                                  ID: {post.id}
+                                </span>
+                              )}
                               {post.url && (
                                 <a
                                   href={post.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/10 transition"
-                                  title="Open post"
+                                  className="px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 hover:text-white transition flex items-center gap-1 text-[11px] border border-blue-500/30"
+                                  title="Open post on Facebook"
                                 >
+                                  <span>Open Post</span>
                                   <ExternalLink className="w-3 h-3" />
                                 </a>
                               )}
@@ -11044,8 +11272,36 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
+                  )}
+
+                  {/* Mode 2: Graph API Compliant Schema Viewer */}
+                  {facebookViewMode === 'graph_api' && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-blue-950/20 border border-blue-500/20 text-xs">
+                        <div className="flex items-center gap-2 text-blue-300">
+                          <Sparkles className="w-4 h-4 text-blue-400 shrink-0" />
+                          <span>Official Facebook Graph API compliant format ready to plug into your enrichment pipeline.</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const dataToCopy = JSON.stringify(actorResult.graphApiData || actorResult, null, 2);
+                            navigator.clipboard.writeText(dataToCopy);
+                            setGraphApiCopied(true);
+                            setTimeout(() => setGraphApiCopied(false), 2000);
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold flex items-center gap-1.5 transition shadow-sm shrink-0"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>{graphApiCopied ? 'Copied JSON!' : 'Copy Graph API JSON'}</span>
+                        </button>
+                      </div>
+
+                      <div className="relative rounded-2xl bg-slate-950 border border-white/10 p-5 overflow-x-auto max-h-[600px] overflow-y-auto font-mono text-xs text-slate-300 leading-relaxed">
+                        <pre>{JSON.stringify(actorResult.graphApiData || actorResult, null, 2)}</pre>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -11213,7 +11469,44 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                                 </p>
                               </div>
 
-                              {/* Creative Media / Graphic Placeholder */}
+                              {/* Creative Media / Graphic Image Banner */}
+                              {ad.adCreative?.imageUrl ? (
+                                <div className="relative w-full h-44 rounded-xl overflow-hidden bg-slate-950 border border-white/10 group/img">
+                                  <img
+                                    src={`/api/image-proxy?url=${encodeURIComponent(ad.adCreative.imageUrl)}`}
+                                    alt={ad.adCreative?.headline || ad.pageName || 'Meta Ad Creative'}
+                                    className="w-full h-full object-cover transition-transform duration-300 group-hover/img:scale-105"
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer"
+                                    onError={(e) => {
+                                      const t = e.currentTarget;
+                                      if (!t.dataset.retried) {
+                                        t.dataset.retried = 'true';
+                                        t.src = ad.adCreative.imageUrl;
+                                      } else {
+                                        t.style.display = 'none';
+                                        const fb = t.parentElement?.querySelector('.ad-brand-fallback') as HTMLElement;
+                                        if (fb) fb.style.display = 'flex';
+                                      }
+                                    }}
+                                  />
+                                  <div className="ad-brand-fallback hidden absolute inset-0 bg-gradient-to-br from-indigo-950/60 via-slate-900 to-slate-950 items-center justify-center p-4 text-center">
+                                    <div className="space-y-1">
+                                      <div className="text-sm font-bold text-white tracking-wide">{ad.pageName || actorResult.pageName || 'Active Meta Creative'}</div>
+                                      <div className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider">Active Ad</div>
+                                    </div>
+                                  </div>
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                                </div>
+                              ) : (
+                                <div className="w-full h-28 rounded-xl bg-gradient-to-br from-indigo-950/40 via-slate-900 to-slate-950 border border-white/10 flex items-center justify-center p-4 text-center">
+                                  <div className="space-y-1">
+                                    <div className="text-sm font-bold text-white tracking-wide">{ad.pageName || actorResult.pageName || 'Active Meta Creative'}</div>
+                                    <div className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider">Active Ad Creative</div>
+                                  </div>
+                                </div>
+                              )}
+
                               <div className="p-3 rounded-xl bg-slate-950/80 border border-white/[0.06] space-y-1.5">
                                 <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
                                   {ad.adCreative?.caption || 'advertiser.com'}
@@ -11232,19 +11525,20 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                                 </a>
                               </div>
 
-                              {/* Telemetry Footer: Impressions & Ad ID */}
+                              {/* Telemetry Footer: Impressions & Real Ad ID */}
                               <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[10px] font-mono text-slate-400">
                                 <span className="flex items-center gap-1 text-amber-300 font-medium">
                                   <Eye className="w-3 h-3" />
-                                  <span>{ad.reachOrViews?.impressionsRange}</span>
+                                  <span>{ad.reachOrViews?.impressionsRange || 'Active Reach'}</span>
                                 </span>
                                 <a
-                                  href={ad.adArchiveUrl}
+                                  href={ad.adArchiveUrl || `https://www.facebook.com/ads/library/?id=${ad.adId}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-slate-400 hover:text-white underline underline-offset-2"
+                                  className="text-pink-400 hover:text-pink-300 font-semibold underline underline-offset-2 flex items-center gap-1"
                                 >
-                                  Ad ID: {ad.adId.slice(-8)}
+                                  <span>Ad ID: {ad.adId}</span>
+                                  <ExternalLink className="w-2.5 h-2.5" />
                                 </a>
                               </div>
                             </div>
@@ -11256,7 +11550,213 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
               </div>
             )}
 
-            {/* Engine 6: 360° Omnichannel Lead Fusion Results */}
+            {/* Engine 6: Instagram Ad Library Hunter Results */}
+            {actorResult && actorType === 'instagram_ads' && (actorResult.actorType === 'instagram_ads' || actorResult.insightsSummary) && (
+              <div className="space-y-6">
+                {/* Hero Summary Header */}
+                <div className="glass-panel p-6 sm:p-7 rounded-2xl relative overflow-hidden border border-pink-500/20 bg-gradient-to-br from-pink-950/30 via-slate-900 to-purple-950/20">
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 pb-5 border-b border-white/[0.07]">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 flex items-center justify-center text-white shadow-xl shadow-pink-500/20">
+                        <InstagramIcon className="w-8 h-8" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-xl sm:text-2xl font-bold text-white capitalize">
+                            {actorResult.targetBrand} • Instagram Ads
+                          </h3>
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-pink-500/20 text-pink-300 border border-pink-500/30 flex items-center gap-1 shadow-sm">
+                            <Sparkles className="w-3 h-3 text-pink-400" />
+                            <span>IG Creative Intel</span>
+                          </span>
+                        </div>
+                        <div className="text-xs font-mono text-pink-400 mt-1">Meta Ad Library Filter: Instagram Feed, Stories & Reels</div>
+                        <p className="text-xs text-slate-300 mt-1 max-w-2xl line-clamp-1 leading-relaxed">
+                          Dominant Hook: <strong className="text-white">{actorResult.topHook}</strong> • Format: <strong className="text-white">{actorResult.dominantFormat}</strong>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <a
+                        href={actorResult.adLibraryUrl || `https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=ALL&q=${encodeURIComponent(actorResult.targetBrand || 'nike')}&publisher_platforms[0]=instagram`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition flex items-center gap-1.5 shadow-sm"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 text-pink-400" />
+                        <span>View on Meta Ad Library</span>
+                      </a>
+                      <button
+                        onClick={() => handleSaveActorToProfiles(actorResult, 'instagram_ads')}
+                        className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white transition flex items-center gap-1.5 shadow-md shadow-pink-600/30"
+                      >
+                        <Bookmark className="w-3.5 h-3.5" />
+                        <span>Save to CRM Profiles</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 4 Precision Insight Telemetry Tiles */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center hover:border-pink-500/30 transition">
+                      <div className="text-slate-400 text-xs font-mono uppercase">Active IG Ads</div>
+                      <div className="text-2xl font-bold text-white font-mono-tight mt-1">{actorResult.totalActiveAds || actorResult.ads?.length || 0}</div>
+                      <div className="text-[10px] text-pink-400 mt-0.5">Live in Ad Library</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center hover:border-emerald-500/30 transition">
+                      <div className="text-slate-400 text-xs font-mono uppercase">Winning Scaled Ads</div>
+                      <div className="text-2xl font-bold text-emerald-400 font-mono-tight mt-1">{actorResult.winningAdsCount || 0}</div>
+                      <div className="text-[10px] text-emerald-400 mt-0.5">Running &gt;30 Days</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center hover:border-purple-500/30 transition">
+                      <div className="text-slate-400 text-xs font-mono uppercase">Dominant Hook</div>
+                      <div className="text-sm font-bold text-purple-300 font-mono-tight mt-2 truncate">{actorResult.topHook || 'Value & Offer'}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Creative Strategy</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center hover:border-amber-500/30 transition">
+                      <div className="text-slate-400 text-xs font-mono uppercase">Dominant CTA</div>
+                      <div className="text-sm font-bold text-amber-300 font-mono-tight mt-2 truncate">{actorResult.dominantCta || 'Shop Now'}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Conversion Action</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ads Card Grid */}
+                {actorResult.ads && actorResult.ads.length > 0 && (
+                  <div className="glass-panel p-6 sm:p-7 rounded-2xl space-y-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.07]">
+                      <div>
+                        <h4 className="text-base font-bold text-white flex items-center gap-2">
+                          <InstagramIcon className="w-4 h-4 text-pink-400" />
+                          <span>Active Instagram Ad Creatives ({actorResult.ads.length})</span>
+                        </h4>
+                        <div className="text-xs text-slate-400 font-mono mt-1">
+                          Scraped directly from Meta Ad Library with Instagram filter & creative telemetry
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {actorResult.ads.map((ad: any, idx: number) => (
+                        <div
+                          key={ad.adId || idx}
+                          className="rounded-2xl bg-slate-900/80 border border-white/[0.08] hover:border-pink-500/40 p-4 flex flex-col justify-between transition group space-y-3.5 shadow-lg relative overflow-hidden"
+                        >
+                          {/* Top Badges: Format & Scaling Status */}
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <span
+                              className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-semibold flex items-center gap-1 ${
+                                ad.creativeFormat?.includes('Reel')
+                                  ? 'bg-pink-500/20 text-pink-300 border border-pink-500/30'
+                                  : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                              }`}
+                            >
+                              <span>{ad.creativeFormat || 'Feed Creative'}</span>
+                            </span>
+
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-medium ${
+                                ad.scalingStatus?.includes('Winning')
+                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                  : ad.scalingStatus?.includes('Core')
+                                    ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                    : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                              }`}
+                            >
+                              {ad.scalingStatus || 'Active'}
+                            </span>
+                          </div>
+
+                          {/* Creative Hook Pill */}
+                          <div className="flex items-center gap-1.5 text-[10px] font-mono text-purple-300 bg-purple-500/10 px-2.5 py-1 rounded-lg border border-purple-500/20">
+                            <Sparkles className="w-3 h-3 text-purple-400 shrink-0" />
+                            <span className="truncate">Hook: {ad.creativeHook}</span>
+                          </div>
+
+                          {/* Ad Creative Image */}
+                          {ad.adCreative?.imageUrl ? (
+                            <div className="relative w-full h-48 rounded-xl overflow-hidden bg-slate-950 border border-white/10 group/img">
+                              <img
+                                src={`/api/image-proxy?url=${encodeURIComponent(ad.adCreative.imageUrl)}`}
+                                alt={ad.adCreative?.headline || ad.pageName || 'Instagram Ad Creative'}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover/img:scale-105"
+                                loading="lazy"
+                                referrerPolicy="no-referrer"
+                                onError={(e) => {
+                                  const t = e.currentTarget;
+                                  if (!t.dataset.retried) {
+                                    t.dataset.retried = 'true';
+                                    t.src = ad.adCreative.imageUrl;
+                                  } else {
+                                    t.style.display = 'none';
+                                    const fb = t.parentElement?.querySelector('.ig-brand-fallback') as HTMLElement;
+                                    if (fb) fb.style.display = 'flex';
+                                  }
+                                }}
+                              />
+                              <div className="ig-brand-fallback hidden absolute inset-0 bg-gradient-to-br from-pink-950/60 via-slate-900 to-purple-950 items-center justify-center p-4 text-center">
+                                <div className="space-y-1">
+                                  <div className="text-sm font-bold text-white tracking-wide">{ad.pageName || actorResult.targetBrand || 'Instagram Ad'}</div>
+                                  <div className="text-[10px] font-mono text-pink-400 uppercase tracking-wider">Active IG Creative</div>
+                                </div>
+                              </div>
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                            </div>
+                          ) : (
+                            <div className="w-full h-28 rounded-xl bg-gradient-to-br from-pink-950/40 via-slate-900 to-purple-950 border border-white/10 flex items-center justify-center p-4 text-center">
+                              <div className="space-y-1">
+                                <div className="text-sm font-bold text-white tracking-wide">{ad.pageName || actorResult.targetBrand || 'Instagram Ad'}</div>
+                                <div className="text-[10px] font-mono text-pink-400 uppercase tracking-wider">Active IG Creative</div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Copy Text */}
+                          <div className="space-y-1.5 flex-1">
+                            {ad.adCreative?.headline && (
+                              <h5 className="text-xs font-bold text-white line-clamp-2">{ad.adCreative.headline}</h5>
+                            )}
+                            <p className="text-xs text-slate-300 leading-relaxed font-normal line-clamp-3">
+                              {ad.adCreative?.body}
+                            </p>
+                          </div>
+
+                          {/* CTA Button */}
+                          <div className="pt-2">
+                            <a
+                              href={ad.adCreative?.linkUrl || ad.adArchiveUrl || '#'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white text-xs font-semibold flex items-center justify-between transition shadow-md shadow-pink-600/20"
+                            >
+                              <span>{ad.adCreative?.ctaText || 'Learn More'}</span>
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          </div>
+
+                          {/* Telemetry Footer */}
+                          <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[10px] font-mono text-slate-400">
+                            <span>Started: {ad.startDate || 'Recent'}</span>
+                            <a
+                              href={ad.adArchiveUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-pink-400 hover:text-pink-300 font-semibold underline underline-offset-2 flex items-center gap-1"
+                            >
+                              <span>Ad ID: {ad.adId}</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Engine 7: 360° Omnichannel Lead Fusion Results */}
             {actorResult && actorType === 'omnichannel_360' && (actorResult.actorType === 'omnichannel_360' || actorResult.digitalPresenceScore !== undefined) && (
               <div className="space-y-6">
                 {/* 360° Command Center Hero Header */}
@@ -11824,7 +12324,7 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                   </button>
 
                   <button
-                    onClick={handleExportCSV}
+                    onClick={() => handleExportCSV(false)}
                     className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-medium flex items-center space-x-1 border border-slate-700"
                   >
                     <Download className="w-3.5 h-3.5" />
@@ -11928,6 +12428,108 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
               </div>
             </div>
 
+            {/* Bulk Action & Selection Bar */}
+            <div className="glass-panel px-5 py-3 rounded-2xl border border-slate-800/80 flex flex-wrap items-center justify-between gap-3 bg-slate-900/60 backdrop-blur-md">
+              <div className="flex items-center flex-wrap gap-3">
+                {/* Toggle Select All Checkbox */}
+                <label className="flex items-center space-x-2 cursor-pointer select-none group">
+                  <input
+                    type="checkbox"
+                    checked={
+                      filteredProfiles.length > 0 &&
+                      filteredProfiles.every((p) => selectedProfilesForMerge.includes(p.id))
+                    }
+                    onChange={handleToggleSelectAll}
+                    className="w-4 h-4 accent-cyan-400 rounded cursor-pointer transition-transform group-hover:scale-110"
+                  />
+                  <span className="text-xs font-semibold text-slate-200 group-hover:text-cyan-400 transition">
+                    Toggle Select All ({filteredProfiles.length})
+                  </span>
+                </label>
+
+                {/* Selection Count Badge */}
+                {selectedProfilesForMerge.length > 0 && (
+                  <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 text-xs font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                    <span>{selectedProfilesForMerge.length} selected</span>
+                    <button
+                      onClick={handleClearSelection}
+                      className="ml-1 text-slate-400 hover:text-white transition"
+                      title="Clear selection"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center flex-wrap gap-2">
+                {selectedProfilesForMerge.length > 0 ? (
+                  <>
+                    {/* Delete Selected Button */}
+                    <button
+                      onClick={handleDeleteSelected}
+                      className="px-3.5 py-1.5 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 hover:text-rose-100 border border-rose-800/60 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition shadow-sm hover:shadow-rose-950/50"
+                      title="Delete all selected profiles"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                      <span>Delete Selected ({selectedProfilesForMerge.length})</span>
+                    </button>
+
+                    {/* Merge Selected Button (if >= 2) */}
+                    {selectedProfilesForMerge.length >= 2 && (
+                      <button
+                        onClick={handleExecuteMerge}
+                        className="px-3.5 py-1.5 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg shadow-cyan-500/20"
+                        title="Merge duplicate accounts into one consolidated entity"
+                      >
+                        <GitMerge className="w-3.5 h-3.5" />
+                        <span>Merge Selected ({selectedProfilesForMerge.length})</span>
+                      </button>
+                    )}
+
+                    {/* Bulk Mark Dropdown */}
+                    <div className="relative">
+                      <select
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            handleBulkUpdateMark(e.target.value as any);
+                            e.target.value = '';
+                          }
+                        }}
+                        defaultValue=""
+                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-xl text-xs text-slate-200 cursor-pointer focus:outline-none focus:border-cyan-400"
+                        title="Bulk assign status mark to selected profiles"
+                      >
+                        <option value="" disabled>🏷️ Mark Selected...</option>
+                        <option value="Hot Lead">🔥 Hot Lead</option>
+                        <option value="Target Account">🎯 Target Account</option>
+                        <option value="Qualified">✅ Qualified</option>
+                        <option value="Contacted">📞 Contacted</option>
+                        <option value="Nurture">🌱 Nurture</option>
+                        <option value="Disqualified">🚫 Disqualified</option>
+                      </select>
+                    </div>
+
+                    {/* Export Selected CSV */}
+                    <button
+                      onClick={() => handleExportCSV(true)}
+                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-medium flex items-center space-x-1 border border-slate-700 transition"
+                      title="Export only selected profiles as CSV"
+                    >
+                      <Download className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Export Selected ({selectedProfilesForMerge.length})</span>
+                    </button>
+                  </>
+                ) : (
+                  <span className="text-[11px] text-slate-500 italic">
+                    Select profiles to unlock bulk delete, merge, status marking, and export.
+                  </span>
+                )}
+              </div>
+            </div>
+
             {/* Profiles Grid */}
             {filteredProfiles.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -11948,7 +12550,7 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                               checked={isMergeSelected}
                               onChange={() => handleToggleMergeSelect(prof.id)}
                               className="mt-1 w-4 h-4 accent-cyan-400 rounded cursor-pointer"
-                              title="Select to merge duplicate entities"
+                              title="Select profile for bulk actions"
                             />
                             <div>
                               <div className="flex items-center space-x-2">

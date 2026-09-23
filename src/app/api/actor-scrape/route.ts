@@ -4,6 +4,7 @@ import { scrapeInstagramProfile } from '@/lib/scraper/instagramScraper';
 import { scrapeLinkedInCompany } from '@/lib/scraper/linkedinScraper';
 import { scrapeFacebookPage } from '@/lib/scraper/facebookScraper';
 import { scrapeMetaAdLibrary } from '@/lib/scraper/metaAdScraper';
+import { scrapeInstagramAdHunter } from '@/lib/scraper/instagramAdHunter';
 
 export const maxDuration = 60; // 60s timeout allowance for deep stealth crawls
 
@@ -52,9 +53,13 @@ export async function POST(req: NextRequest) {
       stages.push('Initializing Meta Ad Library Crawler (Facebook & Instagram Ads)');
       resultData = await scrapeMetaAdLibrary(target, options.country || 'ALL');
       stages.push('Active ad creatives, platforms, CTA buttons, and impressions telemetry compiled');
+    } else if (type === 'instagram_ads') {
+      stages.push('Initializing Instagram Ad Library Hunter (Active Reels, Stories & Feed Ads)');
+      resultData = await scrapeInstagramAdHunter(target, options.country || 'ALL');
+      stages.push('Instagram ad creatives, format breakdown, hook analysis, and conversion telemetry compiled');
     } else {
       return NextResponse.json(
-        { error: `Unsupported scraper type: ${type}. Expected 'web_content' | 'instagram' | 'linkedin' | 'facebook' | 'meta_ads'.` },
+        { error: `Unsupported scraper type: ${type}. Expected 'web_content' | 'instagram' | 'linkedin' | 'facebook' | 'meta_ads' | 'instagram_ads'.` },
         { status: 400 }
       );
     }
