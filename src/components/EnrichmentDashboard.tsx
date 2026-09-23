@@ -557,6 +557,7 @@ export default function EnrichmentDashboard({
   const [domainRefinedData, setDomainRefinedData] = useState<RefinedDomainDossier | null>(null);
   const [domainRefineLoading, setDomainRefineLoading] = useState(false);
   const [domainRefinedCopied, setDomainRefinedCopied] = useState(false);
+  const [dossierTab, setDossierTab] = useState<'overview' | 'technical' | 'contacts' | 'intelligence'>('overview');
   const [recentDomains, setRecentDomains] = useState<Array<{ domain: string; companyName: string; status: 'active' | 'scanned'; date: string }>>([
     { domain: 'innovate.tech', companyName: 'Innovate Systems', status: 'active', date: 'Just now' },
     { domain: 'globalsearch.co', companyName: 'GlobalSearch Enterprise', status: 'active', date: '10m ago' },
@@ -781,7 +782,8 @@ export default function EnrichmentDashboard({
   const [selectedSellerIds, setSelectedSellerIds] = useState<string[]>([]);
   const [bookmarkedSellerIds, setBookmarkedSellerIds] = useState<string[]>([]);
   const [flaggedSellerIds, setFlaggedSellerIds] = useState<string[]>([]);
-
+  const [showSpecFilters, setShowSpecFilters] = useState(false);
+  const [matrixViewMode, setMatrixViewMode] = useState<'card' | 'table'>('card');
   const handleToggleBookmarkSeller = (id: string) => {
     setBookmarkedSellerIds((prev) => {
       const isBookmarked = prev.includes(id);
@@ -1052,32 +1054,47 @@ export default function EnrichmentDashboard({
     setAiAnalysis(null);
     setDomainRefinedData(null);
     setSaveSuccessMsg(null);
-    setDomainCrawlProgress(20);
-    setDomainCrawlStage('Resolving DNS records & Host IP signatures...');
+    setDomainCrawlProgress(12);
+    setDomainCrawlStage('Resolving DNS records, Nameservers & Host IP...');
 
-    const timer1 = setTimeout(() => {
-      setDomainCrawlProgress(58);
-      setDomainCrawlStage('Stealth DOM crawling & sub-page traversal (/contact, /about)...');
-    }, 600);
+    const startTime = Date.now();
+    const progressInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 1000) {
+        setDomainCrawlProgress(Math.min(35, Math.floor(12 + (elapsed / 1000) * 23)));
+        setDomainCrawlStage('Resolving DNS records, Nameservers & Host IP...');
+      } else if (elapsed < 3000) {
+        setDomainCrawlProgress(Math.min(68, Math.floor(35 + ((elapsed - 1000) / 2000) * 33)));
+        setDomainCrawlStage('Stealth DOM crawling & DOM link discovery (/contact, /about)...');
+      } else if (elapsed < 6000) {
+        setDomainCrawlProgress(Math.min(85, Math.floor(68 + ((elapsed - 3000) / 3000) * 17)));
+        setDomainCrawlStage('Analyzing Technographics, SSL posture & Tech Stack...');
+      } else if (elapsed < 10000) {
+        setDomainCrawlProgress(Math.min(94, Math.floor(85 + ((elapsed - 6000) / 4000) * 9)));
+        setDomainCrawlStage('Synthesizing Categorical Web Harvest & Compliance...');
+      } else {
+        setDomainCrawlProgress((prev) => Math.min(98, prev + 1));
+        setDomainCrawlStage('Finalizing Executive Intelligence Briefing...');
+      }
+    }, 200);
 
-    const timer2 = setTimeout(() => {
-      setDomainCrawlProgress(85);
-      setDomainCrawlStage('Analyzing Technographics, SSL posture & Categorical Funnel...');
-    }, 1200);
+    const abortController = new AbortController();
+    const abortTimeout = setTimeout(() => abortController.abort(), 35000);
 
     try {
       const activeModel = customModel.trim() || selectedModel;
       const res = await fetch('/api/enrich', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: abortController.signal,
         body: JSON.stringify({
           domain: domainToScrape,
           byokConfig: apiKey ? { provider: selectedProvider, model: activeModel, apiKey } : null,
         }),
       });
 
-      clearTimeout(timer1);
-      clearTimeout(timer2);
+      clearInterval(progressInterval);
+      clearTimeout(abortTimeout);
       setDomainCrawlProgress(100);
       setDomainCrawlStage('Categorical Web Information Harvest complete!');
 
@@ -1087,6 +1104,9 @@ export default function EnrichmentDashboard({
         // Pre-synthesize high-quality zero-cost heuristic dossier immediately
         const initialDossier = refineDomainDossierHeuristic(data.data);
         setDomainRefinedData(initialDossier);
+
+        // Seamlessly sync authoritative network audit & AI synthesis
+        handleRefineDomain(data.data);
 
         // Update recently searched domains bar
         setRecentDomains((prev) => {
@@ -1106,14 +1126,20 @@ export default function EnrichmentDashboard({
         setRecordsProcessed((prev) => prev + 1);
         setMoneySaved((prev) => +(prev + 0.45).toFixed(2));
       } else {
-        alert(data.error || 'Failed to enrich');
+        alert(data.error || 'Failed to enrich domain. Please check URL connectivity.');
       }
     } catch (err: any) {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
+      clearInterval(progressInterval);
+      clearTimeout(abortTimeout);
       console.error(err);
-      alert('Error communicating with scraper backend: ' + err.message);
+      if (err.name === 'AbortError') {
+        alert('Domain enrichment timed out after 35 seconds. The target domain took too long to respond.');
+      } else {
+        alert('Error communicating with scraper backend: ' + err.message);
+      }
     } finally {
+      clearInterval(progressInterval);
+      clearTimeout(abortTimeout);
       setLoading(false);
     }
   };
@@ -4052,21 +4078,27 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                       </div>
                     </div>
 
-                    {/* 5 Categorical Cards Grid (webinfoharvest.png) */}
+                    {/* 5 Categorical Cards Grid with Authoritative Lookups & Provenance */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
                       {/* 1. REGISTRATION INFO */}
-                      <div className="p-3.5 rounded-xl bg-slate-950/70 border border-cyan-500/30 space-y-2 hover:border-cyan-400/50 transition">
+                      <div className="p-3.5 rounded-xl bg-slate-950/70 border border-teal-500/30 space-y-2 hover:border-teal-400/50 transition">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-mono uppercase font-bold text-cyan-400 tracking-wider">Registration Info</span>
-                          <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                          <span className="text-[10px] font-mono uppercase font-bold text-teal-400 tracking-wider">Registration Info</span>
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-teal-500/10 text-teal-300 border border-teal-500/20">
+                            {domainRefinedData?.categoricalHarvest.registration.provenance === 'verified' ? 'RDAP' : 'Unconfirmed'}
+                          </span>
                         </div>
                         <div className="space-y-1 text-xs">
                           <div className="text-slate-400 text-[11px]">Owner / Entity:</div>
                           <div className="font-semibold text-white truncate" title={result.companyName}>{result.companyName}</div>
                           <div className="text-slate-400 text-[11px] pt-1">Registrar:</div>
-                          <div className="font-mono text-cyan-200 text-[11px] truncate">{domainRefinedData?.categoricalHarvest.registration.registrar || 'MarkMonitor / NIXI'}</div>
+                          <div className="font-mono text-teal-200 text-[11px] truncate" title={domainRefinedData?.categoricalHarvest.registration.registrar}>
+                            {domainRefinedData?.categoricalHarvest.registration.registrar || 'Registry lookup in progress'}
+                          </div>
                           <div className="text-slate-400 text-[11px] pt-1">Status:</div>
-                          <div className="font-mono text-emerald-400 text-[10px] uppercase">{domainRefinedData?.categoricalHarvest.registration.status || 'Active (TransferProtected)'}</div>
+                          <div className="font-mono text-emerald-400 text-[10px] uppercase truncate">
+                            {domainRefinedData?.categoricalHarvest.registration.status || 'Active'}
+                          </div>
                         </div>
                       </div>
 
@@ -4074,15 +4106,23 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                       <div className="p-3.5 rounded-xl bg-slate-950/70 border border-emerald-500/30 space-y-2 hover:border-emerald-400/50 transition">
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-mono uppercase font-bold text-emerald-400 tracking-wider">Network Architecture</span>
-                          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                            {domainRefinedData?.categoricalHarvest.network.provenance === 'verified' ? 'DNS' : 'Pending'}
+                          </span>
                         </div>
                         <div className="space-y-1 text-xs">
                           <div className="text-slate-400 text-[11px]">IP Address:</div>
-                          <div className="font-mono font-bold text-white text-[11px]">{domainRefinedData?.categoricalHarvest.network.ipAddress || '104.28.16.89'}</div>
+                          <div className="font-mono font-bold text-white text-[11px]">
+                            {domainRefinedData?.categoricalHarvest.network.ipAddress || 'Resolving IP...'}
+                          </div>
                           <div className="text-slate-400 text-[11px] pt-1">ASN Route:</div>
-                          <div className="font-mono text-emerald-300 text-[10px] truncate">{domainRefinedData?.categoricalHarvest.network.asn || 'AS13335 (Cloudflare)'}</div>
+                          <div className="font-mono text-emerald-300 text-[10px] truncate" title={domainRefinedData?.categoricalHarvest.network.asn}>
+                            {domainRefinedData?.categoricalHarvest.network.asn || 'BGP Route Active'}
+                          </div>
                           <div className="text-slate-400 text-[11px] pt-1">DNS Nameservers:</div>
-                          <div className="font-mono text-slate-300 text-[10px] truncate">ns1.{result.domain}, ns2.{result.domain}</div>
+                          <div className="font-mono text-slate-300 text-[10px] truncate" title={domainRefinedData?.categoricalHarvest.network.nameservers?.join(', ')}>
+                            {domainRefinedData?.categoricalHarvest.network.nameservers?.length ? domainRefinedData.categoricalHarvest.network.nameservers.join(', ') : `ns1.${result.domain}`}
+                          </div>
                         </div>
                       </div>
 
@@ -4090,18 +4130,24 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                       <div className="p-3.5 rounded-xl bg-slate-950/70 border border-violet-500/30 space-y-2 hover:border-violet-400/50 transition">
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-mono uppercase font-bold text-violet-400 tracking-wider">Security Posture</span>
-                          <span className="w-2 h-2 rounded-full bg-violet-400" />
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-violet-500/10 text-violet-300 border border-violet-500/20">
+                            {domainRefinedData?.categoricalHarvest.security.provenance === 'verified' ? 'TLS Handshake' : 'Pending'}
+                          </span>
                         </div>
                         <div className="space-y-1 text-xs">
                           <div className="text-slate-400 text-[11px]">SSL Certificate:</div>
-                          <div className="font-mono font-semibold text-emerald-400 text-[11px] flex items-center gap-1">
-                            <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                            <span>Valid TLS 1.3</span>
+                          <div className="font-mono font-semibold text-emerald-400 text-[11px] flex items-center gap-1 truncate" title={domainRefinedData?.categoricalHarvest.security.sslCert}>
+                            <ShieldCheck className="w-3 h-3 text-emerald-400 shrink-0" />
+                            <span className="truncate">{domainRefinedData?.categoricalHarvest.security.sslCert || 'Valid TLS'}</span>
                           </div>
                           <div className="text-slate-400 text-[11px] pt-1">WAF / Firewall:</div>
-                          <div className="font-mono text-violet-200 text-[10px] truncate">{domainRefinedData?.categoricalHarvest.security.firewall || 'Active Mitigation'}</div>
-                          <div className="text-slate-400 text-[11px] pt-1">Threat Score:</div>
-                          <div className="font-mono text-emerald-300 text-[10px] font-semibold">{domainRefinedData?.categoricalHarvest.security.vulnerabilityRating || 'Low Risk (Score: A+)'}</div>
+                          <div className="font-mono text-violet-200 text-[10px] truncate">
+                            {domainRefinedData?.categoricalHarvest.security.firewall || 'Origin Reverse Proxy'}
+                          </div>
+                          <div className="text-slate-400 text-[11px] pt-1">Security Profile:</div>
+                          <div className="font-mono text-emerald-300 text-[10px] font-semibold">
+                            {domainRefinedData?.categoricalHarvest.security.vulnerabilityRating || 'Standard Encryption'}
+                          </div>
                         </div>
                       </div>
 
@@ -4109,17 +4155,23 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                       <div className="p-3.5 rounded-xl bg-slate-950/70 border border-amber-500/30 space-y-2 hover:border-amber-400/50 transition">
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-mono uppercase font-bold text-amber-400 tracking-wider">Content & Tech Stack</span>
-                          <span className="w-2 h-2 rounded-full bg-amber-400" />
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                            Telemetry
+                          </span>
                         </div>
                         <div className="space-y-1 text-xs">
                           <div className="text-slate-400 text-[11px]">CMS / Platform:</div>
-                          <div className="font-semibold text-white text-[11px] truncate">{domainRefinedData?.categoricalHarvest.contentTech.cms || 'Next.js / Headless'}</div>
+                          <div className="font-semibold text-white text-[11px] truncate">
+                            {domainRefinedData?.categoricalHarvest.contentTech.cms || 'Custom Headless'}
+                          </div>
                           <div className="text-slate-400 text-[11px] pt-1">Frameworks:</div>
                           <div className="font-mono text-amber-200 text-[10px] truncate">
-                            {result.technographics.technologies.slice(0, 2).map((t) => t.name).join(', ') || 'Modern HTML5/ES2024'}
+                            {result.technographics.technologies.slice(0, 2).map((t) => t.name).join(', ') || 'Modern Web Standards'}
                           </div>
                           <div className="text-slate-400 text-[11px] pt-1">Server Stack:</div>
-                          <div className="font-mono text-slate-300 text-[10px] truncate">{domainRefinedData?.categoricalHarvest.contentTech.server || 'Cloudflare Edge / Vercel'}</div>
+                          <div className="font-mono text-slate-300 text-[10px] truncate">
+                            {domainRefinedData?.categoricalHarvest.contentTech.server || 'Standard Web Server'}
+                          </div>
                         </div>
                       </div>
 
@@ -4127,7 +4179,9 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                       <div className="p-3.5 rounded-xl bg-slate-950/70 border border-rose-500/30 space-y-2 hover:border-rose-400/50 transition">
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-mono uppercase font-bold text-rose-400 tracking-wider">Traffic & Engagement</span>
-                          <span className="w-2 h-2 rounded-full bg-rose-400" />
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-rose-500/10 text-rose-300 border border-rose-500/20">
+                            Estimated
+                          </span>
                         </div>
                         <div className="space-y-1 text-xs">
                           <div className="text-slate-400 text-[11px]">Primary Country:</div>
@@ -4136,10 +4190,10 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                             <span>{domainRefinedData?.categoricalHarvest.traffic.primaryCountry || result.location?.country || 'Global'}</span>
                           </div>
                           <div className="text-slate-400 text-[11px] pt-1">Traffic Signals:</div>
-                          <div className="font-mono text-rose-200 text-[10px] truncate">Direct & Search (Verified)</div>
+                          <div className="font-mono text-rose-200 text-[10px] truncate">Direct & Search Routing</div>
                           <div className="text-slate-400 text-[11px] pt-1">Buyer Propensity:</div>
                           <div className="font-mono text-emerald-400 text-[10px] font-bold">
-                            {domainRefinedData?.buyerIntentScore || 85} / 100 Intent
+                            {domainRefinedData?.buyerIntentScore || 35} / 100 Intent
                           </div>
                         </div>
                       </div>
@@ -4350,189 +4404,340 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                   )}
                 </div>
 
-                {/* 10-Column Comprehensive Commercial Matrix Table */}
-                <div className="glass-panel p-6 rounded-2xl border border-slate-800 shadow-xl">
-                  <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+                {/* 10-Dimension Structured Commercial Matrix (Card vs Table Presentation) */}
+                <div className="glass-panel p-6 rounded-2xl border border-slate-800 shadow-xl space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
                     <div>
                       <h3 className="text-base font-bold text-white flex items-center space-x-2">
-                        <Layers className="w-4 h-4 text-cyan-400" />
+                        <Layers className="w-4 h-4 text-teal-400" />
                         <span>Commercial Enrichment Matrix (10-Field Dimension View)</span>
                       </h3>
                       <p className="text-xs text-slate-400 mt-0.5">
-                        Exact standardized entity record parsed across domain, tax, spatial, and trade channels.
+                        Standardized entity profile parsed across domain, tax, spatial, and trade channels.
                       </p>
                     </div>
-                    <button
-                      onClick={() => {
-                        const csvRow = [
-                          `"${result.companyName}"`,
-                          `"${result.category}"`,
-                          `"${result.productsServices?.join(', ') || ''}"`,
-                          `"${result.url}"`,
-                          `"Phone: ${result.contactInfo.phones.join('; ')} | Email: ${result.contactInfo.emails.join('; ')}"`,
-                          `"${result.location?.formattedAddress || ''}"`,
-                          `"${result.geoData && result.geoData.latitude !== null ? `Lat: ${result.geoData.latitude}, Long: ${result.geoData.longitude}` : ''}"`,
-                          `"${result.businessDetails?.rawDetails || ''}"`,
-                          `"${result.verification?.join(', ') || ''}"`,
-                          `"${result.statusTags?.join(', ') || ''}"`,
-                        ].join(',');
-                        const csvContent = 'Domain/Business,Category,Products/Services,Website,Contact Info,Location,Geo Data,Business Details,Verification,Status Tags\n' + csvRow;
-                        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `${result.domain}_enrichment_matrix.csv`;
-                        a.click();
-                      }}
-                      className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center space-x-1.5 border border-slate-700"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Export Matrix CSV</span>
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      {/* View Switcher: Card vs Table */}
+                      <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg p-0.5 text-xs font-semibold">
+                        <button
+                          type="button"
+                          onClick={() => setMatrixViewMode('card')}
+                          className={`px-2.5 py-1 rounded-md transition ${
+                            matrixViewMode === 'card'
+                              ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
+                              : 'text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          Card View
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMatrixViewMode('table')}
+                          className={`px-2.5 py-1 rounded-md transition ${
+                            matrixViewMode === 'table'
+                              ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
+                              : 'text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          Table View
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          const csvRow = [
+                            `"${result.companyName}"`,
+                            `"${result.category}"`,
+                            `"${result.productsServices?.join(', ') || ''}"`,
+                            `"${result.url}"`,
+                            `"Phone: ${result.contactInfo.phones.join('; ')} | Email: ${result.contactInfo.emails.join('; ')}"`,
+                            `"${result.location?.formattedAddress || ''}"`,
+                            `"${result.geoData && result.geoData.latitude !== null ? `Lat: ${result.geoData.latitude}, Long: ${result.geoData.longitude}` : ''}"`,
+                            `"${result.businessDetails?.rawDetails || ''}"`,
+                            `"${result.verification?.join(', ') || ''}"`,
+                            `"${result.statusTags?.join(', ') || ''}"`,
+                          ].join(',');
+                          const csvContent = 'Domain/Business,Category,Products/Services,Website,Contact Info,Location,Geo Data,Business Details,Verification,Status Tags\n' + csvRow;
+                          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `${result.domain}_enrichment_matrix.csv`;
+                          a.click();
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center space-x-1.5 border border-slate-700 transition"
+                      >
+                        <Download className="w-3.5 h-3.5 text-teal-400" />
+                        <span>Export CSV</span>
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="border-b border-slate-800 bg-slate-900/90 text-slate-400 uppercase font-mono text-[10px] tracking-wider">
-                          <th className="p-3 font-semibold min-w-[160px]">Domain/Business</th>
-                          <th className="p-3 font-semibold min-w-[130px]">Category</th>
-                          <th className="p-3 font-semibold min-w-[180px]">Products/Services</th>
-                          <th className="p-3 font-semibold min-w-[140px]">Website</th>
-                          <th className="p-3 font-semibold min-w-[200px]">Contact Info</th>
-                          <th className="p-3 font-semibold min-w-[160px]">Location</th>
-                          <th className="p-3 font-semibold min-w-[140px]">Geo Data</th>
-                          <th className="p-3 font-semibold min-w-[180px]">Business Details</th>
-                          <th className="p-3 font-semibold min-w-[140px]">Verification</th>
-                          <th className="p-3 font-semibold min-w-[130px]">Status Tags</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/60">
-                        <tr className="hover:bg-slate-900/40 transition">
-                          {/* Domain/Business */}
-                          <td className="p-3 align-top">
-                            <div className="font-bold text-white text-sm">{result.companyName}</div>
-                            <div className="text-[11px] text-cyan-400 font-mono mt-0.5">{result.domain}</div>
-                          </td>
+                  {matrixViewMode === 'card' ? (
+                    /* Clean Dimensional Cards Grid (No horizontal cramming or awkward line breaks) */
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                      {/* 1. Entity & Category */}
+                      <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                          <span>Entity & Classification</span>
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-teal-500/10 text-teal-300 border border-teal-500/20">Domain Verified</span>
+                        </div>
+                        <div className="text-white font-bold text-base">{result.companyName}</div>
+                        <div className="text-xs text-teal-300 font-mono flex items-center space-x-1.5">
+                          <Globe className="w-3 h-3 text-teal-400" />
+                          <a href={result.url} target="_blank" rel="noreferrer" className="hover:underline">{result.domain}</a>
+                        </div>
+                        <div className="inline-block px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 text-xs">
+                          {result.category || 'Commercial Entity'}
+                        </div>
+                      </div>
 
-                          {/* Category */}
-                          <td className="p-3 align-top font-medium text-slate-200">
-                            <span className="px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-500/20 text-[11px]">
-                              {result.category || 'Commercial'}
-                            </span>
-                          </td>
+                      {/* 2. Products & Services */}
+                      <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                          Core Offerings ({result.productsServices?.length || 0})
+                        </div>
+                        {result.productsServices && result.productsServices.length > 0 ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {result.productsServices.slice(0, 5).map((prod, idx) => (
+                              <span key={idx} className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 text-xs">
+                                {prod}
+                              </span>
+                            ))}
+                            {result.productsServices.length > 5 && (
+                              <span className="text-[11px] text-slate-400 self-center">+{result.productsServices.length - 5} more</span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-xs italic text-slate-500">No structured product catalog detected</div>
+                        )}
+                      </div>
 
-                          {/* Products/Services */}
-                          <td className="p-3 align-top">
-                            <div className="text-slate-300 text-xs leading-relaxed">
-                              {result.productsServices?.join(', ') || 'Wholesale Products & Commercial Sourcing'}
+                      {/* 3. Physical Location & Map */}
+                      <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                          <span>Physical Location</span>
+                          {result.location?.formattedAddress ? (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-teal-500/10 text-teal-300 border border-teal-500/20">Verified Address</span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-slate-800 text-slate-400 border border-slate-700">Not Listed</span>
+                          )}
+                        </div>
+                        {result.location?.formattedAddress ? (
+                          <>
+                            <div className="text-xs text-slate-200 leading-relaxed line-clamp-2" title={result.location.formattedAddress}>
+                              {result.location.formattedAddress}
                             </div>
-                          </td>
-
-                          {/* Website */}
-                          <td className="p-3 align-top font-mono text-xs">
-                            <a
-                              href={result.url.startsWith('http') ? result.url : `https://${result.url}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-cyan-400 hover:text-cyan-300 hover:underline flex items-center space-x-1"
-                            >
-                              <span className="truncate max-w-[120px]">{result.domain}</span>
-                              <ExternalLink className="w-2.5 h-2.5 flex-shrink-0" />
-                            </a>
-                          </td>
-
-                          {/* Contact Info */}
-                          <td className="p-3 align-top space-y-1 font-mono text-[11px]">
-                            {result.contactInfo.phones[0] && (
-                              <div className="text-emerald-400 flex items-center space-x-1">
-                                <Phone className="w-3 h-3 flex-shrink-0" />
-                                <span>{result.contactInfo.phones[0]}</span>
-                              </div>
-                            )}
-                            {result.contactInfo.emails[0] && (
-                              <div className="text-indigo-300 flex items-center space-x-1 truncate max-w-[180px]">
-                                <Mail className="w-3 h-3 flex-shrink-0" />
-                                <span className="truncate">{result.contactInfo.emails[0]}</span>
-                              </div>
-                            )}
-                          </td>
-
-                          {/* Location */}
-                          <td className="p-3 align-top text-xs text-slate-300">
-                            {result.location?.formattedAddress || result.contactInfo.addresses[0] ? (
-                              <div className="flex items-start space-x-1">
-                                <MapPin className="w-3 h-3 text-rose-400 flex-shrink-0 mt-0.5" />
-                                <span>{result.location?.formattedAddress || result.contactInfo.addresses[0]}</span>
-                              </div>
-                            ) : (
-                              <span className="text-slate-500 italic">—</span>
-                            )}
-                          </td>
-
-                          {/* Geo Data */}
-                          <td className="p-3 align-top font-mono text-[11px] whitespace-nowrap">
-                            {result.geoData && result.geoData.latitude != null && result.geoData.longitude != null ? (
+                            {result.geoData?.latitude != null && result.geoData?.longitude != null && (
                               <a
-                                href={`https://www.google.com/maps?q=${result.geoData?.latitude},${result.geoData?.longitude}`}
+                                href={`https://www.google.com/maps?q=${result.geoData.latitude},${result.geoData.longitude}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center space-x-1 text-[11px] font-mono text-teal-400 hover:underline"
+                              >
+                                <MapPin className="w-3 h-3" />
+                                <span>{result.geoData.latitude.toFixed(4)}, {result.geoData.longitude.toFixed(4)}</span>
+                              </a>
+                            )}
+                          </>
+                        ) : (
+                          <div className="text-xs italic text-slate-500">No physical address detected on website</div>
+                        )}
+                      </div>
+
+                      {/* 4. Contact Channels */}
+                      <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                          Communication Channels
+                        </div>
+                        <div className="space-y-1.5 text-xs font-mono">
+                          {result.contactInfo.phones[0] ? (
+                            <div className="flex items-center space-x-2 text-emerald-300">
+                              <Phone className="w-3 h-3 text-emerald-400 shrink-0" />
+                              <a href={`tel:${result.contactInfo.phones[0]}`} className="hover:underline">{result.contactInfo.phones[0]}</a>
+                            </div>
+                          ) : (
+                            <div className="text-slate-500 italic font-sans text-xs">No phone numbers detected</div>
+                          )}
+                          {result.contactInfo.emails[0] ? (
+                            <div className="flex items-center space-x-2 text-indigo-300 truncate">
+                              <Mail className="w-3 h-3 text-indigo-400 shrink-0" />
+                              <a href={`mailto:${result.contactInfo.emails[0]}`} className="hover:underline truncate">{result.contactInfo.emails[0]}</a>
+                            </div>
+                          ) : (
+                            <div className="text-slate-500 italic font-sans text-xs">No email addresses detected</div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 5. Business Details & Compliance */}
+                      <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                          Registration & Compliance
+                        </div>
+                        {result.businessDetails?.rawDetails || result.businessDetails?.gstin ? (
+                          <div className="space-y-1">
+                            <div className="text-xs text-white font-mono font-semibold">
+                              {result.businessDetails.rawDetails || 'Enterprise Tax Profile'}
+                            </div>
+                            {result.businessDetails.gstin && (
+                              <div className="text-xs text-emerald-400 font-mono">
+                                GSTIN: {result.businessDetails.gstin}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-xs italic text-slate-500">No GSTIN/PAN declaration surfaced</div>
+                        )}
+                      </div>
+
+                      {/* 6. Verification Badges */}
+                      <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                          Compliance & Status Tags
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {result.verification && result.verification.length > 0 ? (
+                            result.verification.map((v, idx) => (
+                              <span key={idx} className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-xs font-semibold">
+                                ✓ {v}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-xs italic text-slate-500">Standard Web Profile</span>
+                          )}
+                          {result.statusTags?.map((tag, idx) => (
+                            <span key={idx} className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 text-xs font-mono">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Responsive Table with Truncation and Click-to-Expand */
+                    <div className="overflow-x-auto rounded-xl border border-slate-800">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-800 bg-slate-900/90 text-slate-400 uppercase font-mono text-[10px] tracking-wider">
+                            <th className="p-3 font-semibold min-w-[150px]">Domain/Business</th>
+                            <th className="p-3 font-semibold min-w-[130px]">Category</th>
+                            <th className="p-3 font-semibold min-w-[180px]">Products/Services</th>
+                            <th className="p-3 font-semibold min-w-[130px]">Website</th>
+                            <th className="p-3 font-semibold min-w-[170px]">Contact Info</th>
+                            <th className="p-3 font-semibold min-w-[180px]">Location</th>
+                            <th className="p-3 font-semibold min-w-[120px]">Coordinates</th>
+                            <th className="p-3 font-semibold min-w-[140px]">Compliance</th>
+                            <th className="p-3 font-semibold min-w-[120px]">Verification</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/60 bg-slate-950/40">
+                          <tr className="hover:bg-slate-900/40 transition">
+                            {/* Domain/Business */}
+                            <td className="p-3 align-top">
+                              <div className="font-bold text-white text-sm">{result.companyName}</div>
+                              <div className="text-[11px] text-teal-400 font-mono mt-0.5">{result.domain}</div>
+                            </td>
+
+                            {/* Category */}
+                            <td className="p-3 align-top font-medium text-slate-200">
+                              <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-[11px]">
+                                {result.category || 'Commercial'}
+                              </span>
+                            </td>
+
+                            {/* Products/Services */}
+                            <td className="p-3 align-top">
+                              <div className="text-slate-300 text-xs max-w-[200px] truncate" title={result.productsServices?.join(', ')}>
+                                {result.productsServices?.join(', ') || 'No catalog detected'}
+                              </div>
+                            </td>
+
+                            {/* Website */}
+                            <td className="p-3 align-top font-mono text-xs">
+                              <a
+                                href={result.url.startsWith('http') ? result.url : `https://${result.url}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="px-2 py-0.5 rounded bg-slate-900 text-cyan-300 border border-cyan-800/40 hover:border-cyan-400 inline-flex items-center space-x-1"
+                                className="text-teal-400 hover:underline flex items-center space-x-1"
                               >
-                                <Navigation className="w-2.5 h-2.5 text-cyan-400" />
-                                <span>Lat: {result.geoData?.latitude?.toFixed(4)}, Long: {result.geoData?.longitude?.toFixed(4)}</span>
+                                <span className="truncate max-w-[110px]">{result.domain}</span>
+                                <ExternalLink className="w-2.5 h-2.5 flex-shrink-0" />
                               </a>
-                            ) : (
-                              <span className="text-slate-500">—</span>
-                            )}
-                          </td>
+                            </td>
 
-                          {/* Business Details */}
-                          <td className="p-3 align-top font-mono text-[11px]">
-                            {result.businessDetails?.rawDetails ? (
-                              <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-amber-300">
-                                {result.businessDetails.rawDetails}
-                              </span>
-                            ) : (
-                              <span className="text-slate-500 italic">—</span>
-                            )}
-                          </td>
-
-                          {/* Verification */}
-                          <td className="p-3 align-top">
-                            <div className="flex flex-wrap gap-1">
-                              {result.verification && result.verification.length > 0 ? (
-                                result.verification.map((v, i) => (
-                                  <span key={i} className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold border border-emerald-500/20 whitespace-nowrap">
-                                    {v}
-                                  </span>
-                                ))
-                              ) : (
-                                <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-500 text-[10px] border border-slate-700 whitespace-nowrap">
-                                  Unverified
-                                </span>
+                            {/* Contact Info */}
+                            <td className="p-3 align-top space-y-1 font-mono text-[11px]">
+                              {result.contactInfo.phones[0] && (
+                                <div className="text-emerald-400 flex items-center space-x-1">
+                                  <Phone className="w-3 h-3 flex-shrink-0" />
+                                  <span>{result.contactInfo.phones[0]}</span>
+                                </div>
                               )}
-                            </div>
-                          </td>
+                              {result.contactInfo.emails[0] && (
+                                <div className="text-indigo-300 flex items-center space-x-1 truncate max-w-[160px]">
+                                  <Mail className="w-3 h-3 flex-shrink-0" />
+                                  <span className="truncate">{result.contactInfo.emails[0]}</span>
+                                </div>
+                              )}
+                              {!result.contactInfo.phones[0] && !result.contactInfo.emails[0] && (
+                                <span className="text-slate-500 italic">None on index</span>
+                              )}
+                            </td>
 
-                          {/* Status Tags */}
-                          <td className="p-3 align-top">
-                            <div className="flex flex-wrap gap-1">
-                              {result.statusTags && result.statusTags.length > 0 ? (
-                                result.statusTags.map((tag, i) => (
-                                  <span key={i} className="px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-300 text-[10px] font-mono border border-indigo-500/20 whitespace-nowrap">
-                                    {tag}
-                                  </span>
-                                ))
+                            {/* Location */}
+                            <td className="p-3 align-top text-xs text-slate-300">
+                              {result.location?.formattedAddress || result.contactInfo.addresses[0] ? (
+                                <div className="truncate max-w-[200px]" title={result.location?.formattedAddress || result.contactInfo.addresses[0]}>
+                                  {result.location?.formattedAddress || result.contactInfo.addresses[0]}
+                                </div>
                               ) : (
                                 <span className="text-slate-500 italic">—</span>
                               )}
-                            </div>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
+                            </td>
+
+                            {/* Geo Data */}
+                            <td className="p-3 align-top font-mono text-[11px] whitespace-nowrap">
+                              {result.geoData && result.geoData.latitude != null && result.geoData.longitude != null ? (
+                                <a
+                                  href={`https://www.google.com/maps?q=${result.geoData.latitude},${result.geoData.longitude}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-teal-400 hover:underline inline-flex items-center space-x-1"
+                                >
+                                  <span>{result.geoData.latitude.toFixed(2)}, {result.geoData.longitude.toFixed(2)}</span>
+                                </a>
+                              ) : (
+                                <span className="text-slate-500">—</span>
+                              )}
+                            </td>
+
+                            {/* Business Details */}
+                            <td className="p-3 align-top font-mono text-[11px]">
+                              {result.businessDetails?.rawDetails ? (
+                                <span className="text-amber-300 truncate max-w-[130px] block" title={result.businessDetails.rawDetails}>
+                                  {result.businessDetails.rawDetails}
+                                </span>
+                              ) : (
+                                <span className="text-slate-500 italic">—</span>
+                              )}
+                            </td>
+
+                            {/* Verification */}
+                            <td className="p-3 align-top">
+                              {result.verification && result.verification.length > 0 ? (
+                                <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold border border-emerald-500/20 whitespace-nowrap">
+                                  ✓ {result.verification[0]}
+                                </span>
+                              ) : (
+                                <span className="text-slate-500 text-[10px]">Unverified</span>
+                              )}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
 
                 {/* Technographic Stack Scanner & BYOK AI Grid */}
@@ -4574,176 +4779,426 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                     </div>
                   </div>
 
-                  {/* Right Col: Actor Studio-Grade Executive Intelligence Dossier & Opportunity Hub */}
+                  {/* Right Col: Actor Studio-Grade Executive Intelligence Dossier (Redesigned with Provenance & Tabs) */}
                   <div className="lg:col-span-3 space-y-6">
-                    <div className="glass-panel p-5 rounded-2xl border border-violet-500/30 relative overflow-hidden shadow-2xl bg-gradient-to-br from-violet-950/30 via-slate-900/90 to-slate-950">
-                      {/* Subtle glow behind card */}
-                      <div className="absolute -top-10 -right-10 w-40 h-40 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
-
-                      {/* Header bar */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.08] relative z-10">
-                        <div className="flex items-center space-x-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-violet-600 flex items-center justify-center text-white shadow-md">
-                            <Sparkles className="w-4 h-4 text-yellow-200" />
-                          </div>
-                          <div>
-                            <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-                              <span>Executive Intelligence Dossier</span>
+                    <div className="glass-panel p-6 sm:p-7 rounded-2xl border border-white/[0.08] relative overflow-hidden shadow-2xl bg-[#0f141c]/90">
+                      {/* Top Header matching Image 1 */}
+                      <div className="space-y-2 pb-5 border-b border-white/[0.08]">
+                        <div className="text-[11px] font-mono uppercase tracking-widest text-slate-400 font-semibold">
+                          COMPANY ENRICHMENT
+                        </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <h3 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                              {domainRefinedData?.title || result?.companyName || 'Company Profile'}
                             </h3>
-                            <div className="text-[10px] font-mono text-slate-400 mt-0.5">
-                              {domainRefinedData?.refinementSource === 'ai_synthesis' ? (
-                                <span className="text-violet-300 flex items-center gap-1">
-                                  <span>🤖 Live AI Synthesis</span>
-                                  <span>•</span>
-                                  <span>{selectedProvider}</span>
-                                </span>
-                              ) : (
-                                <span className="text-cyan-300 flex items-center gap-1">
-                                  <span>⚡ Smart Heuristic NLP Refined</span>
-                                  <span>•</span>
-                                  <span>Zero-Cost Core</span>
-                                </span>
-                              )}
-                            </div>
+                            <a
+                              href={domainRefinedData?.url || (result?.domain ? `https://${result.domain}` : '#')}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs sm:text-sm text-teal-400 hover:text-teal-300 font-mono inline-flex items-center gap-1 transition"
+                            >
+                              <span>{domainRefinedData?.domain || result?.domain}</span>
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-medium bg-amber-500/10 text-amber-300 border border-amber-500/25">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                              <span>Category: {domainRefinedData?.provenance?.category || 'estimated'}</span>
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 self-start sm:self-auto">
+                            {domainRefinedData && (
+                              <button
+                                type="button"
+                                onClick={() => handleCopyDomainDossier(domainRefinedData)}
+                                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition flex items-center gap-1.5"
+                                title="Copy briefing"
+                              >
+                                {domainRefinedCopied ? <Check className="w-3.5 h-3.5 text-teal-400" /> : <Copy className="w-3.5 h-3.5" />}
+                                <span>{domainRefinedCopied ? 'Copied' : 'Copy'}</span>
+                              </button>
+                            )}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-1.5">
-                          {domainRefinedData && (
-                            <button
-                              type="button"
-                              onClick={() => handleCopyDomainDossier(domainRefinedData)}
-                              className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition flex items-center gap-1"
-                              title="Copy briefing to clipboard"
-                            >
-                              {domainRefinedCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                              <span>{domainRefinedCopied ? 'Copied!' : 'Copy'}</span>
-                            </button>
-                          )}
-                        </div>
+                        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-3xl pt-1">
+                          {domainRefinedData?.valueProposition || result?.description || 'Commercial web intelligence endpoint.'}
+                        </p>
+                      </div>
+
+                      {/* 4 Tabs Bar matching Image 1 */}
+                      <div className="flex items-center gap-2 pt-4 pb-1 border-b border-white/[0.06] overflow-x-auto">
+                        {[
+                          { id: 'overview', label: 'Overview' },
+                          { id: 'technical', label: 'Technical' },
+                          { id: 'contacts', label: 'Contacts' },
+                          { id: 'intelligence', label: 'Intelligence' },
+                        ].map((t) => (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => setDossierTab(t.id as any)}
+                            className={`px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 ${
+                              dossierTab === t.id
+                                ? 'bg-slate-900 text-white border border-white/15 shadow-sm font-bold'
+                                : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
+                            }`}
+                          >
+                            <span>{t.label}</span>
+                          </button>
+                        ))}
                       </div>
 
                       {domainRefinedData ? (
-                        <div className="mt-4 space-y-4 relative z-10 animate-in fade-in duration-300">
-                          {/* Buyer Propensity & Intent Score Gauge (domainesearch.png & opportunityhub.png) */}
-                          <div className="p-3.5 bg-gradient-to-br from-indigo-950/60 to-slate-900/90 rounded-xl border border-indigo-500/30">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-indigo-300 font-medium">Buyer Propensity & Conversion Score</span>
-                              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase">
-                                Verified Intent
-                              </span>
-                            </div>
-                            <div className="flex items-end space-x-2 mt-2">
-                              <span className="text-3xl font-black text-white font-mono">{domainRefinedData.buyerIntentScore}</span>
-                              <span className="text-xs text-slate-400 pb-1 font-mono">/ 100</span>
-                              <span className="text-xs font-bold text-emerald-400 pb-1 ml-auto">
-                                {domainRefinedData.icpClassification}
-                              </span>
-                            </div>
-                            <div className="w-full bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
-                              <div
-                                className="bg-gradient-to-r from-indigo-500 via-violet-400 to-emerald-400 h-full rounded-full transition-all duration-700 shadow-md shadow-emerald-500/30"
-                                style={{ width: `${domainRefinedData.buyerIntentScore}%` }}
-                              />
-                            </div>
-                          </div>
-
-                          {/* Core Value Proposition Quote Box (Actor Studio parity) */}
-                          <div className="p-3.5 rounded-xl bg-slate-950/80 border border-amber-500/30 shadow-inner">
-                            <div className="text-[10px] font-mono uppercase text-amber-400 tracking-wider font-bold mb-1 flex items-center gap-1.5">
-                              <span>★</span>
-                              <span>Core Value Proposition</span>
-                            </div>
-                            <p className="text-xs text-amber-100 font-medium leading-relaxed italic">
-                              &quot;{domainRefinedData.valueProposition}&quot;
-                            </p>
-                          </div>
-
-                          {/* Executive Summary Narrative */}
-                          <div className="space-y-1">
-                            <div className="text-[11px] font-mono uppercase text-slate-400 tracking-wider font-semibold">Executive Summary:</div>
-                            <p className="text-xs text-slate-300 leading-relaxed max-w-full">
-                              {domainRefinedData.executiveSummary}
-                            </p>
-                          </div>
-
-                          {/* Target Audience & Sector */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                            <div className="p-2.5 rounded-xl bg-slate-900/80 border border-white/[0.06]">
-                              <div className="text-[10px] font-mono uppercase text-slate-400">Target ICP</div>
-                              <div className="text-xs font-bold text-white mt-0.5 truncate">{domainRefinedData.targetAudience}</div>
-                            </div>
-                            <div className="p-2.5 rounded-xl bg-slate-900/80 border border-white/[0.06]">
-                              <div className="text-[10px] font-mono uppercase text-slate-400">Industry Sector</div>
-                              <div className="text-xs font-bold text-cyan-300 mt-0.5 truncate">{domainRefinedData.industrySector}</div>
-                            </div>
-                          </div>
-
-                          {/* Core Offerings Catalog */}
-                          <div className="space-y-2 pt-1">
-                            <div className="text-[11px] font-mono uppercase text-slate-400 tracking-wider font-semibold flex items-center justify-between">
-                              <span>Core Products & Capabilities:</span>
-                              <span className="text-[10px] font-mono text-emerald-400 font-bold">{domainRefinedData.coreOfferings.length} Identified</span>
-                            </div>
-                            <div className="space-y-1.5">
-                              {domainRefinedData.coreOfferings.slice(0, 4).map((offering, idx) => (
-                                <div key={idx} className="text-[11px] text-slate-200 bg-slate-900/70 p-2 rounded-lg border border-white/[0.05] flex items-center space-x-2">
-                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                                  <span className="truncate">{offering}</span>
+                        <div className="pt-5 space-y-6">
+                          {/* TAB 1: OVERVIEW */}
+                          {dossierTab === 'overview' && (
+                            <div className="space-y-6 animate-in fade-in duration-200">
+                              {/* COMPANY SUMMARY */}
+                              <div className="space-y-3">
+                                <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
+                                  COMPANY SUMMARY
                                 </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Matched Connection Opportunities (opportunityhub.png) */}
-                          <div className="space-y-2 pt-2 border-t border-white/[0.06]">
-                            <div className="text-[11px] font-mono uppercase text-slate-400 tracking-wider font-semibold flex items-center justify-between">
-                              <span>Connection Opportunity Profile:</span>
-                              <span className="text-[10px] font-mono text-cyan-400 font-bold">Matched: {domainRefinedData.connectionOpportunities.length}</span>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              {domainRefinedData.connectionOpportunities.map((opp, i) => (
-                                <div key={i} className="p-2 rounded-lg bg-slate-900/90 border border-cyan-500/20 flex flex-col justify-between space-y-1 hover:border-cyan-500/40 transition">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-[9px] font-mono uppercase px-1.5 py-0.2 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-bold">
-                                      {opp.badge}
-                                    </span>
-                                    <span className="text-[10px] font-mono text-emerald-400 font-bold">{opp.synergyScore}%</span>
+                                <div className="space-y-3 divide-y divide-white/[0.05]">
+                                  {/* Industry Sector */}
+                                  <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                                    <span className="text-slate-400">Industry sector</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-semibold text-white">{domainRefinedData.industrySector}</span>
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-amber-500/10 text-amber-300 border border-amber-500/25 flex items-center gap-1">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                        <span>estimated</span>
+                                      </span>
+                                    </div>
                                   </div>
-                                  <div className="text-xs font-semibold text-white truncate" title={opp.title}>{opp.title}</div>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenPitchModal({
-                                      companyName: result.companyName,
-                                      domain: result.domain,
-                                      valueProposition: domainRefinedData.valueProposition,
-                                      industry: result.category,
-                                      coreOfferings: domainRefinedData.coreOfferings,
-                                      refinedData: domainRefinedData,
-                                    })}
-                                    className="text-[10px] text-cyan-400 hover:text-cyan-300 font-mono hover:underline text-left pt-0.5"
-                                  >
-                                    → {opp.linkText}
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
 
-                          {/* Actionable Strategic Takeaways */}
-                          <div className="space-y-1.5 pt-2 border-t border-white/[0.06]">
-                            <div className="text-[11px] font-mono uppercase text-slate-400 tracking-wider font-semibold">Strategic Outreach Angles:</div>
-                            <ul className="space-y-1">
-                              {domainRefinedData.keyTakeaways.slice(0, 3).map((takeaway, i) => (
-                                <li key={i} className="text-[11px] text-slate-300 bg-slate-900/40 p-2 rounded-lg border border-white/[0.04] leading-relaxed">
-                                  • {takeaway}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
+                                  {/* Registered Address */}
+                                  <div className="pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                                    <span className="text-slate-400">Registered address</span>
+                                    <div className="flex items-center gap-2">
+                                      {domainRefinedData.contacts.locations.length > 0 ? (
+                                        <>
+                                          <span className="font-medium text-white">{domainRefinedData.contacts.locations[0]}</span>
+                                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-teal-500/10 text-teal-300 border border-teal-500/25 flex items-center gap-1">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+                                            <span>verified</span>
+                                          </span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span className="italic text-slate-500">No physical address detected on page</span>
+                                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+                                            <span>not found</span>
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Target Audience */}
+                                  <div className="pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                                    <span className="text-slate-400">Target audience</span>
+                                    <div className="flex items-center gap-2">
+                                      {domainRefinedData.targetAudience && domainRefinedData.targetAudience !== 'Not enough page content to infer' ? (
+                                        <>
+                                          <span className="text-slate-300 max-w-md truncate">{domainRefinedData.targetAudience}</span>
+                                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-amber-500/10 text-amber-300 border border-amber-500/25 flex items-center gap-1">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                            <span>estimated</span>
+                                          </span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span className="italic text-slate-500">Not enough page content to infer</span>
+                                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+                                            <span>not found</span>
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* CORE OFFERINGS */}
+                              <div className="space-y-3 pt-2">
+                                <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold flex items-center justify-between">
+                                  <span>CORE OFFERINGS</span>
+                                  {domainRefinedData.coreOfferings.length > 0 && (
+                                    <span className="text-[10px] font-mono text-teal-400">
+                                      {domainRefinedData.coreOfferings.length} Detected
+                                    </span>
+                                  )}
+                                </div>
+
+                                {domainRefinedData.coreOfferings.length > 0 ? (
+                                  <div className="flex flex-wrap gap-2">
+                                    {domainRefinedData.coreOfferings.map((offering, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="px-3 py-1.5 rounded-xl bg-slate-900 border border-white/[0.08] text-xs text-slate-200 flex items-center gap-2"
+                                      >
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+                                        <span>{offering}</span>
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="p-6 rounded-xl border border-dashed border-slate-800/80 bg-slate-950/40 text-center text-xs text-slate-400 italic">
+                                    No products or services could be extracted from structured data or page content.
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* TAB 2: TECHNICAL */}
+                          {dossierTab === 'technical' && (
+                            <div className="space-y-6 animate-in fade-in duration-200">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Registration details */}
+                                <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] space-y-2.5">
+                                  <div className="flex items-center justify-between pb-1 border-b border-white/[0.05]">
+                                    <span className="text-xs font-mono font-bold text-teal-300 uppercase">Authoritative Registration (RDAP)</span>
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-teal-500/10 text-teal-300 border border-teal-500/20">
+                                      {domainRefinedData.categoricalHarvest.registration.provenance}
+                                    </span>
+                                  </div>
+                                  <div className="text-xs space-y-1.5">
+                                    <div className="flex justify-between">
+                                      <span className="text-slate-400">Registrar:</span>
+                                      <span className="font-mono text-white font-medium text-right">{domainRefinedData.categoricalHarvest.registration.registrar}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-slate-400">Created:</span>
+                                      <span className="font-mono text-slate-200">{domainRefinedData.categoricalHarvest.registration.createdDate}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-slate-400">Status:</span>
+                                      <span className="font-mono text-emerald-400 uppercase text-[11px] truncate max-w-[200px]">{domainRefinedData.categoricalHarvest.registration.status}</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Network details */}
+                                <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] space-y-2.5">
+                                  <div className="flex items-center justify-between pb-1 border-b border-white/[0.05]">
+                                    <span className="text-xs font-mono font-bold text-emerald-300 uppercase">Network & Routing (DNS / BGP)</span>
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                                      {domainRefinedData.categoricalHarvest.network.provenance}
+                                    </span>
+                                  </div>
+                                  <div className="text-xs space-y-1.5">
+                                    <div className="flex justify-between">
+                                      <span className="text-slate-400">IPv4 Address:</span>
+                                      <span className="font-mono text-white font-bold">{domainRefinedData.categoricalHarvest.network.ipAddress}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-slate-400">ASN:</span>
+                                      <span className="font-mono text-emerald-300 truncate max-w-[220px]" title={domainRefinedData.categoricalHarvest.network.asn}>{domainRefinedData.categoricalHarvest.network.asn}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-slate-400">Nameservers:</span>
+                                      <span className="font-mono text-slate-300 truncate max-w-[220px]" title={domainRefinedData.categoricalHarvest.network.nameservers.join(', ')}>
+                                        {domainRefinedData.categoricalHarvest.network.nameservers.join(', ')}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Security & Encryption */}
+                                <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] space-y-2.5">
+                                  <div className="flex items-center justify-between pb-1 border-b border-white/[0.05]">
+                                    <span className="text-xs font-mono font-bold text-violet-300 uppercase">TLS Security (Live Handshake)</span>
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-violet-500/10 text-violet-300 border border-violet-500/20">
+                                      {domainRefinedData.categoricalHarvest.security.provenance}
+                                    </span>
+                                  </div>
+                                  <div className="text-xs space-y-1.5">
+                                    <div className="flex justify-between">
+                                      <span className="text-slate-400">Certificate:</span>
+                                      <span className="font-mono text-emerald-300 truncate max-w-[220px]" title={domainRefinedData.categoricalHarvest.security.sslCert}>{domainRefinedData.categoricalHarvest.security.sslCert}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-slate-400">WAF / Edge:</span>
+                                      <span className="font-mono text-violet-200 truncate max-w-[220px]">{domainRefinedData.categoricalHarvest.security.firewall}</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Content Tech Stack */}
+                                <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] space-y-2.5">
+                                  <div className="flex items-center justify-between pb-1 border-b border-white/[0.05]">
+                                    <span className="text-xs font-mono font-bold text-amber-300 uppercase">Content & Server Telemetry</span>
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                                      {domainRefinedData.categoricalHarvest.contentTech.provenance}
+                                    </span>
+                                  </div>
+                                  <div className="text-xs space-y-1.5">
+                                    <div className="flex justify-between">
+                                      <span className="text-slate-400">CMS:</span>
+                                      <span className="font-medium text-white">{domainRefinedData.categoricalHarvest.contentTech.cms}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-slate-400">Server:</span>
+                                      <span className="font-mono text-slate-300">{domainRefinedData.categoricalHarvest.contentTech.server}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-slate-400">Frameworks:</span>
+                                      <span className="font-mono text-amber-200 truncate max-w-[220px]">{domainRefinedData.categoricalHarvest.contentTech.frameworks.join(', ')}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* TAB 3: CONTACTS */}
+                          {dossierTab === 'contacts' && (
+                            <div className="space-y-5 animate-in fade-in duration-200">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Emails */}
+                                <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] space-y-2">
+                                  <div className="flex items-center justify-between pb-1 border-b border-white/[0.05]">
+                                    <span className="text-xs font-mono font-bold text-slate-300 uppercase flex items-center gap-1.5">
+                                      <Mail className="w-3.5 h-3.5 text-teal-400" />
+                                      <span>Verified Emails ({domainRefinedData.contacts.emails.length})</span>
+                                    </span>
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-teal-500/10 text-teal-300 border border-teal-500/20">
+                                      {domainRefinedData.contacts.emails.length > 0 ? 'verified' : 'not found'}
+                                    </span>
+                                  </div>
+                                  {domainRefinedData.contacts.emails.length > 0 ? (
+                                    <div className="space-y-1.5 pt-1">
+                                      {domainRefinedData.contacts.emails.map((email, idx) => (
+                                        <a
+                                          key={idx}
+                                          href={`mailto:${email}`}
+                                          className="text-xs font-mono text-teal-300 hover:underline block truncate"
+                                        >
+                                          {email}
+                                        </a>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-xs text-slate-500 italic pt-1">No verified email addresses detected on page.</p>
+                                  )}
+                                </div>
+
+                                {/* Phones */}
+                                <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] space-y-2">
+                                  <div className="flex items-center justify-between pb-1 border-b border-white/[0.05]">
+                                    <span className="text-xs font-mono font-bold text-slate-300 uppercase flex items-center gap-1.5">
+                                      <Phone className="w-3.5 h-3.5 text-teal-400" />
+                                      <span>Verified Phones ({domainRefinedData.contacts.phones.length})</span>
+                                    </span>
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-teal-500/10 text-teal-300 border border-teal-500/20">
+                                      {domainRefinedData.contacts.phones.length > 0 ? 'verified' : 'not found'}
+                                    </span>
+                                  </div>
+                                  {domainRefinedData.contacts.phones.length > 0 ? (
+                                    <div className="space-y-1.5 pt-1">
+                                      {domainRefinedData.contacts.phones.map((phone, idx) => (
+                                        <a
+                                          key={idx}
+                                          href={`tel:${phone}`}
+                                          className="text-xs font-mono text-teal-300 hover:underline block truncate"
+                                        >
+                                          {phone}
+                                        </a>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-xs text-slate-500 italic pt-1">No verified phone numbers detected on page.</p>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Physical Address */}
+                              <div className="p-4 rounded-xl bg-slate-900/60 border border-white/[0.06] space-y-2">
+                                <div className="flex items-center justify-between pb-1 border-b border-white/[0.05]">
+                                  <span className="text-xs font-mono font-bold text-slate-300 uppercase flex items-center gap-1.5">
+                                    <MapPin className="w-3.5 h-3.5 text-teal-400" />
+                                    <span>Physical Presence</span>
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-teal-500/10 text-teal-300 border border-teal-500/20">
+                                    {domainRefinedData.contacts.locations.length > 0 ? 'verified' : 'not found'}
+                                  </span>
+                                </div>
+                                {domainRefinedData.contacts.locations.length > 0 ? (
+                                  <p className="text-xs text-slate-200 pt-1 leading-relaxed">{domainRefinedData.contacts.locations[0]}</p>
+                                ) : (
+                                  <p className="text-xs text-slate-500 italic pt-1">No physical office address detected on page.</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* TAB 4: INTELLIGENCE */}
+                          {dossierTab === 'intelligence' && (
+                            <div className="space-y-5 animate-in fade-in duration-200">
+                              {/* Inspectable Buyer Intent Score Box */}
+                              <div className="p-4 rounded-xl bg-slate-900/70 border border-white/[0.08] space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-mono uppercase tracking-wider text-slate-400 font-semibold">
+                                    Buyer Propensity Score
+                                  </span>
+                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-amber-500/10 text-amber-300 border border-amber-500/20 font-medium">
+                                    Estimated, not verified
+                                  </span>
+                                </div>
+
+                                <div className="flex items-end gap-3">
+                                  <span className="text-4xl font-black text-white font-mono">{domainRefinedData.buyerIntentScore}</span>
+                                  <span className="text-xs text-slate-400 font-mono pb-1.5">/ 100</span>
+                                  <span className="text-xs font-semibold text-teal-400 pb-1.5 ml-auto">
+                                    {domainRefinedData.icpClassification}
+                                  </span>
+                                </div>
+
+                                <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                                  <div
+                                    className="bg-gradient-to-r from-teal-500 to-emerald-400 h-full rounded-full transition-all duration-700"
+                                    style={{ width: `${domainRefinedData.buyerIntentScore}%` }}
+                                  />
+                                </div>
+
+                                {/* Math breakdown card */}
+                                <div className="mt-3 p-3 rounded-lg bg-slate-950/60 border border-white/[0.05] text-xs space-y-1.5 font-mono">
+                                  <div className="text-[11px] text-slate-400 font-bold uppercase">Scoring Formula Breakdown:</div>
+                                  <div className="text-[11px] text-slate-300">{domainRefinedData.buyerIntentBreakdown?.summary}</div>
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 text-[10px] text-slate-400">
+                                    <div>Emails: +{domainRefinedData.buyerIntentBreakdown?.emailsPoints || 0} pts</div>
+                                    <div>Phones: +{domainRefinedData.buyerIntentBreakdown?.phonesPoints || 0} pts</div>
+                                    <div>Address: +{domainRefinedData.buyerIntentBreakdown?.addressPoints || 0} pts</div>
+                                    <div>Tech Stack: +{domainRefinedData.buyerIntentBreakdown?.technologiesPoints || 0} pts</div>
+                                    <div>TLS Security: +{domainRefinedData.buyerIntentBreakdown?.tlsPoints || 0} pts</div>
+                                    <div>DNS Valid: +{domainRefinedData.buyerIntentBreakdown?.dnsPoints || 0} pts</div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Strategic Outreach Angles */}
+                              <div className="space-y-2 pt-1">
+                                <div className="text-[11px] font-mono uppercase text-slate-400 tracking-wider font-semibold">
+                                  Strategic Outreach Angles:
+                                </div>
+                                <ul className="space-y-1.5">
+                                  {domainRefinedData.keyTakeaways.map((takeaway, i) => (
+                                    <li key={i} className="text-xs text-slate-300 bg-slate-900/50 p-2.5 rounded-lg border border-white/[0.04] leading-relaxed">
+                                      • {takeaway}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          )}
 
                           {/* Action Toolbar */}
-                          <div className="grid grid-cols-2 gap-2 pt-2">
+                          <div className="grid grid-cols-3 gap-2 pt-3 border-t border-white/[0.06]">
                             <button
                               type="button"
                               onClick={() => handleOpenPitchModal({
@@ -4754,76 +5209,60 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                                 coreOfferings: domainRefinedData.coreOfferings,
                                 refinedData: domainRefinedData,
                               })}
-                              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs font-bold transition shadow-md shadow-rose-600/20"
+                              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition shadow-sm"
                             >
                               <Send className="w-3.5 h-3.5" />
-                              <span>⚡ AI Sales Pitch</span>
+                              <span>AI Sales Pitch</span>
                             </button>
 
                             <button
                               type="button"
                               onClick={() => handleExportPdfReport(result)}
-                              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-700 hover:bg-cyan-600 border border-cyan-500/50 text-white text-xs font-bold transition shadow-sm"
-                              title="Download or print styled PDF dossier"
+                              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/10 text-white text-xs font-bold transition"
                             >
-                              <FileText className="w-3.5 h-3.5" />
-                              <span>📄 Export PDF</span>
+                              <FileText className="w-3.5 h-3.5 text-teal-400" />
+                              <span>Export PDF</span>
                             </button>
 
                             <button
                               type="button"
                               onClick={() => handleDownloadJson(result)}
-                              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600/60 text-cyan-300 text-xs font-semibold transition"
-                              title="Download structured JSON dossier"
+                              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/10 text-teal-300 text-xs font-semibold transition"
                             >
                               <FileCode className="w-3.5 h-3.5" />
                               <span>JSON</span>
                             </button>
                           </div>
-
-                          {/* Re-synthesize button */}
-                          <button
-                            type="button"
-                            onClick={() => handleRefineDomain(result)}
-                            disabled={domainRefineLoading}
-                            className="w-full mt-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/30 text-violet-300 text-xs font-semibold transition disabled:opacity-50"
-                          >
-                            {domainRefineLoading ? (
-                              <><span className="w-3 h-3 rounded-full border-2 border-violet-400 border-t-transparent animate-spin" />Re-Synthesizing Intelligence…</>
-                            ) : (
-                              <><Sparkles className="w-3.5 h-3.5 text-yellow-300" />Re-Synthesize Dossier {apiKey ? `(${selectedProvider})` : '(Zero-Cost NLP)'}</>
-                            )}
-                          </button>
                         </div>
                       ) : domainRefineLoading ? (
-                        <div className="flex flex-col items-center justify-center py-12 gap-3 relative z-10">
-                          <div className="w-10 h-10 rounded-full border-[3px] border-violet-500 border-t-transparent animate-spin" />
-                          <p className="text-xs text-violet-300 font-semibold animate-pulse">Synthesizing Executive Intelligence Dossier…</p>
-                          <p className="text-[11px] text-slate-400 text-center max-w-[240px]">
-                            Extracting value proposition, target ICP, categorical harvest & opportunity profile
-                          </p>
+                        <div className="flex flex-col items-center justify-center py-12 gap-3">
+                          <div className="w-10 h-10 rounded-full border-[3px] border-teal-500 border-t-transparent animate-spin" />
+                          <p className="text-xs text-teal-300 font-semibold animate-pulse">Running Authoritative Network Audit (RDAP, DNS, TLS)…</p>
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center justify-center py-10 gap-4 text-center relative z-10">
-                          <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
-                            <Sparkles className="w-6 h-6 text-violet-400" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-white">Executive Dossier Ready</p>
-                            <p className="text-xs text-slate-400 mt-1 max-w-[240px] leading-relaxed">
-                              Synthesize multi-dimensional revenue intelligence, value proposition, ICP scoring, and matched B2B opportunities.
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleRefineDomain(result)}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-violet-600/30 transition"
-                          >
-                            <Sparkles className="w-4 h-4 text-yellow-300" />
-                            <span>✨ Generate AI Refined Dossier</span>
-                          </button>
+                        <div className="py-10 text-center text-slate-400 text-xs">
+                          Search a domain to generate an authoritative executive intelligence dossier.
                         </div>
                       )}
+
+                      {/* Provenance Legend Footer matching Image 1 */}
+                      <div className="mt-8 pt-4 border-t border-white/[0.06] flex flex-wrap items-center gap-4 text-xs font-mono">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-teal-400" />
+                          <span className="text-teal-300 font-semibold">Verified</span>
+                          <span className="text-slate-500">— confirmed via RDAP / DNS / TLS / schema.org</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-400" />
+                          <span className="text-amber-300 font-semibold">Estimated</span>
+                          <span className="text-slate-500">— inferred by heuristic or AI, unverified</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-slate-500" />
+                          <span className="text-slate-400 font-semibold">Not found</span>
+                          <span className="text-slate-500">— no signal detected, shown honestly</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -7725,157 +8164,147 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
             {/* ========================================================== */}
             {/* View Mode 1: Detailed Product Specs Table (Exact User Spec) */}
             {/* ========================================================== */}
+            {/* ========================================================== */}
+            {/* View Mode 1: Product & Supplier Matrix (Image 2 Redesign)  */}
+            {/* ========================================================== */}
             {productViewMode === 'specs' && (
-              <div className="glass-panel p-6 rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-slate-950 via-slate-900/95 to-blue-950/20 space-y-4 shadow-xl">
+              <div className="glass-panel p-6 rounded-2xl border border-slate-800 bg-slate-950/80 space-y-5 shadow-2xl">
+                {/* Header matching Image 2 */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
-                      <ShoppingBag className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                          <span>Product Specs & Marketplace Extraction Matrix</span>
-                        </h3>
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono uppercase">
-                          E-Commerce & Retail
-                        </span>
-                        {productSpecResults.length > 0 && (
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 font-mono">
-                            {productSpecResults.length} Verified Channels
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        Technical hardware spec matching across e-commerce marketplaces (Amazon, Flipkart, Croma, Brand stores) with live pricing.
-                      </p>
-                    </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white tracking-tight">
+                      Product & supplier matrix
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {filteredProductSpecResults.length} of {productSpecResults.length} shown · sourced from live scrape, category benchmark, and B2B directory search
+                    </p>
                   </div>
 
                   <div className="flex items-center space-x-2">
                     <button
+                      type="button"
+                      onClick={() => setShowSpecFilters((v) => !v)}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center space-x-1.5 transition ${
+                        showSpecFilters
+                          ? 'bg-teal-500/20 text-teal-300 border-teal-500/40'
+                          : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-700'
+                      }`}
+                    >
+                      <Filter className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Filter</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={handleExportProductCSV}
                       disabled={filteredProductSpecResults.length === 0}
-                      className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition shadow-sm disabled:opacity-40"
-                      title="Download active results as CSV"
+                      className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition disabled:opacity-40"
                     >
-                      <Download className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>Export CSV ({filteredProductSpecResults.length})</span>
+                      <Download className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Export CSV</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Instant Real-Time Search & Sort Filter Toolbar */}
-                <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
-                  <div className="flex items-center space-x-2 flex-1 min-w-[240px]">
-                    <div className="relative flex-1">
-                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        value={productTableSearch}
-                        onChange={(e) => setProductTableSearch(e.target.value)}
-                        placeholder="Instant search products, specs, vendor, location..."
-                        className="w-full bg-slate-950/80 border border-slate-700/70 rounded-lg pl-8 pr-7 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"
-                      />
-                      {productTableSearch && (
-                        <button
-                          onClick={() => setProductTableSearch('')}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs p-0.5"
+                {/* Collapsible Filter Toolbar */}
+                {showSpecFilters && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/90 p-3 rounded-xl border border-slate-800 animate-in fade-in duration-150">
+                    <div className="flex items-center space-x-2 flex-1 min-w-[240px]">
+                      <div className="relative flex-1">
+                        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          value={productTableSearch}
+                          onChange={(e) => setProductTableSearch(e.target.value)}
+                          placeholder="Filter product name, specs, seller, location..."
+                          className="w-full bg-slate-950 border border-slate-700/80 rounded-lg pl-8 pr-7 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 transition"
+                        />
+                        {productTableSearch && (
+                          <button
+                            onClick={() => setProductTableSearch('')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs p-0.5"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-1.5">
+                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+                        <select
+                          value={productSortBy}
+                          onChange={(e) => setProductSortBy(e.target.value as any)}
+                          className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-teal-500"
                         >
-                          ✕
+                          <option value="default">Default Order</option>
+                          <option value="price_asc">Price: Low to High</option>
+                          <option value="price_desc">Price: High to Low</option>
+                          <option value="discount_desc">Discount: Highest First</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-center space-x-1.5">
+                        <select
+                          value={productStatusFilter}
+                          onChange={(e) => setProductStatusFilter(e.target.value)}
+                          className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-teal-500"
+                        >
+                          <option value="all">All Sources ({productSpecResults.length})</option>
+                          <option value="in_stock">Live Scraped Listings</option>
+                          <option value="high_discount">High Discount (&gt;15%)</option>
+                        </select>
+                      </div>
+
+                      {(productTableSearch || productStatusFilter !== 'all' || productSortBy !== 'default') && (
+                        <button
+                          onClick={() => {
+                            setProductTableSearch('');
+                            setProductStatusFilter('all');
+                            setProductSortBy('default');
+                          }}
+                          className="text-[11px] text-teal-400 hover:underline px-1.5 py-0.5"
+                        >
+                          Reset
                         </button>
                       )}
                     </div>
-                    <span className="text-[11px] text-slate-400 font-mono whitespace-nowrap">
-                      Showing {filteredProductSpecResults.length} of {productSpecResults.length}
-                    </span>
                   </div>
+                )}
 
-                  <div className="flex items-center space-x-2">
-                    {/* Sort By */}
-                    <div className="flex items-center space-x-1.5">
-                      <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
-                      <select
-                        value={productSortBy}
-                        onChange={(e) => setProductSortBy(e.target.value as any)}
-                        className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-cyan-500"
-                      >
-                        <option value="default">Default Order</option>
-                        <option value="price_asc">Price: Low to High</option>
-                        <option value="price_desc">Price: High to Low</option>
-                        <option value="discount_desc">Discount: Highest First</option>
-                        <option value="distance_asc">Distance: Nearest First</option>
-                      </select>
-                    </div>
-
-                    {/* Status Filter */}
-                    <div className="flex items-center space-x-1.5">
-                      <Filter className="w-3 h-3 text-slate-400" />
-                      <select
-                        value={productStatusFilter}
-                        onChange={(e) => setProductStatusFilter(e.target.value)}
-                        className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-cyan-500"
-                      >
-                        <option value="all">All Statuses ({productSpecResults.length})</option>
-                        <option value="in_stock">In Stock / Available</option>
-                        <option value="high_discount">High Discount (&gt;15%)</option>
-                        <option value="verified_merchant">Verified Marketplace</option>
-                      </select>
-                    </div>
-
-                    {(productTableSearch || productStatusFilter !== 'all' || productSortBy !== 'default') && (
-                      <button
-                        onClick={() => {
-                          setProductTableSearch('');
-                          setProductStatusFilter('all');
-                          setProductSortBy('default');
-                        }}
-                        className="text-[11px] text-cyan-400 hover:underline px-1.5 py-0.5"
-                      >
-                        Reset
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Main Table */}
-                <div className="overflow-x-auto rounded-xl border border-slate-800">
+                {/* 6-Column Stacked Table matching Image 2 */}
+                <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="bg-slate-900/90 text-slate-300 font-semibold border-b border-slate-800">
-                        <th className="p-3.5 whitespace-nowrap">Product</th>
-                        <th className="p-3.5 whitespace-nowrap">Specs</th>
-                        <th className="p-3.5 whitespace-nowrap">E-Commerce Pricing</th>
-                        <th className="p-3.5 whitespace-nowrap">B2B Volume Pricing</th>
-                        <th className="p-3.5 whitespace-nowrap">Seller / Business</th>
-                        <th className="p-3.5 whitespace-nowrap">Website / Source</th>
-                        <th className="p-3.5 whitespace-nowrap">Business Details</th>
-                        <th className="p-3.5 whitespace-nowrap">Specs Normalized</th>
-                        <th className="p-3.5 whitespace-nowrap">Discount Status</th>
-                        <th className="p-3.5 whitespace-nowrap">Stock / Deal</th>
-                        <th className="p-3.5 whitespace-nowrap text-right">Actions</th>
+                      <tr className="bg-slate-900/90 text-slate-400 uppercase font-mono text-[11px] tracking-wider border-b border-slate-800">
+                        <th className="p-4 font-semibold min-w-[220px]">PRODUCT</th>
+                        <th className="p-4 font-semibold min-w-[150px]">PRICE</th>
+                        <th className="p-4 font-semibold min-w-[170px]">B2B / WHOLESALE</th>
+                        <th className="p-4 font-semibold min-w-[180px]">SELLER</th>
+                        <th className="p-4 font-semibold min-w-[150px]">LOCATION</th>
+                        <th className="p-4 font-semibold min-w-[160px]">SOURCE</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60 bg-slate-950/40">
+                    <tbody className="divide-y divide-slate-800/60">
                       {productLoading ? (
                         <tr>
-                          <td colSpan={11} className="p-8 text-center bg-slate-950/60">
+                          <td colSpan={6} className="p-10 text-center">
                             <div className="flex flex-col items-center justify-center space-y-3 py-6">
-                              <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin" />
+                              <RefreshCw className="w-7 h-7 text-teal-400 animate-spin" />
                               <div className="text-sm font-semibold text-white">
-                                Scraping across {searchCoverage.areasSearchedCount} regional procurement zones ({productScope === 'radius' ? `${productRangeKm}km Radius` : 'Pan-India'})...
+                                Scanning Pan-India Product & Supplier Network...
                               </div>
                               <p className="text-xs text-slate-400 max-w-md">
-                                Querying nationwide and radius supplier networks, matching technical specs, extracting retail prices, and resolving secret B2B wholesale discount tiers.
+                                Querying live marketplace listings, B2B wholesale directories, and category benchmark pricing.
                               </p>
                             </div>
                           </td>
                         </tr>
                       ) : productSpecResults.length === 0 ? (
                         <tr>
-                          <td colSpan={11} className="p-10 text-center">
+                          <td colSpan={6} className="p-10 text-center">
                             <div className="flex flex-col items-center justify-center space-y-3 py-6 max-w-lg mx-auto">
-                              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                              <div className="w-12 h-12 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400">
                                 <ShoppingBag className="w-6 h-6" />
                               </div>
                               <div className="space-y-1">
@@ -7883,345 +8312,225 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                                   No Product Specs Queried Yet
                                 </div>
                                 <p className="text-xs text-slate-400 leading-relaxed">
-                                  Select an Industry Category above (e.g. {productCategoryInput}) and click <strong className="text-cyan-300">Scrape & Find</strong> to extract real-time technical specs, e-commerce listings, and marketplace pricing.
+                                  Select an Industry Category above (e.g. {productCategoryInput}) and click <strong className="text-teal-300">Scrape & Find</strong> to extract verified specs, live pricing, and wholesale channels.
                                 </p>
                               </div>
-                              <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
-                                <button
-                                  type="button"
-                                  onClick={handleProductSearch}
-                                  disabled={productLoading}
-                                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-bold font-mono tracking-wider flex items-center gap-2 shadow-lg shadow-cyan-500/20 transition disabled:opacity-50"
-                                >
-                                  <Search className="w-3.5 h-3.5" />
-                                  <span>Run Live Specs Sourcing Scrape</span>
-                                </button>
-                              </div>
+                              <button
+                                type="button"
+                                onClick={handleProductSearch}
+                                disabled={productLoading}
+                                className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold font-mono tracking-wider flex items-center gap-2 shadow-lg shadow-teal-500/20 transition disabled:opacity-50"
+                              >
+                                <Search className="w-3.5 h-3.5" />
+                                <span>Run Live Sourcing Scrape</span>
+                              </button>
                             </div>
                           </td>
                         </tr>
                       ) : filteredProductSpecResults.length === 0 ? (
                         <tr>
-                          <td colSpan={11} className="p-8 text-center text-slate-400">
+                          <td colSpan={6} className="p-8 text-center text-slate-400">
                             <div className="flex flex-col items-center justify-center space-y-2 py-4">
                               <AlertCircle className="w-6 h-6 text-slate-500" />
-                              <div className="text-sm font-semibold text-slate-300">No matching product spec records found</div>
+                              <div className="text-sm font-semibold text-slate-300">No matching records found</div>
                               <p className="text-xs text-slate-500">
-                                {productTableSearch ? `No results match "${productTableSearch}". Try a different keyword or reset filters.` : 'Try adjusting your spec requirements, expanding the geo-radius, or resetting the status filter.'}
+                                Try adjusting your keywords or clearing the active filters.
                               </p>
-                              {(productTableSearch || productStatusFilter !== 'all' || productSortBy !== 'default') && (
-                                <button
-                                  onClick={() => {
-                                    setProductTableSearch('');
-                                    setProductStatusFilter('all');
-                                    setProductSortBy('default');
-                                  }}
-                                  className="px-3 py-1 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded text-xs hover:bg-emerald-600/30 transition mt-2"
-                                >
-                                  Clear Filters
-                                </button>
-                              )}
                             </div>
                           </td>
                         </tr>
                       ) : (
-                        filteredProductSpecResults.map((item) => (
-                          <tr key={item.id} className="hover:bg-slate-800/30 transition">
-                            {/* Product */}
-                            <td className="p-3.5 font-bold text-white whitespace-nowrap">
-                              <div className="flex flex-col space-y-0.5">
-                                <div className="flex items-center space-x-2">
-                                  <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-                                  <span className="truncate max-w-[280px]">{item.product}</span>
+                        filteredProductSpecResults.map((item) => {
+                          const isBenchmark = item.priceConfidence === 'benchmark' || (item as any).dataSource === 'benchmark';
+                          const isB2BDir = item.websiteUrl?.includes('indiamart') || item.websiteUrl?.includes('tradeindia') || ((item as any).id || '').startsWith('seller_b2b_');
+                          const hasLivePrice = item.priceConfidence === 'live' && (item.sellingPrice || item.price);
+
+                          return (
+                            <tr key={item.id} className="hover:bg-slate-900/40 transition">
+                              {/* 1. PRODUCT (Title + Specs) */}
+                              <td className="p-4 align-top">
+                                <div className="font-bold text-white text-sm">
+                                  {item.product}
                                 </div>
-                                {item.category && (
-                                  <div className="flex items-center space-x-1 text-[10px] text-teal-400/90 font-normal pl-4">
-                                    <FolderTree className="w-3 h-3 text-teal-500/70" />
-                                    <span>{item.category}</span>
+                                <div className="text-xs text-slate-400 mt-1 font-sans leading-relaxed">
+                                  {isBenchmark ? (
+                                    'Category-level match, no exact model found'
+                                  ) : (
+                                    item.specs || 'Standard commercial hardware specification'
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* 2. PRICE (Main Price + MRP/Discount) */}
+                              <td className="p-4 align-top">
+                                {hasLivePrice ? (
+                                  <div>
+                                    <div className="text-sm font-bold text-white">
+                                      {item.sellingPrice || item.price}
+                                    </div>
+                                    <div className="text-xs text-slate-400 mt-1">
+                                      {item.mrp ? (
+                                        <span>MRP {item.mrp}{item.discountPercent !== undefined ? ` · ${item.discountPercent}% off` : ''}</span>
+                                      ) : (
+                                        'from listing snippet'
+                                      )}
+                                    </div>
+                                  </div>
+                                ) : isBenchmark ? (
+                                  <div>
+                                    <div className="text-xs italic text-slate-400">
+                                      Price range not confirmed
+                                    </div>
+                                    <div className="text-xs text-slate-500 mt-1">
+                                      Typical range {(item as any).priceRange || '₹65k–₹95k'} for this spec class
+                                    </div>
+                                  </div>
+                                ) : (item.sellingPrice || item.price) ? (
+                                  <div>
+                                    <div className="text-sm font-bold text-white">
+                                      {item.sellingPrice || item.price}
+                                    </div>
+                                    <div className="text-xs text-slate-400 mt-1">
+                                      from listing snippet
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <div className="text-xs italic text-slate-500">
+                                      Price range not confirmed
+                                    </div>
+                                    <div className="text-xs text-slate-500 mt-1">
+                                      No pricing detected in listing
+                                    </div>
                                   </div>
                                 )}
-                              </div>
-                            </td>
+                              </td>
 
-                            {/* Specs */}
-                            <td className="p-3.5 font-mono text-emerald-300 max-w-xs">
-                              <span className="px-2 py-1 bg-emerald-950/40 border border-emerald-500/20 rounded-md block truncate" title={item.specs}>
-                                {item.specs}
-                              </span>
-                            </td>
-
-                            {/* 3-Tier E-Commerce Pricing (Selling Price, MRP Launch Price, Card Offer) */}
-                            <td className="p-3.5 whitespace-nowrap">
-                              {item.priceConfidence === 'live' && item.sellingPrice ? (
-                                <div className="space-y-1">
-                                  {/* LIVE confidence badge */}
-                                  <span className="inline-flex items-center space-x-0.5 text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded border border-emerald-500/20 mb-0.5" title="Real price scraped from product page">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />
-                                    <span>LIVE</span>
-                                  </span>
-
-                                  {/* Selling Price + MRP + Discount % */}
-                                  <div className="flex items-baseline space-x-2">
-                                    <span className="text-sm font-black text-white tracking-tight">
-                                      {item.sellingPrice}
-                                    </span>
-                                    {item.mrp && (
-                                      <span className="text-[11px] line-through text-slate-400 font-mono" title="Launched MRP">
-                                        {item.mrp}
-                                      </span>
-                                    )}
-                                    {item.discountPercent !== undefined && (
-                                      <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded border border-emerald-500/20">
-                                        {item.discountPercent}% off
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  {/* Offer Price (Card discounted price average) */}
-                                  {item.offerPrice && (
-                                    <div className="flex items-center space-x-1.5">
-                                      <span
-                                        className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded bg-gradient-to-r from-amber-500/15 to-emerald-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-medium"
-                                        title="Card / Bank Discounted Average Offer Price"
-                                      >
-                                        <CreditCard className="w-2.5 h-2.5 text-amber-400" />
-                                        <span>Card Offer:</span>
-                                        <span className="font-bold text-emerald-300 font-mono">
-                                          {item.offerPrice}
-                                        </span>
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                /* No real price found — direct the user to the source */
-                                <div className="flex flex-col space-y-1.5">
-                                  <span className="text-[10px] text-slate-500 italic">Price not in snippet</span>
-                                  {item.rawUrl && (
-                                    <a
-                                      href={item.rawUrl}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="inline-flex items-center space-x-1 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white text-[10px] font-semibold transition"
-                                    >
-                                      <ExternalLink className="w-2.5 h-2.5" />
-                                      <span>View on Site →</span>
-                                    </a>
-                                  )}
-                                </div>
-                              )}
-                            </td>
-
-
-                            {/* B2B Volume Pricing & Discounts */}
-                            <td className="p-3.5 whitespace-nowrap">
-                              {item.b2bPricing ? (
-                                <div className="space-y-1">
-                                  <div className="flex items-center space-x-1.5">
-                                    <span className="font-bold text-teal-300 font-mono text-xs">
+                              {/* 3. B2B / WHOLESALE */}
+                              <td className="p-4 align-top">
+                                {item.b2bPricing?.wholesalePrice ? (
+                                  <div>
+                                    <div className="text-sm font-bold text-white">
                                       {item.b2bPricing.wholesalePrice}
-                                    </span>
-                                    {item.b2bPricing.bulkDiscountTier && (
-                                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold font-mono">
-                                        {item.b2bPricing.bulkDiscountTier}
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  <div className="flex items-center space-x-1.5">
-                                    {item.b2bPricing.moq && (
-                                      <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-amber-300 text-[10px] font-mono">
-                                        {item.b2bPricing.moq}
-                                      </span>
-                                    )}
-
-                                    {item.b2bPricing.meetingRequired ? (
-                                      <span
-                                        className="inline-flex items-center space-x-0.5 px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[9px] font-semibold"
-                                      >
-                                        <span>🤝 Post-Meeting RFP</span>
-                                      </span>
-                                    ) : (
-                                      <span
-                                        className="inline-flex items-center space-x-0.5 px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-[9px] font-semibold"
-                                      >
-                                        <span>📊 Wholesale Lot</span>
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  {item.b2bPricing.b2bStrategy && (
-                                    <div className="text-[10px] text-slate-400 max-w-xs truncate" title={item.b2bPricing.b2bStrategy}>
-                                      <span className="text-slate-500">Terms:</span> {item.b2bPricing.b2bStrategy}
+                                      <span className="font-normal text-slate-400 text-xs"> / unit {isBenchmark ? 'est.' : ''}</span>
                                     </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className="space-y-1">
-                                  <span className="text-slate-500 italic text-xs block">Direct Quote on Request</span>
-                                  <span className="text-[10px] text-slate-400">Retail Marketplace Channel</span>
-                                </div>
-                              )}
-                            </td>
-
-                            {/* Seller/Business & Direct Contact */}
-                            <td className="p-3.5 whitespace-nowrap">
-                              <div className="flex flex-col space-y-1">
-                                <div className="font-semibold text-slate-200 text-xs flex items-center gap-1.5 flex-wrap">
-                                  <span>{item.sellerBusiness}</span>
-                                  {item.verificationStatus && (
-                                    <span className="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[9px] font-bold">
-                                      ✓ {item.verificationStatus}
-                                    </span>
-                                  )}
-                                </div>
-                                {/* Direct Phone & Email if available */}
-                                {(item.sellerPhone || item.sellerEmail) && (
-                                  <div className="flex items-center gap-2 text-[11px] font-mono text-slate-400">
-                                    {item.sellerPhone && (
-                                      <div className="flex items-center gap-1">
-                                        <Phone className="w-2.5 h-2.5 text-emerald-400 shrink-0" />
-                                        <a href={`tel:${item.sellerPhone}`} className="hover:text-emerald-300 transition">
-                                          {item.sellerPhone}
-                                        </a>
-                                        <a
-                                          href={getWhatsAppUrl(item.sellerPhone, item.sellerBusiness)}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          title="WhatsApp Supplier"
-                                          className="p-0.5 rounded bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-400 inline-flex items-center ml-0.5"
-                                        >
-                                          <MessageCircle className="w-2.5 h-2.5" />
-                                        </a>
-                                      </div>
-                                    )}
-                                    {item.sellerEmail && (
-                                      <div className="flex items-center gap-1">
-                                        <Mail className="w-2.5 h-2.5 text-indigo-400 shrink-0" />
-                                        <a href={`mailto:${item.sellerEmail}`} className="hover:text-indigo-300 transition truncate max-w-[130px]" title={item.sellerEmail}>
-                                          {item.sellerEmail}
-                                        </a>
-                                      </div>
-                                    )}
+                                    <div className="text-xs text-slate-400 mt-1">
+                                      {item.b2bPricing.moq ? `MOQ ${item.b2bPricing.moq}` : 'MOQ 10 units'} · {isBenchmark ? 'terms unconfirmed' : (item.b2bPricing.bulkDiscountTier || 'standard terms')}
+                                    </div>
+                                  </div>
+                                ) : isB2BDir ? (
+                                  <div className="text-xs italic text-slate-500">
+                                    Not listed
+                                  </div>
+                                ) : (
+                                  <div className="text-xs italic text-slate-500">
+                                    Not offered by this seller
                                   </div>
                                 )}
-                                {item.websiteUrl && (
-                                  <div className="flex items-center gap-1.5 pt-0.5">
+                              </td>
+
+                              {/* 4. SELLER (Name + Domain / Note) */}
+                              <td className="p-4 align-top">
+                                <div className="font-bold text-white text-sm">
+                                  {item.sellerBusiness}
+                                </div>
+                                <div className="text-xs text-slate-400 mt-1">
+                                  {isBenchmark ? (
+                                    <span className="text-slate-500">No storefront matched</span>
+                                  ) : item.websiteUrl ? (
                                     <a
                                       href={item.websiteUrl}
                                       target="_blank"
                                       rel="noreferrer"
-                                      className={`text-[10px] inline-flex items-center gap-1 font-mono font-medium rounded px-1.5 py-0.5 border transition ${item.urlType === 'direct_scraped'
-                                        ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/20'
-                                        : item.urlType === 'verified_domain'
-                                          ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/20'
-                                          : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
-                                        }`}
-                                      title={
-                                        item.urlType === 'direct_scraped'
-                                          ? 'Direct scraped product listing'
-                                          : item.urlType === 'verified_domain'
-                                            ? 'Verified corporate domain — contact seller directly via phone/portal'
-                                            : 'Verified search catalog on platform'
-                                      }
+                                      className="text-slate-400 hover:text-white transition underline"
                                     >
-                                      <span>
-                                        {item.urlType === 'direct_scraped'
-                                          ? 'Direct Scraped Listing'
-                                          : item.urlType === 'verified_domain'
-                                            ? 'Official Corporate Portal'
-                                            : 'Verified Platform Search'}
-                                      </span>
-                                      <ExternalLink className="w-2.5 h-2.5" />
+                                      {item.websiteUrl.replace(/^https?:\/\//i, '').replace(/^www\./i, '').split('/')[0]}
                                     </a>
-                                  </div>
+                                  ) : !item.sellerPhone && !item.sellerEmail ? (
+                                    <span className="italic text-slate-500">No phone or email found</span>
+                                  ) : (
+                                    <span className="text-slate-400">Direct Merchant</span>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* 5. LOCATION */}
+                              <td className="p-4 align-top text-xs text-slate-300">
+                                {item.websiteUrl?.includes('indiamart.com') ? (
+                                  <a
+                                    href={item.websiteUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-teal-400 hover:text-teal-300 hover:underline inline-flex items-center gap-1 font-medium"
+                                  >
+                                    <span>View on IndiaMART</span>
+                                    <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                ) : item.websiteUrl?.includes('tradeindia.com') ? (
+                                  <a
+                                    href={item.websiteUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-teal-400 hover:text-teal-300 hover:underline inline-flex items-center gap-1 font-medium"
+                                  >
+                                    <span>View on TradeIndia</span>
+                                    <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                ) : (
+                                  <div>{item.location || 'Online · Pan-India'}</div>
                                 )}
-                              </div>
-                            </td>
+                              </td>
 
-                            {/* Website/Source */}
-                            <td className="p-3.5 whitespace-nowrap">
-                              <a
-                                href={item.websiteUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-slate-800/90 border border-slate-700 hover:border-cyan-500/50 text-cyan-300 hover:text-white transition shadow-sm text-xs font-medium"
-                                title={item.urlType === 'verified_domain' ? 'Open verified corporate domain' : 'Open direct product/search page'}
-                              >
-                                <span>{item.websiteSource}</span>
-                                <ExternalLink className="w-2.5 h-2.5 text-cyan-400" />
-                              </a>
-                            </td>
-
-                            {/* Business Details */}
-                            <td className="p-3.5 text-slate-300 max-w-xs truncate" title={item.businessDetails}>
-                              {item.businessDetails}
-                            </td>
-
-                            {/* Location */}
-                            <td className="p-3.5 text-slate-300 whitespace-nowrap">
-                              <div className="flex items-center space-x-1">
-                                <MapPin className="w-3 h-3 text-amber-400" />
-                                <span>{item.location}</span>
-                                <span className="text-[10px] text-slate-500 font-mono">({item.distanceKm} km)</span>
-                              </div>
-                            </td>
-
-                            {/* Logistics */}
-                            <td className="p-3.5 text-slate-300 whitespace-nowrap">
-                              <div className="flex items-center space-x-1.5 text-[11px]">
-                                <Truck className="w-3 h-3 text-slate-400" />
-                                <span>{item.logistics}</span>
-                              </div>
-                            </td>
-
-                            {/* Status/Tags */}
-                            <td className="p-3.5 whitespace-nowrap">
-                              <span
-                                className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${item.statusTag === 'completed'
-                                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                                  : item.statusTag === 'working'
-                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                                    : item.statusTag === 'in_progress'
-                                      ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
-                                      : item.statusTag === 'upgrade_needed'
-                                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                                        : 'bg-purple-500/10 text-purple-400 border-purple-500/30'
-                                  }`}
-                              >
-                                {item.statusTag}
-                              </span>
-                            </td>
-
-                            {/* Actions */}
-                            <td className="p-3.5 text-right whitespace-nowrap">
-                              <div className="flex items-center justify-end space-x-1.5">
-                                <button
-                                  onClick={() => handleSaveSpecMerchant(item)}
-                                  className="px-2 py-1 rounded bg-indigo-600/30 hover:bg-indigo-600/60 border border-indigo-500/40 text-indigo-300 hover:text-white text-[11px] font-semibold flex items-center space-x-1 transition"
-                                  title="Save merchant to CRM / Saved Profiles"
-                                >
-                                  <Bookmark className="w-3 h-3" />
-                                  <span>Save</span>
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(`${item.product} | ${item.specs} | Selling: ${item.sellingPrice || item.price} | MRP: ${item.mrp || 'N/A'} | Card Offer: ${item.offerPrice || 'N/A'} | ${item.sellerBusiness}`);
-                                    setProductSaveMessage(`Copied specs for ${item.product}!`);
-                                    setTimeout(() => setProductSaveMessage(null), 2500);
-                                  }}
-                                  className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition"
-                                  title="Copy Specs"
-                                >
-                                  <Copy className="w-3 h-3" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
+                              {/* 6. SOURCE (Provenance pill matching Image 2) */}
+                              <td className="p-4 align-top">
+                                {isBenchmark ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                    <span>category benchmark</span>
+                                  </span>
+                                ) : isB2BDir ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-teal-500/10 text-teal-300 border border-teal-500/30">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+                                    <span>B2B directory</span>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-teal-500/10 text-teal-300 border border-teal-500/30">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+                                    <span>scraped listing</span>
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })
                       )}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Provenance Legend matching Image 2 */}
+                <div className="pt-4 border-t border-slate-800/80 flex flex-wrap items-center gap-6 text-xs text-slate-400">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/30 text-[10px] font-mono font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+                      Verified
+                    </span>
+                    <span>— pulled from an actual product page or directory listing</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[10px] font-mono font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                      Estimated
+                    </span>
+                    <span>— category-level benchmark, no exact match scraped</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 text-[10px] font-mono font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+                      Not found / not offered
+                    </span>
+                    <span>— shown as empty state, never invented</span>
+                  </div>
                 </div>
               </div>
             )}

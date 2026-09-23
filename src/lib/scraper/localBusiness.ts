@@ -119,15 +119,27 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
 
   const companyName = ogSiteName || title.split(/[-|–:·•]/)[0]?.trim() || targetDomain;
 
-  // 2. Visible text and headings
+  // 2. Visible text and headings (stripped of navigation and footer chrome)
   const { visibleText, headings } = await page.evaluate(() => {
     const hEls = Array.from(document.querySelectorAll('h1, h2, h3'));
     const hTexts = hEls
       .map((el) => (el.textContent || '').trim())
       .filter((t) => t.length > 2 && t.length < 80);
 
+    let cleanText = '';
+    try {
+      if (document.body) {
+        const clone = document.body.cloneNode(true) as HTMLElement;
+        const chromeSelectors = 'nav, header, footer, aside, [role="navigation"], [role="banner"], [role="contentinfo"], .nav, .navbar, .menu, .footer, script, style, noscript, [aria-hidden="true"], [class*="cookie" i], [class*="modal" i]';
+        clone.querySelectorAll(chromeSelectors).forEach((el) => el.remove());
+        cleanText = (clone.innerText || clone.textContent || '').trim();
+      }
+    } catch {
+      cleanText = document.body ? (document.body.innerText || document.body.textContent || '') : '';
+    }
+
     return {
-      visibleText: document.body ? (document.body.innerText || document.body.textContent || '') : '',
+      visibleText: cleanText,
       headings: hTexts,
     };
   }).catch(() => ({ visibleText: '', headings: [] }));
@@ -318,7 +330,7 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
     }
   }
 
-  // 9. Products / Services from DOM & Meta
+  // 9. Products / Services from DOM & Meta (strictly from main content, not navigation)
   const keywordItems = metaKeywords
     .split(',')
     .map((k) => k.trim())
@@ -326,11 +338,16 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
 
   const domOfferings = await page.evaluate(() => {
     const results: string[] = [];
-    const els = document.querySelectorAll('nav a, header a, [class*="service" i] h3, [class*="product" i] h3');
-    const stopWords = new Set(['home', 'about', 'contact', 'login', 'signup', 'terms', 'privacy', 'blog', 'careers']);
+    // Only look in main content, feature, service, or product blocks — NOT in nav or header
+    const els = document.querySelectorAll('main h2, main h3, article h2, article h3, [class*="feature" i] h3, [class*="service" i] h3, [class*="product" i] h3, [class*="offering" i] h3');
+    const stopWords = new Set([
+      'home', 'about', 'contact', 'login', 'signup', 'sign in', 'sign up', 'terms', 'privacy',
+      'blog', 'careers', 'pricing', 'resources', 'community', 'connectors', 'courses',
+      'partner network', 'console login', 'documentation', 'docs', 'solutions', 'get started',
+    ]);
     els.forEach((el) => {
       const txt = (el.textContent || '').trim();
-      if (txt.length > 3 && txt.length < 35 && !stopWords.has(txt.toLowerCase())) {
+      if (txt.length > 3 && txt.length < 45 && !stopWords.has(txt.toLowerCase())) {
         results.push(txt);
       }
     });
@@ -363,40 +380,42 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
 
   // ================================================================
   // TEXT-BASED ADDRESS EXTRACTION
-  // Schema.org is unreliable — many sites only have addresses in
-  // visible text on Contact pages. We run three layers:
-  //   A) Targeted DOM elements (address, .contact, .office, etc.)
-  //   B) Multi-office block detection ("Jaipur Office \n addr \n ...")
-  //   C) Full-text Indian pincode + city regex
+  // Rigorously validated to reject navigation/footer soup.
   // ================================================================
 
-  // A) Targeted DOM element extraction
+  // Strict negative boilerplate detector
+  const isLikelyNavBoilerplate = (txt: string): boolean => {
+    return /\b(console login|login|sign in|sign up|register|resources|blog|connectors|courses|community|partner network|terms of service|privacy policy|cookie policy|all rights reserved|copyright|documentation|read more|learn more)\b/i.test(txt);
+  };
+
+  const isLikelyPhysicalAddress = (txt: string): boolean => {
+    if (!txt || txt.length < 12 || txt.length > 250) return false;
+    if (isLikelyNavBoilerplate(txt)) return false;
+
+    // Must have physical address tokens
+    const addressTokens = /\b(street|st\b|road|rd\b|avenue|ave\b|boulevard|blvd\b|lane|ln\b|drive|dr\b|floor|fl\b|suite|ste\b|block|bldg|building|nagar|marg|sector|pincode|pin code|\d{5,6})\b/i;
+    const hasCityStatePattern = /\b[A-Za-z\s]+,\s*[A-Z]{2}\b/.test(txt) || /\b[A-Za-z\s]+,\s*(?:India|USA|United States|UK|Canada)\b/i.test(txt);
+    return addressTokens.test(txt) || hasCityStatePattern;
+  };
+
+  // A) Targeted DOM element extraction (strictly physical address elements)
   const domAddresses: string[] = await page.evaluate(() => {
     const results: string[] = [];
     const selectors = [
       'address',
-      '[class*="address" i]',
-      '[class*="location" i]',
-      '[class*="office" i]',
-      '[class*="contact-detail" i]',
-      '[class*="contact_detail" i]',
-      '[class*="our-office" i]',
-      '[id*="address" i]',
-      '[id*="contact" i]',
+      '[class*="office-address" i]',
+      '[class*="contact-address" i]',
+      '[class*="postal-address" i]',
       '[itemprop="address"]',
       '[itemprop="streetAddress"]',
-      'footer p',
-      '.footer p',
-      '#footer p',
     ];
     for (const sel of selectors) {
       try {
         const els = document.querySelectorAll(sel);
         els.forEach((el) => {
           const text = (el.textContent || '').trim().replace(/\s+/g, ' ');
-          // Must have an Indian pincode OR known city pattern to qualify
-          if (/\b\d{6}\b/.test(text) || /\b(mumbai|delhi|bangalore|bengaluru|hyderabad|jaipur|gurugram|gurgaon|pune|chennai|kolkata|ahmedabad|surat|lucknow|kochi|coimbatore|noida|thane|bhopal|indore|nagpur|patna|chandigarh|malda|siliguri)\b/i.test(text)) {
-            if (text.length > 15 && text.length < 500) results.push(text);
+          if (text.length > 15 && text.length < 300) {
+            results.push(text);
           }
         });
       } catch {}
@@ -407,12 +426,12 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
   // B) Multi-office block detection from visible text
   // Pattern: "[City] Office\n[Address lines]...[Pincode]"
   const officeBlockAddresses: string[] = [];
-  const officeBlockRegex = /([A-Z][a-zA-Z\s]+)\s+(?:Office|Branch|Centre|Center|HQ|Headquarters)[\s\n]+([^\n]{10,}(?:[\n][^\n]{5,}){0,4})/gi;
+  const officeBlockRegex = /([A-Z][a-zA-Z\s]+)\s+(?:Office|Branch|Centre|Center|HQ|Headquarters)[\s\n]+([^\n]{10,}(?:[\n][^\n]{5,}){0,3})/gi;
   let officeMatch: RegExpExecArray | null;
   while ((officeMatch = officeBlockRegex.exec(visibleText)) !== null) {
     const officeCity = officeMatch[1].trim();
     const officeAddr = officeMatch[2].replace(/\n/g, ', ').replace(/\s+/g, ' ').trim();
-    if (officeAddr.length > 10) {
+    if (officeAddr.length > 10 && !isLikelyNavBoilerplate(officeAddr)) {
       officeBlockAddresses.push(`${officeCity} Office: ${officeAddr}`);
     }
     if (officeBlockAddresses.length >= 6) break;
@@ -420,13 +439,11 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
 
   // C) Full-text Indian address patterns (pincode anchored)
   const textAddresses: string[] = [];
-  // Indian pincode: 6 digits, preceded by city/area text
   const pincodeRegex = /([A-Za-z0-9\s,\.\-\/]+?[A-Za-z\s]+\s*[\-–]?\s*\d{6})/g;
   let pincodeMatch: RegExpExecArray | null;
   while ((pincodeMatch = pincodeRegex.exec(visibleText)) !== null) {
     const candidate = pincodeMatch[1].replace(/\s+/g, ' ').trim();
-    // Must be long enough to be an address, not just a sentence
-    if (candidate.length >= 15 && candidate.length <= 300) {
+    if (candidate.length >= 15 && candidate.length <= 250 && !isLikelyNavBoilerplate(candidate)) {
       textAddresses.push(candidate);
     }
     if (textAddresses.length >= 5) break;
@@ -438,7 +455,10 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
     ...domAddresses,
     ...officeBlockAddresses,
     ...textAddresses,
-  ])).map((a) => a.replace(/\s+/g, ' ').trim()).filter((a) => a.length > 10).slice(0, 8);
+  ]))
+    .map((a) => a.replace(/\s+/g, ' ').trim())
+    .filter(isLikelyPhysicalAddress)
+    .slice(0, 8);
 
   // ================================================================
   // LOCATION — city / state / country parsing from best address
@@ -491,33 +511,41 @@ export async function extractLocalBusinessData(page: Page, targetDomain: string)
     formattedAddress = 'Remote Worldwide';
   }
 
-  // Try to extract city/state from the best address or visible text
-  const textToScan = (formattedAddress || visibleText).toLowerCase();
-  for (const [key, val] of Object.entries(INDIAN_CITIES)) {
-    if (textToScan.includes(key)) {
-      city = val.city;
-      state = val.state;
-      country = 'India';
-      break;
+  // Try to extract city/state strictly from the validated address
+  if (formattedAddress && formattedAddress !== 'Remote Worldwide') {
+    const textToScan = formattedAddress.toLowerCase();
+    for (const [key, val] of Object.entries(INDIAN_CITIES)) {
+      if (textToScan.includes(key)) {
+        city = val.city;
+        state = val.state;
+        country = 'India';
+        break;
+      }
     }
-  }
-  // Also check for state names directly if no city match
-  if (!state) {
-    const STATE_MAP: Record<string, string> = {
-      'west bengal': 'West Bengal', 'maharashtra': 'Maharashtra', 'karnataka': 'Karnataka',
-      'telangana': 'Telangana', 'rajasthan': 'Rajasthan', 'gujarat': 'Gujarat',
-      'tamil nadu': 'Tamil Nadu', 'kerala': 'Kerala', 'haryana': 'Haryana',
-      'uttar pradesh': 'Uttar Pradesh', 'madhya pradesh': 'Madhya Pradesh',
-      'bihar': 'Bihar', 'punjab': 'Punjab', 'odisha': 'Odisha', 'assam': 'Assam',
-      'andhra pradesh': 'Andhra Pradesh', 'jharkhand': 'Jharkhand',
-    };
-    for (const [k, v] of Object.entries(STATE_MAP)) {
-      if (textToScan.includes(k)) { state = v; country = 'India'; break; }
+    // Also check for state names directly if no city match
+    if (!state) {
+      const STATE_MAP: Record<string, string> = {
+        'west bengal': 'West Bengal', 'maharashtra': 'Maharashtra', 'karnataka': 'Karnataka',
+        'telangana': 'Telangana', 'rajasthan': 'Rajasthan', 'gujarat': 'Gujarat',
+        'tamil nadu': 'Tamil Nadu', 'kerala': 'Kerala', 'haryana': 'Haryana',
+        'uttar pradesh': 'Uttar Pradesh', 'madhya pradesh': 'Madhya Pradesh',
+        'bihar': 'Bihar', 'punjab': 'Punjab', 'odisha': 'Odisha', 'assam': 'Assam',
+        'andhra pradesh': 'Andhra Pradesh', 'jharkhand': 'Jharkhand',
+      };
+      for (const [k, v] of Object.entries(STATE_MAP)) {
+        if (textToScan.includes(k)) { state = v; country = 'India'; break; }
+      }
+    }
+
+    if (!country) {
+      if (/\b(?:usa|united states|california|new york|texas|washington|san francisco)\b/i.test(textToScan)) country = 'United States';
+      else if (/\b(?:uk|united kingdom|london|england)\b/i.test(textToScan)) country = 'United Kingdom';
+      else if (/\b(?:india|bharat)\b/i.test(textToScan)) country = 'India';
     }
   }
 
-  const location = formattedAddress || city
-    ? { formattedAddress, city, state, country }
+  const location = formattedAddress
+    ? { formattedAddress, city, state, country: country || 'Global' }
     : null;
 
   // 12. Geo Data — STRICT: NO FAKE COORDINATES

@@ -1,7 +1,8 @@
 import { launchStealthBrowser } from './browser';
 import { detectTechnographics, TechnographicResult } from './technographics';
 import { extractLocalBusinessData, ExtractedContactInfo } from './localBusiness';
-import { analyzeDomainWithGemini } from '../ai/geminiEnricher';
+import { analyzeDomainWithGemini, generateRuleBasedEnrichmentFallback, GeminiEnrichmentInput } from '../ai/geminiEnricher';
+import { performRealNetworkAudit, RealNetworkAuditResult } from './networkAudit';
 
 export interface EnrichedCompanyProfile {
   domain: string;
@@ -36,6 +37,7 @@ export interface EnrichedCompanyProfile {
   verification: string[];
   statusTags: string[];
   technographics: TechnographicResult;
+  networkAudit?: RealNetworkAuditResult;
   status: 'success' | 'partial' | 'failed';
   crawledAt: string;
   executionTimeMs: number;
@@ -184,95 +186,99 @@ export async function enrichDomain(
     const { browser, context, page } = await launchStealthBrowser();
     browserInstance = browser;
 
+    // Start real network audit in parallel with browser launch & navigation (zero latency overhead)
+    const networkAuditPromise = performRealNetworkAudit(cleanDomain).catch((err) => {
+      console.warn(`[enrichDomain] Real network audit notice for ${cleanDomain}:`, err.message);
+      return undefined;
+    });
+
+    let mainResponse: any = null;
     // Navigate to primary domain
     try {
-      await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 25000 });
+      mainResponse = await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
     } catch {
-      await page.goto(`http://${cleanDomain}`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+      mainResponse = await page.goto(`http://${cleanDomain}`, { waitUntil: 'domcontentloaded', timeout: 10000 });
     }
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(800);
+
+    const responseHeaders = mainResponse ? mainResponse.headers() : {};
+    const networkAudit = await networkAuditPromise;
+    const nameservers = networkAudit?.dns.nameservers || [];
 
     // Run extraction in parallel on the primary landing page
     const [businessData, technographics] = await Promise.all([
       extractLocalBusinessData(page, cleanDomain),
-      detectTechnographics(page),
+      detectTechnographics(page, {
+        headers: responseHeaders,
+        domain: cleanDomain,
+        nameservers,
+      }),
     ]);
 
     // ====================================================================
-    // MULTI-PAGE DEEP CRAWL
-    // Always visit Contact, About, Team pages — regardless of whether the
-    // homepage already found some data. These pages almost always contain
-    // emails, phone numbers, owner names, and address details that are NOT
-    // on the homepage.
-    //
-    // Strategy:
-    //   1. Build a priority-ordered list of slug candidates to try
-    //   2. For each slug — try direct URL first, then find a matching link
-    //      on the current page (handles relative paths like ../contact)
-    //   3. Extract mailto: hrefs as the most reliable email signal
-    //   4. Extract owner/founder/CEO names from About / Team pages
-    //   5. Merge all results with deduplication
+    // INTELLIGENT DOM-GUIDED SUBPAGE CRAWL
+    // Extract actual hyperlinks from the homepage DOM to identify real
+    // /contact, /about, /team pages instead of blind-guessing 13 sequential URLs.
     // ====================================================================
-
-    // Priority list: contact pages first (best email yield), then about/team
-    const CRAWL_SLUGS = [
-      '/contact-us',
-      '/contact',
-      '/contactus',
-      '/reach-us',
-      '/get-in-touch',
-      '/about-us',
-      '/about',
-      '/aboutus',
-      '/team',
-      '/our-team',
-      '/leadership',
-      '/people',
-      '/management',
-    ];
-
     const visitedUrls = new Set<string>([page.url()]);
     let ownerNames: string[] = [];
 
-    for (const slug of CRAWL_SLUGS) {
-      // We stop after 5 successful sub-pages to keep crawl time reasonable
-      if (visitedUrls.size > 6) break;
+    // Discover internal links from current rendered homepage DOM
+    let candidateLinks: string[] = [];
+    try {
+      const pageLinks: string[] = await page.$$eval('a[href]', (anchors) =>
+        anchors.map((a) => a.getAttribute('href') || '').filter(Boolean)
+      );
+
+      const targetHostname = new URL(targetUrl).hostname.replace(/^www\./, '');
+      const candidateSet = new Set<string>();
+
+      for (const href of pageLinks) {
+        try {
+          const resolved = new URL(href, targetUrl);
+          const resolvedHost = resolved.hostname.replace(/^www\./, '');
+          if (resolvedHost === targetHostname) {
+            const pathLower = resolved.pathname.toLowerCase();
+            if (
+              /contact|reach-us|get-in-touch/i.test(pathLower) ||
+              /about|team|leadership|management|people/i.test(pathLower)
+            ) {
+              candidateSet.add(resolved.toString());
+            }
+          }
+        } catch {}
+      }
+
+      candidateLinks = Array.from(candidateSet);
+    } catch {}
+
+    // Fallback: If no links found in DOM, try at most 2 high-yield standard paths
+    if (candidateLinks.length === 0) {
+      candidateLinks = [
+        new URL('/contact', targetUrl).toString(),
+        new URL('/about', targetUrl).toString(),
+      ];
+    }
+
+    // Limit to max 2 high-priority subpages to guarantee lightning-fast response (<4s total)
+    const targetSubpages = candidateLinks.slice(0, 2);
+
+    for (const subUrl of targetSubpages) {
+      if (visitedUrls.has(subUrl)) continue;
 
       try {
-        const directUrl = new URL(slug, targetUrl).toString();
+        const resp = await page.goto(subUrl, {
+          waitUntil: 'domcontentloaded',
+          timeout: 3500, // Strict 3.5s per subpage
+        });
 
-        // Skip if already visited
-        if (visitedUrls.has(directUrl)) continue;
-
-        // Try navigating directly to the slug
-        let navOk = false;
-        try {
-          const resp = await page.goto(directUrl, { waitUntil: 'domcontentloaded', timeout: 12000 });
-          navOk = (resp?.status() ?? 0) < 400;
-        } catch { }
-
-        // If direct slug 404'd, try finding a matching link on the current page
-        if (!navOk) {
-          try {
-            const slugKeyword = slug.replace(/^\//, '').split('-')[0]; // e.g. 'contact', 'about', 'team'
-            const linkHref = await page.$eval(
-              `a[href*="${slugKeyword}" i]`,
-              (el) => el.getAttribute('href') || ''
-            ).catch(() => '');
-
-            if (!linkHref) continue;
-            const resolvedHref = new URL(linkHref, targetUrl).toString();
-            if (visitedUrls.has(resolvedHref)) continue;
-
-            const resp2 = await page.goto(resolvedHref, { waitUntil: 'domcontentloaded', timeout: 12000 });
-            navOk = (resp2?.status() ?? 0) < 400;
-            if (!navOk) continue;
-          } catch { continue; }
-        }
-
+        if (!resp || resp.status() >= 400) continue;
         visitedUrls.add(page.url());
-        await page.waitForTimeout(700);
+        visitedUrls.add(subUrl);
+
+        // Quick 300ms pause for dynamic DOM hydration
+        await page.waitForTimeout(300);
 
         // ---- Extract mailto: hrefs (most reliable email source) ----
         const mailtoEmails: string[] = await page.$$eval(
@@ -322,11 +328,9 @@ export async function enrichDomain(
         if (subData.businessDetails && !businessData.businessDetails) businessData.businessDetails = subData.businessDetails;
 
         // ---- Owner / Founder / CEO / Director name extraction ----
-        // Only meaningful on About/Team/Leadership pages
-        if (/about|team|leadership|people|management/i.test(slug)) {
+        if (/about|team|leadership|people|management/i.test(subUrl)) {
           try {
             const pageText = await page.evaluate(() => document.body.innerText || '');
-            // Patterns: "Founder: John Smith", "CEO — Priya Sharma", "MD: Rahul Gupta"
             const rolePatterns = [
               /(?:founder|co-founder|ceo|cto|coo|director|md|managing director|owner|proprietor|president|chairman)\s*[:\-–—]\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})/gi,
               /([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})\s*[,–—]\s*(?:founder|co-founder|ceo|cto|coo|director|md|owner|proprietor)/gi,
@@ -368,57 +372,57 @@ export async function enrichDomain(
         ? byokConfig.apiKey
         : (byokConfig?.apiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '');
 
-    // AI-Powered Field Suggestion with Gemini
-    if (geminiApiKey) {
-      try {
-        const rawScraped = businessData.rawScraped || {
-          title: '',
-          metaDescription: '',
-          metaKeywords: '',
-          headings: [],
-          visibleText: '',
-        };
+    // AI-Powered Field Suggestion with Gemini & Rule-based fallback
+    try {
+      const rawScraped = businessData.rawScraped || {
+        title: '',
+        metaDescription: '',
+        metaKeywords: '',
+        headings: [],
+        visibleText: '',
+      };
 
-        const aiOutput = await analyzeDomainWithGemini(
-          {
-            domain: cleanDomain,
-            url: targetUrl,
-            title: rawScraped.title,
-            metaDescription: rawScraped.metaDescription,
-            metaKeywords: rawScraped.metaKeywords,
-            headings: rawScraped.headings,
-            visibleText: rawScraped.visibleText,
-            emails: businessData.emails,
-            phones: businessData.phones,
-            addresses: businessData.addresses,
-            socialLinks: (businessData.socialLinks as Record<string, string>) || {},
-          },
-          geminiApiKey,
-          byokConfig?.model
-        );
+      const enrichmentInput: GeminiEnrichmentInput = {
+        domain: cleanDomain,
+        url: targetUrl,
+        title: rawScraped.title,
+        metaDescription: rawScraped.metaDescription,
+        metaKeywords: rawScraped.metaKeywords,
+        headings: rawScraped.headings,
+        visibleText: rawScraped.visibleText,
+        emails: businessData.emails,
+        phones: businessData.phones,
+        addresses: businessData.addresses,
+        socialLinks: (businessData.socialLinks as Record<string, string>) || {},
+      };
 
-        if (aiOutput) {
-          if (aiOutput.companyName) businessData.companyName = aiOutput.companyName;
-          if (aiOutput.category) businessData.category = aiOutput.category;
-          if (aiOutput.description) businessData.description = aiOutput.description;
-          if (aiOutput.productsServices && aiOutput.productsServices.length > 0) {
-            businessData.productsServices = aiOutput.productsServices;
-          }
-          // Location: Use Gemini's factual assessment (or null)
-          businessData.location = aiOutput.location !== undefined ? aiOutput.location : businessData.location;
-          // Geo: Use Gemini's factual coordinates (or null)
-          businessData.geoData = aiOutput.geoData !== undefined ? aiOutput.geoData : businessData.geoData;
-          // Business details: Use Gemini's factual registration (or null)
-          businessData.businessDetails = aiOutput.businessDetails !== undefined ? aiOutput.businessDetails : businessData.businessDetails;
-          // Verification: Only proven badges
-          businessData.verification = aiOutput.verification !== undefined ? aiOutput.verification : businessData.verification;
-          if (aiOutput.statusTags && aiOutput.statusTags.length > 0) {
-            businessData.statusTags = aiOutput.statusTags;
-          }
-        }
-      } catch (err: any) {
-        console.warn('[enrichDomain] Gemini analysis error, keeping clean rule-based extraction:', err.message);
+      let aiOutput: any = null;
+      if (geminiApiKey) {
+        aiOutput = await Promise.race([
+          analyzeDomainWithGemini(enrichmentInput, geminiApiKey, byokConfig?.model),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 5500)),
+        ]).catch(() => null);
       }
+
+      if (!aiOutput) {
+        aiOutput = generateRuleBasedEnrichmentFallback(enrichmentInput);
+      }
+
+      if (aiOutput) {
+        if (aiOutput.companyName) businessData.companyName = aiOutput.companyName;
+        if (aiOutput.category) businessData.category = aiOutput.category;
+        if (aiOutput.description) businessData.description = aiOutput.description;
+        if (aiOutput.productsServices && aiOutput.productsServices.length > 0) {
+          businessData.productsServices = aiOutput.productsServices;
+        }
+        if (aiOutput.location !== undefined && aiOutput.location !== null) businessData.location = aiOutput.location;
+        if (aiOutput.geoData !== undefined && aiOutput.geoData !== null) businessData.geoData = aiOutput.geoData;
+        if (aiOutput.businessDetails !== undefined && aiOutput.businessDetails !== null) businessData.businessDetails = aiOutput.businessDetails;
+        if (aiOutput.verification && aiOutput.verification.length > 0) businessData.verification = aiOutput.verification;
+        if (aiOutput.statusTags && aiOutput.statusTags.length > 0) businessData.statusTags = aiOutput.statusTags;
+      }
+    } catch (err: any) {
+      console.warn('[enrichDomain] Enrichment synthesis error:', err.message);
     }
 
     return {
@@ -440,6 +444,7 @@ export async function enrichDomain(
       verification: businessData.verification,
       statusTags: businessData.statusTags,
       technographics,
+      networkAudit,
       status: 'success',
       crawledAt: new Date().toISOString(),
       executionTimeMs: Date.now() - startTime,

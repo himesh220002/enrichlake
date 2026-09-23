@@ -52,7 +52,9 @@ Return ONLY a JSON object with this exact schema:
   try {
     // 1. Google Gemini
     if (provider === 'gemini') {
-      const geminiModel = model.includes('gemini') ? model : 'gemini-2.0-flash';
+      const geminiModel = model && model.includes('gemini') && !model.includes('gemini-2.0-flash') && !model.includes('gemini-1.5-flash')
+        ? model
+        : 'gemini-2.5-flash';
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`;
       const res = await fetch(endpoint, {
         method: 'POST',

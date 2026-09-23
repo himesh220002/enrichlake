@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { refineDomainDossierHeuristic, RefinedDomainDossier } from '@/lib/scraper/domainRefiner';
+import { refineDomainDossierLive } from '@/lib/scraper/domainRefinerServer';
 import { executeByokAgent } from '@/lib/ai/byokAgent';
 
 export async function POST(req: NextRequest) {
@@ -14,9 +15,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Step 1: Compute baseline structured executive dossier & categorical harvest
-    const heuristicData = refineDomainDossierHeuristic(profile);
-    let finalData: RefinedDomainDossier = heuristicData;
+    // Step 1: Compute authoritative structured executive dossier with live network audit (RDAP, DNS, TLS, ASN)
+    let finalData: RefinedDomainDossier;
+    try {
+      finalData = await refineDomainDossierLive(profile);
+    } catch {
+      finalData = refineDomainDossierHeuristic(profile);
+    }
 
     // Step 2: If user provided active BYOK key, enhance with live LLM synthesis
     if (byokConfig?.apiKey && byokConfig?.provider) {
@@ -28,7 +33,7 @@ export async function POST(req: NextRequest) {
           companyData: {
             domain: profile.domain || 'domain.com',
             companyName: profile.companyName || profile.domain,
-            description: profile.description || heuristicData.executiveSummary,
+            description: profile.description || finalData.executiveSummary,
             technologies: (profile.technographics?.technologies || []).map((t: any) =>
               typeof t === 'string' ? t : t.name
             ),
@@ -40,18 +45,18 @@ export async function POST(req: NextRequest) {
 
         if (aiResponse) {
           finalData = {
-            ...heuristicData,
-            executiveSummary: aiResponse.summary || heuristicData.executiveSummary,
-            targetAudience: aiResponse.icpFit || heuristicData.targetAudience,
-            buyerIntentScore: aiResponse.buyerIntentScore || heuristicData.buyerIntentScore,
-            icpClassification: aiResponse.icpFit || heuristicData.icpClassification,
-            keyTakeaways: aiResponse.buyingSignals?.length ? aiResponse.buyingSignals : heuristicData.keyTakeaways,
+            ...finalData,
+            executiveSummary: aiResponse.summary || finalData.executiveSummary,
+            targetAudience: aiResponse.icpFit || finalData.targetAudience,
+            buyerIntentScore: aiResponse.buyerIntentScore || finalData.buyerIntentScore,
+            icpClassification: aiResponse.icpFit || finalData.icpClassification,
+            keyTakeaways: aiResponse.buyingSignals?.length ? aiResponse.buyingSignals : finalData.keyTakeaways,
             refinementSource: 'ai_synthesis',
           };
         }
       } catch (aiErr: any) {
         console.warn('[domain-refine] BYOK AI enhancement notice:', aiErr.message);
-        // Fallback to high-quality heuristicData
+        // Fallback to high-quality finalData
       }
     }
 
