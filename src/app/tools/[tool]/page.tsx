@@ -11,6 +11,8 @@ const toolConfigs = {
   'ad-intelligence': { title: 'Ad intelligence', description: 'Explore public Meta Ad Library signals, creatives, and campaign activity.', initialTab: 'actors' as const, initialActorType: 'meta_ads' as const },
   'brand-360': { title: 'Brand 360', description: 'Sweep web and public social signals into one brand intelligence dossier.', initialTab: 'actors' as const, initialActorType: 'omnichannel_360' as const },
   'serp-intelligence': { title: 'Google Search & SERP Intelligence', description: 'Scrape Google Search organic results, paid PPC ads, AI Overviews, and extract verified business leads.', initialTab: 'maps' as const, initialMapsMode: 'serp' as const },
+  'lead-dossiers': { title: 'Lead dossiers & Saved profiles', description: 'Curate, filter, rate, segment, and bulk manage enriched company profiles and account graph.', initialTab: 'saved' as const },
+  'saved-profiles': { title: 'Saved profiles & Account graph', description: 'Curate, filter, rate, segment, and bulk manage enriched company profiles and account graph.', initialTab: 'saved' as const },
 } as const;
 
 type ToolSlug = keyof typeof toolConfigs;
