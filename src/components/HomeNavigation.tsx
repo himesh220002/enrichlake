@@ -8,19 +8,27 @@ export default function HomeNavigation() {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
+    let raf = 0;
     const onScroll = () => {
-      const secondaryHero = document.getElementById('secondary-hero');
-      if (secondaryHero) {
-        const rect = secondaryHero.getBoundingClientRect();
-        // Nav background ONLY transitions after video briefing ends and secondary hero reaches top
-        setIsScrolled(rect.top <= 80);
-      } else {
-        setIsScrolled(window.scrollY > 2000);
-      }
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const secondaryHero = document.getElementById('secondary-hero');
+        if (secondaryHero) {
+          const rect = secondaryHero.getBoundingClientRect();
+          // Nav background ONLY transitions after video briefing ends and secondary hero reaches top
+          setIsScrolled(rect.top <= 80);
+        } else {
+          setIsScrolled(window.scrollY > 2000);
+        }
+      });
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, []);
 
   const scrollToSecondaryHero = () => {

@@ -50,7 +50,7 @@ export default function HomePage() {
       <ScrollVideoHero />
 
       {/* 2. Secondary Hero: Interactive Research Console & Value Proposition */}
-      <div id="secondary-hero" className="relative w-full overflow-hidden pt-20 md:pt-24">
+      <div id="secondary-hero" className="relative w-full scroll-mt-16 overflow-hidden pt-20 md:pt-24">
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
           <div className="home-halo home-halo-one" />
           <div className="home-halo home-halo-two" />

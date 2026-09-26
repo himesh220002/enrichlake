@@ -62,6 +62,13 @@ const CHAPTERS: Chapter[] = [
   },
 ];
 
+// herovideo.mp4 is 24fps — one frame ≈ 0.0417s. Frame 0 renders half-dark
+// (fade-in from black), so the whole scrub range starts one+ frame forward
+// and every scroll mapping stays aligned to that same offset.
+const FRAME = 1 / 24;
+const START_OFFSET = FRAME * 1.5; // ~0.062s: first fully-visible frame
+const END_TRIM = 0.05; // keep the last frame clear of the fade-out tail
+
 export default function ScrollVideoHero() {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -74,11 +81,35 @@ export default function ScrollVideoHero() {
   const targetProgress = useRef(0);
   const smoothProgress = useRef(0);
   const isSeeking = useRef(false);
+  const primed = useRef(false);
+  const lastFrameTime = useRef<number | null>(null);
+  const lastRenderedProgress = useRef(0);
+  const lastRenderedCompleted = useRef(false);
 
-  // Measure video duration once loaded
+  // Measure video duration once loaded, then prime the first visible frame
+  // so the hero never paints the half-invisible frame 0.
   const handleLoadedMetadata = () => {
-    if (videoRef.current && !isNaN(videoRef.current.duration) && videoRef.current.duration > 0) {
-      setDuration(videoRef.current.duration);
+    const video = videoRef.current;
+    if (video && !isNaN(video.duration) && video.duration > 0) {
+      setDuration(video.duration);
+    }
+  };
+
+  const primeFirstFrame = () => {
+    const video = videoRef.current;
+    if (!video || primed.current) return;
+    primed.current = true;
+    try {
+      video.pause();
+      // Seeking to the offset frame; 'seeked' handler releases the gate.
+      if (Math.abs(video.currentTime - START_OFFSET) > 0.01) {
+        isSeeking.current = true;
+        video.currentTime = START_OFFSET;
+      } else {
+        isSeeking.current = false;
+      }
+    } catch {
+      isSeeking.current = false;
     }
   };
 
@@ -104,29 +135,65 @@ export default function ScrollVideoHero() {
   }, []);
 
   // Smooth, continuous hardware playback animation loop
-  // Zero seek stalls forward, seek-gated smooth stepping reverse
+  // Single aligned pattern: time-based damping -> one scrub range
+  // [START_OFFSET, duration - END_TRIM]. Forward plays fluidly, reverse
+  // steps back through the same range. State updates are throttled so
+  // React re-renders at most on visible progress changes, not every RAF.
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     let active = true;
+    lastFrameTime.current = null;
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-    const tick = () => {
+    // Aligned scrub range: progress 0..1 maps onto the visible frames only.
+    const scrubRange = Math.max(0.1, duration - START_OFFSET - END_TRIM);
+    const toVideoTime = (p: number) =>
+      START_OFFSET + Math.max(0, Math.min(1, p)) * scrubRange;
+
+    const renderProgress = (p: number) => {
+      const clamped = Math.max(0, Math.min(1, p));
+      if (Math.abs(clamped - lastRenderedProgress.current) > 0.002) {
+        lastRenderedProgress.current = clamped;
+        setProgress(clamped);
+      }
+      const completed = clamped >= 0.96;
+      if (completed !== lastRenderedCompleted.current) {
+        lastRenderedCompleted.current = completed;
+        setIsCompleted(completed);
+      }
+    };
+
+    const tick = (now: number) => {
       if (!active) return;
+
+      // Time-based damping: same feel at 30/60/120Hz (matches old 0.16 @60fps).
+      if (lastFrameTime.current == null) lastFrameTime.current = now;
+      const dt = Math.min(0.1, Math.max(0, (now - lastFrameTime.current) / 1000));
+      lastFrameTime.current = now;
+      const alpha = prefersReducedMotion ? 1 : 1 - Math.exp(-dt * 10.5);
 
       // Smoothly interpolate scroll progress (LERP)
       const diffP = targetProgress.current - smoothProgress.current;
-      smoothProgress.current += diffP * 0.16;
+      smoothProgress.current += diffP * alpha;
 
       const clampedP = Math.max(0, Math.min(1, smoothProgress.current));
-      setProgress(clampedP);
-      setIsCompleted(clampedP >= 0.96);
+      renderProgress(clampedP);
 
-      const targetTime = clampedP * duration;
+      const targetTime = toVideoTime(clampedP);
       const leadTime = targetTime - video.currentTime;
 
       // Fluid Playback:
-      if (leadTime > 0.05) {
+      if (prefersReducedMotion) {
+        if (!video.paused) video.pause();
+        if (!isSeeking.current && Math.abs(leadTime) > 0.08) {
+          isSeeking.current = true;
+          video.currentTime = targetTime;
+        }
+      } else if (leadTime > 0.05) {
         // Target is ahead (scrolling down): play smoothly forward
         const speed = Math.min(3.2, Math.max(0.75, leadTime * 1.8));
         video.playbackRate = speed;
@@ -144,7 +211,7 @@ export default function ScrollVideoHero() {
         if (!isSeeking.current) {
           const absDiff = Math.abs(leadTime);
           const step = Math.min(absDiff, Math.max(0.04, absDiff * 0.3));
-          const nextTime = Math.max(0, video.currentTime - step);
+          const nextTime = Math.max(START_OFFSET, video.currentTime - step);
 
           if (Math.abs(video.currentTime - nextTime) > 0.02) {
             isSeeking.current = true;
@@ -183,7 +250,7 @@ export default function ScrollVideoHero() {
   return (
     <section
       ref={trackRef}
-      className="relative w-full h-[320vh] bg-[#070b18] select-none"
+      className="relative w-full h-[320vh] overflow-clip bg-[#070b18] select-none"
       aria-label="Interactive Hero Video Briefing"
     >
       {/* Sticky Fullscreen Viewport — Stays locked at top: 0 until scroll finishes */}
@@ -206,15 +273,20 @@ export default function ScrollVideoHero() {
             preload="auto"
             muted
             playsInline
+            disablePictureInPicture
+            aria-hidden="true"
+            tabIndex={-1}
             onLoadedMetadata={handleLoadedMetadata}
-            className="h-full w-full object-cover opacity-90"
+            onLoadedData={primeFirstFrame}
+            onCanPlay={primeFirstFrame}
+            className="h-full w-full scale-[1.03] object-cover object-center opacity-90"
             style={{ willChange: 'transform' }}
           />
 
-          {/* Vignette Gradients */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#070b18] via-transparent to-[#070b18]/80" />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#070b18]/80 via-transparent to-[#070b18]/80" />
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(7,11,24,0.75)_85%)]" />
+          {/* Vignette Gradients — top kept light so the primed first frame stays visible */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#070b18] via-transparent to-[#070b18]/45" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#070b18]/70 via-transparent to-[#070b18]/70" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_32%,rgba(7,11,24,0.7)_88%)]" />
         </div>
 
         {/* Dynamic HUD Overlays (No player controls, pure cinematic briefing) */}
