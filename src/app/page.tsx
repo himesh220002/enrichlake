@@ -3,36 +3,22 @@ import Link from 'next/link';
 import {
   ArrowRight,
   CheckCircle2,
-  Database,
   ExternalLink,
   FileText,
   Globe,
   Layers,
-  MapPin,
-  Package,
-  Search,
   ShieldCheck,
   Sparkles,
-  Users,
-  Zap,
 } from 'lucide-react';
 
 import ScrollVideoHero from '@/components/ScrollVideoHero';
 import HomeNavigation from '@/components/HomeNavigation';
+import HomeToolCards from '@/components/HomeToolCards';
 
 export const metadata: Metadata = {
   title: 'Enricher AI — Turn the open web into usable intelligence',
   description: 'Dedicated research workspaces for company enrichment, local discovery, product sourcing, web crawling, and social intelligence.',
 };
-
-const workspaces = [
-  { name: 'Company enrichment', eyebrow: 'ACCOUNT INTELLIGENCE', detail: 'Turn a domain into contacts, technographics, location signals, and a CRM-ready profile.', href: '/tools/company-enrichment', Icon: Globe, tone: 'indigo', flow: 'Domain → dossier' },
-  { name: 'Local business discovery', eyebrow: 'GEO RESEARCH', detail: 'Search a market by keywords and location, then qualify the businesses you find.', href: '/tools/local-business', Icon: MapPin, tone: 'cyan', flow: 'Keywords → accounts' },
-  { name: 'Product & supplier finder', eyebrow: 'PROCUREMENT', detail: 'Build exact specifications, compare listings, and investigate B2B supplier options.', href: '/tools/product-finder', Icon: Package, tone: 'emerald', flow: 'Specs → suppliers' },
-  { name: 'Web crawler', eyebrow: 'CONTENT SIGNALS', detail: 'Extract readable content, links, headings, images, and a concise brief from public URLs.', href: '/tools/web-crawler', Icon: Search, tone: 'violet', flow: 'URL → intelligence' },
-  { name: 'Social intelligence', eyebrow: 'PUBLIC PRESENCE', detail: 'Inspect public Instagram, LinkedIn, and Facebook signals in one focused workspace.', href: '/tools/social-intelligence', Icon: Users, tone: 'pink', flow: 'Handle → presence' },
-  { name: 'Ad intelligence', eyebrow: 'CAMPAIGN RESEARCH', detail: 'Review public Meta Ad Library activity, creatives, calls to action, and campaign signals.', href: '/tools/ad-intelligence', Icon: Sparkles, tone: 'amber', flow: 'Brand → campaigns' },
-];
 
 const principles = [
   { number: '01', title: 'Choose the job first', detail: 'A clear starting point makes a research run feel deliberate—not like navigating a control panel.', Icon: Layers },
@@ -76,7 +62,7 @@ export default function HomePage() {
             <div className="home-console-shadow" aria-hidden="true" />
             <div className="home-console relative overflow-hidden rounded-[32px] border border-white/[0.14] p-3 shadow-2xl shadow-black/50 sm:p-5">
               <div className="home-console-top flex items-center justify-between rounded-2xl px-4 py-3 sm:px-5">
-                <div className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-xl bg-cyan-300 text-slate-950"><Sparkles className="h-4 w-4" /></span><div><p className="text-[11px] font-bold tracking-wide text-white">Research control room</p><p className="text-[10px] text-slate-500">6 dedicated workspaces online</p></div></div>
+                <div className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-xl bg-cyan-300 text-slate-950"><Sparkles className="h-4 w-4" /></span><div><p className="text-[11px] font-bold tracking-wide text-white">Research control room</p><p className="text-[10px] text-slate-500">7 dedicated workspaces online</p></div></div>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/15 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold text-emerald-300"><span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> Ready</span>
               </div>
               <div className="mt-3 grid gap-3 md:grid-cols-[1.17fr_0.83fr]">
@@ -95,7 +81,7 @@ export default function HomePage() {
         </section>
       </div>
 
-      <section id="workspaces" className="relative z-10 overflow-hidden border-y border-white/[0.06] bg-white/[0.018] py-24 sm:py-28"><div className="mx-auto max-w-[1600px] px-5 sm:px-10 xl:px-20"><div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end"><div className="max-w-2xl"><p className="text-[10px] font-bold uppercase tracking-[0.23em] text-cyan-300">One workflow per tool</p><h2 className="mt-4 text-balance text-4xl font-black leading-none tracking-[-0.055em] text-white sm:text-5xl">Room to do every kind of research well.</h2></div><p className="max-w-md text-sm leading-6 text-slate-400">Start with the question in front of you. Each tool route removes unrelated controls while leaving its full depth available.</p></div><div className="mt-14 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{workspaces.map(({ name, eyebrow, detail, href, Icon, tone, flow }) => <Link key={name} href={href} className={`home-tool-card home-tool-${tone} group relative min-h-[275px] overflow-hidden rounded-[26px] border border-white/[0.09] p-6 transition duration-300 hover:-translate-y-1 hover:border-white/[0.18] sm:p-7`}><div className="relative z-10 flex h-full flex-col"><div className="flex items-start justify-between"><span className="text-[10px] font-bold tracking-[0.18em] text-slate-500">{eyebrow}</span><span className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 bg-white/[0.055] text-slate-200 transition group-hover:scale-110 group-hover:text-white"><Icon className="h-4 w-4" /></span></div><div className="mt-auto pt-14"><p className="font-mono text-[11px] text-cyan-200/70">{flow}</p><h3 className="mt-3 text-2xl font-extrabold tracking-tight text-white">{name}</h3><p className="mt-3 max-w-md text-sm leading-6 text-slate-400">{detail}</p><span className="mt-6 inline-flex items-center gap-2 text-xs font-bold text-white">Open workspace <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" /></span></div></div></Link>)}</div></div></section>
+      <section id="workspaces" className="relative z-10 overflow-hidden border-y border-white/[0.06] bg-white/[0.018] py-24 sm:py-28"><div className="mx-auto max-w-[1600px] px-5 sm:px-10 xl:px-20"><div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end"><div className="max-w-2xl"><p className="text-[10px] font-bold uppercase tracking-[0.23em] text-cyan-300">One workflow per tool</p><h2 className="mt-4 text-balance text-4xl font-black leading-none tracking-[-0.055em] text-white sm:text-5xl">Room to do every kind of research well.</h2></div><p className="max-w-md text-sm leading-6 text-slate-400">Start with the question in front of you. Each tool route removes unrelated controls while leaving its full depth available.</p></div><HomeToolCards /></div></section>
 
       <section id="approach" className="relative z-10 overflow-hidden mx-auto max-w-[1600px] px-5 py-24 sm:px-10 sm:py-32 xl:px-20"><div className="grid gap-12 xl:grid-cols-[0.78fr_1.22fr] xl:gap-20"><div><p className="text-[10px] font-bold uppercase tracking-[0.23em] text-cyan-300">Designed around real work</p><h2 className="mt-4 text-balance text-4xl font-black leading-none tracking-[-0.055em] text-white sm:text-5xl">Less interface noise. More room to investigate.</h2><p className="mt-6 max-w-md text-base leading-7 text-slate-400">The home page directs intent. The focused tool page handles depth. The dashboard remains available when your work crosses more than one surface.</p><Link href="/dashboard" className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-cyan-200 transition hover:text-white">Go to the complete dashboard <ArrowRight className="h-4 w-4" /></Link></div><div className="grid gap-3">{principles.map(({ number, title, detail, Icon }) => <article key={number} className="group grid gap-5 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 transition hover:border-cyan-300/20 hover:bg-white/[0.05] sm:grid-cols-[60px_1fr_auto] sm:items-center sm:p-6"><span className="font-mono text-sm font-bold text-cyan-300">{number}</span><div><h3 className="text-lg font-bold tracking-tight text-white">{title}</h3><p className="mt-1.5 max-w-xl text-sm leading-6 text-slate-400">{detail}</p></div><span className="hidden h-11 w-11 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-slate-300 sm:grid"><Icon className="h-4 w-4" /></span></article>)}</div></div></section>
 

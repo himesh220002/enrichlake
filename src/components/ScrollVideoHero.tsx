@@ -56,7 +56,7 @@ const CHAPTERS: Chapter[] = [
     end: 1.0,
     badge: 'STAGE 04 // MISSION READY',
     icon: Layers,
-    title: '6 Focused Research Workspaces',
+    title: '7 Focused Research Workspaces',
     description: 'Video briefing complete. Scroll forward into dedicated control rooms tailored to your exact investigation workflow.',
     tag: 'READY TO DEPLOY',
   },

@@ -393,6 +393,14 @@ body::before {
 .home-tool-violet::after { background: #a78bfa; }
 .home-tool-pink::after { background: #f472b6; }
 .home-tool-amber::after { background: #fbbf24; }
+.home-tool-rose::after { background: #fb7185; }
+
+@media (prefers-reduced-motion: reduce) {
+  .home-tool-card,
+  .home-tool-card::after {
+    transition: none;
+  }
+}
 
 .home-cta {
   background:

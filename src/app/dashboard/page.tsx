@@ -13,6 +13,7 @@ import {
   Layers,
   Compass,
   ChevronRight,
+  Megaphone,
 } from 'lucide-react';
 import DashboardQuickLaunch from '@/components/DashboardQuickLaunch';
 
@@ -101,6 +102,19 @@ const groups = [
         href: '/tools/ad-intelligence',
         Icon: Sparkles,
         flow: 'Brand → campaigns',
+      },
+    ],
+  },
+  {
+    title: 'Create & launch',
+    detail: 'Turn finished work into posts that bring clients and recruiters to you.',
+    items: [
+      {
+        name: 'Post Studio',
+        detail: 'Generate copy-ready launch posts from a live site and GitHub repo.',
+        href: '/tools/post-generator',
+        Icon: Megaphone,
+        flow: 'URL → viral posts',
       },
     ],
   },

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import EnrichmentDashboard from '@/components/EnrichmentDashboard';
+import PostStudio from '@/components/PostStudio';
 
 const toolConfigs = {
   'company-enrichment': { title: 'Company enrichment', description: 'Build a source-aware company profile from a domain.', initialTab: 'live' as const },
@@ -13,6 +14,7 @@ const toolConfigs = {
   'serp-intelligence': { title: 'Google Search & SERP Intelligence', description: 'Scrape Google Search organic results, paid PPC ads, AI Overviews, and extract verified business leads.', initialTab: 'maps' as const, initialMapsMode: 'serp' as const },
   'lead-dossiers': { title: 'Lead dossiers & Saved profiles', description: 'Curate, filter, rate, segment, and bulk manage enriched company profiles and account graph.', initialTab: 'saved' as const },
   'saved-profiles': { title: 'Saved profiles & Account graph', description: 'Curate, filter, rate, segment, and bulk manage enriched company profiles and account graph.', initialTab: 'saved' as const },
+  'post-generator': { title: 'Post Studio — launch-post generator', description: 'Turn a live website and GitHub repo into platform-ready posts for LinkedIn, Instagram, Facebook, YouTube, and X.', initialTab: 'live' as const },
 } as const;
 
 type ToolSlug = keyof typeof toolConfigs;
@@ -34,6 +36,7 @@ export async function generateMetadata({ params }: { params: Promise<{ tool: str
 
 export default async function ToolPage({ params }: { params: Promise<{ tool: string }> }) {
   const { tool: slug } = await params;
+  if (slug === 'post-generator') return <PostStudio />;
   const tool = getTool(slug);
   if (!tool) notFound();
 

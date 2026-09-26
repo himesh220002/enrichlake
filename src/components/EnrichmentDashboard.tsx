@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import Link from 'next/link';
 import {
   Globe,
   Search,
@@ -86,6 +87,7 @@ import {
   Briefcase,
   GraduationCap,
   Home,
+  Megaphone,
 } from 'lucide-react';
 import type { PitchTone, GeneratedPitchResult } from '@/lib/ai/pitchGenerator';
 import type { GoogleMapsPlaceRecord } from '@/lib/scraper/googleMapsTypes';
@@ -3276,6 +3278,18 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${hoveredMegaMenu === 'dossier' ? 'rotate-180 text-cyan-400' : 'text-slate-500'}`} />
               </button>
             </div>
+
+            {/* Nav 5: Post Studio (dedicated route — no tab panel) */}
+            <div className="py-4">
+              <Link
+                href="/tools/post-generator"
+                className="mega-nav-item inline-flex items-center gap-1.5 transition text-slate-300 hover:text-white"
+              >
+                <Megaphone className="w-3.5 h-3.5 text-fuchsia-300" />
+                <span>Post Studio</span>
+                <span className="px-1.5 py-0.2 text-[9px] font-mono font-bold rounded bg-fuchsia-500/25 text-fuchsia-300 border border-fuchsia-500/30">NEW</span>
+              </Link>
+            </div>
           </nav>
 
           {/* Engine Status + Fast Action Buttons */}
@@ -3868,6 +3882,15 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
               <span>Queue</span>
               {(queueMetrics.waiting + queueMetrics.active) > 0 && <span className="ml-0.5 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
             </button>
+
+            <Link
+              href="/tools/post-generator"
+              className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-semibold transition border bg-fuchsia-500/10 text-fuchsia-200 border-fuchsia-500/30 hover:bg-fuchsia-500/20 hover:text-white"
+            >
+              <Megaphone className="w-4 h-4" />
+              <span>Post Studio</span>
+              <span className="px-1.5 py-0.2 text-[9px] font-mono font-bold rounded-full bg-fuchsia-400/20 text-fuchsia-100 uppercase">New</span>
+            </Link>
           </div>
         )}
 
