@@ -14,6 +14,7 @@ import {
   Compass,
   ChevronRight,
   Megaphone,
+  AreaChart,
 } from 'lucide-react';
 import DashboardQuickLaunch from '@/components/DashboardQuickLaunch';
 
@@ -134,10 +135,10 @@ export default function DashboardPage() {
         <div className="mx-auto flex max-w-[1200px] items-center justify-between px-5 py-3.5 sm:px-8">
           <Link href="/" className="group inline-flex items-center gap-2.5" aria-label="Enricher AI home">
             <span className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-tr from-cyan-400 to-indigo-500 text-white">
-              <Sparkles className="h-4 w-4" />
+              <AreaChart className="h-4 w-4" />
             </span>
             <span className="flex flex-col leading-none">
-              <span className="text-[12px] font-extrabold tracking-[0.18em] text-white">ENRICHER.AI</span>
+              <span className="text-[12px] font-extrabold tracking-[0.18em] text-white">ENRICHERLAKE</span>
               <span className="mt-1 font-mono text-[9px] uppercase tracking-widest text-cyan-300/70">
                 Dashboard
               </span>
@@ -262,7 +263,7 @@ export default function DashboardPage() {
         </section>
 
         <footer className="mt-10 flex flex-col gap-2 border-t border-white/[0.06] pt-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-          <span>ENRICHER.AI · dashboard is a router, not a report</span>
+          <span>ENRICHERLAKE · dashboard is a router, not a report</span>
           <div className="flex items-center gap-4">
             <Link href="/" className="transition hover:text-slate-300">
               Home

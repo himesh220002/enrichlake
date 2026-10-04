@@ -34,7 +34,7 @@ handlers = """  const getWhatsAppUrl = (phone: string, businessName: string) => 
     }
     const queryTerm = productQuery || 'Hardware & IT Sourcing';
     const text = encodeURIComponent(
-      `Hello ${businessName}, we are reaching out via ENRICHER.AI regarding commercial bulk procurement for ${queryTerm}. Please share your current wholesale availability, MOQ, and corporate pricing terms.`
+      `Hello ${businessName}, we are reaching out via ENRICHERLAKE regarding commercial bulk procurement for ${queryTerm}. Please share your current wholesale availability, MOQ, and corporate pricing terms.`
     );
     return `https://wa.me/${intl}?text=${text}`;
   };

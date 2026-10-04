@@ -84,7 +84,7 @@ export function generateOutreachPitch(params: {
     inmailSubject = `Ideas for ${companyName}'s pipeline`;
     inmailBody = `Hi ${contactName},\n\nCame across ${companyName} while analyzing top innovators in ${industry}. Love the focus on ${topOffering}.\n\nCurious how your team is currently handling lead enrichment and customer response velocity. Open to exchanging notes?`;
 
-    waText = `Hi ${contactName}! Reaching out from ENRICHER.AI regarding ${companyName}'s digital expansion. Love your work with ${topOffering}. Do you have 2 mins to check our benchmark report?`;
+    waText = `Hi ${contactName}! Reaching out from ENRICHERLAKE regarding ${companyName}'s digital expansion. Love your work with ${topOffering}. Do you have 2 mins to check our benchmark report?`;
   } else if (tone === 'executive') {
     emailSubject1 = `Strategic synergy with ${companyName}`;
     emailSubject2 = `Enterprise RevOps acceleration for ${companyName}`;
@@ -124,7 +124,7 @@ export function generateOutreachPitch(params: {
     waText = `Hi ${contactName}! Hope you're having a great week. Put together a customized growth intelligence report for ${companyName}. Happy to send the link if you'd like!`;
   }
 
-  const emailBody = `Hi ${contactName},\n\n${emailHook}\n\n${emailValue}\n\n${emailCta}\n\nBest regards,\n[Your Name]\n[Your Title] • ENRICHER.AI`;
+  const emailBody = `Hi ${contactName},\n\n${emailHook}\n\n${emailValue}\n\n${emailCta}\n\nBest regards,\n[Your Name]\n[Your Title] • ENRICHERLAKE`;
 
   // WhatsApp Web URL
   const whatsappWebUrl = `https://wa.me/?text=${encodeURIComponent(waText)}`;

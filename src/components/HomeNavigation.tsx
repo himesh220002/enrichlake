@@ -40,11 +40,10 @@ export default function HomeNavigation() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        isScrolled
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
           ? 'bg-[#070b18]/75 backdrop-blur-xl border-b border-white/[0.08] shadow-[0_12px_40px_rgba(0,0,0,0.6)] py-3.5'
           : 'bg-transparent border-b border-transparent py-5'
-      }`}
+        }`}
     >
       <div className="mx-auto flex max-w-[1600px] items-center justify-between px-5 sm:px-10 xl:px-20">
         {/* Brand Logo */}
@@ -53,7 +52,7 @@ export default function HomeNavigation() {
             <Sparkles className="h-4 w-4 text-white" />
           </span>
           <div className="flex flex-col">
-            <span className="text-[13px] font-extrabold tracking-[0.18em] text-white">ENRICHER.AI</span>
+            <span className="text-[13px] font-extrabold tracking-[0.18em] text-white">ENRICHERLAKE</span>
             <span className="text-[9px] font-mono tracking-widest text-cyan-300/80 uppercase">
               ZERO-API AUTONOMOUS
             </span>

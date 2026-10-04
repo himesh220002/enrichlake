@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ENRICHER.AI — Zero-Cost Stealth Enrichment & B2B Sourcing Engine",
+  title: "ENRICHERLAKE — Zero-Cost Stealth Enrichment & B2B Sourcing Engine",
   description: "Headless Playwright stealth scraping, technographics, 2026 BYOK AI RevOps, and B2B procurement sourcing with GST-verified intelligence.",
 };
 

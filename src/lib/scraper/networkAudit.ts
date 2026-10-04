@@ -118,7 +118,7 @@ export async function fetchRdapWhois(domain: string): Promise<RealRdapResult> {
     const resp = await fetch(`https://rdap.org/domain/${cleanDomain}`, {
       headers: {
         Accept: 'application/rdap+json, application/json',
-        'User-Agent': 'EnricherAI-DomainAuditor/2.0 (+https://enricher.ai)',
+        'User-Agent': 'EnricherAI-DomainAuditor/2.0 (+https://ENRICHERLAKE)',
       },
       signal: controller.signal,
       redirect: 'follow',
