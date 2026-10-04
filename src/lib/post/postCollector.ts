@@ -20,11 +20,13 @@ export function assertSafeHttpUrl(raw: string, label: string): string {
     throw new Error(`${label} must start with http(s).`);
   }
   const host = parsed.hostname.toLowerCase();
+  const allowLocal = process.env.NODE_ENV !== 'production' || process.env.ALLOW_LOCAL_URLS === 'true';
   if (
-    BLOCKED_HOST_RE.test(host) ||
+    !allowLocal &&
+    (BLOCKED_HOST_RE.test(host) ||
     BLOCKED_IP_RE.test(host) ||
     PRIVATE_172_RE.test(host) ||
-    host === '[::1]'
+    host === '[::1]')
   ) {
     throw new Error(`${label} points to a private/local address and cannot be fetched.`);
   }
@@ -169,8 +171,8 @@ export async function collectPostSource(params: {
           external: crawled.links.external.slice(0, 10),
         },
         ogImage: crawled.ogImage,
-        screenshotDesktopUrl: `/api/post-studio/screenshot?url=${u}&viewport=desktop`,
-        screenshotMobileUrl: `/api/post-studio/screenshot?url=${u}&viewport=mobile`,
+        screenshotDesktopUrl: `/api/post-studio/screenshot?url=${u}&viewport=desktop&mode=viewport`,
+        screenshotMobileUrl: `/api/post-studio/screenshot?url=${u}&viewport=mobile&mode=viewport`,
       },
       github,
       collectedAt: new Date().toISOString(),

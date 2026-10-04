@@ -6,15 +6,26 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  CheckCircle2,
+  Clock,
   Copy,
+  Download,
   ExternalLink,
+  Eye,
   Globe,
   GitBranch,
   Hash,
   Image as ImageIcon,
+  Layers,
   Loader2,
+  Lock,
+  Maximize2,
   Megaphone,
+  Monitor,
+  RefreshCw,
+  Smartphone,
   Sparkles,
+  X,
 } from 'lucide-react';
 import {
   POST_PLATFORMS,
@@ -169,6 +180,95 @@ export default function PostStudio() {
   const [pack, setPack] = useState<GeneratedPack | null>(null);
   const [activePlatform, setActivePlatform] = useState<PostPlatform>('linkedin');
 
+  const [screenshotMode, setScreenshotMode] = useState<'viewport' | 'fullpage'>('viewport');
+  const [screenshotDelay, setScreenshotDelay] = useState<number>(2000);
+  const [screenshotVersion, setScreenshotVersion] = useState<number>(0);
+  const [recapturing, setRecapturing] = useState<boolean>(false);
+  const [copiedImageKey, setCopiedImageKey] = useState<string | null>(null);
+  const [desktopImgLoaded, setDesktopImgLoaded] = useState<boolean>(false);
+  const [mobileImgLoaded, setMobileImgLoaded] = useState<boolean>(false);
+  const [lightboxImage, setLightboxImage] = useState<{ url: string; title: string; subtitle: string } | null>(null);
+
+  const getScreenshotUrl = (vp: 'desktop' | 'mobile', forDownload = false) => {
+    if (!source) return '';
+    const u = encodeURIComponent(source.site.url);
+    const base = `/api/post-studio/screenshot?url=${u}&viewport=${vp}&mode=${screenshotMode}&delay=${screenshotDelay}`;
+    const vParam = screenshotVersion > 0 ? `&v=${screenshotVersion}&refresh=1` : '';
+    const dParam = forDownload ? '&download=1' : '';
+    return `${base}${vParam}${dParam}`;
+  };
+
+  const handleRecapture = () => {
+    setRecapturing(true);
+    setDesktopImgLoaded(false);
+    setMobileImgLoaded(false);
+    setScreenshotVersion((v) => v + 1);
+    setTimeout(() => setRecapturing(false), 800);
+  };
+
+  const handleModeChange = (mode: 'viewport' | 'fullpage') => {
+    if (mode === screenshotMode) return;
+    setScreenshotMode(mode);
+    setDesktopImgLoaded(false);
+    setMobileImgLoaded(false);
+  };
+
+  const handleDelayChange = (delay: number) => {
+    setScreenshotDelay(delay);
+    setDesktopImgLoaded(false);
+    setMobileImgLoaded(false);
+    setScreenshotVersion((v) => v + 1);
+  };
+
+  const copyImageToClipboard = async (url: string, key: string) => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      if (blob.type === 'image/png') {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      } else {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        const imgLoaded = new Promise<HTMLImageElement>((resolve, reject) => {
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+        });
+        img.src = URL.createObjectURL(blob);
+        const el = await imgLoaded;
+        const canvas = document.createElement('canvas');
+        canvas.width = el.naturalWidth;
+        canvas.height = el.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(el, 0, 0);
+        const pngBlob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+        if (pngBlob) {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
+        }
+      }
+      setCopiedImageKey(key);
+      setTimeout(() => setCopiedImageKey(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy image to clipboard:', err);
+    }
+  };
+
+  const triggerDownload = async (url: string, filename: string) => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open(url, '_blank');
+    }
+  };
+
   const togglePlatform = (p: PostPlatform) =>
     setPlatforms((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
 
@@ -178,6 +278,10 @@ export default function PostStudio() {
     setCollectError('');
     setSource(null);
     setPack(null);
+    setScreenshotMode('viewport');
+    setScreenshotVersion(0);
+    setDesktopImgLoaded(false);
+    setMobileImgLoaded(false);
     try {
       const res = await fetch('/api/post-studio/collect', {
         method: 'POST',
@@ -506,33 +610,254 @@ export default function PostStudio() {
               </div>
             )}
 
-            <div className="glass-panel p-5 sm:p-6">
-              <h3 className="flex items-center gap-2 text-sm font-extrabold text-white">
-                <ImageIcon className="h-4 w-4 text-fuchsia-300" /> Demo captures — attach these to your posts
-              </h3>
-              <div className="mt-4 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
-                <figure>
-                  <div className="max-h-[420px] overflow-auto rounded-xl border border-white/10 bg-black/40">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={source.site.screenshotDesktopUrl} alt={`${source.site.title} desktop demo capture`} className="w-full" loading="lazy" />
+            <div className="glass-panel p-5 sm:p-6" id="demo-captures-section">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="flex items-center gap-2 text-sm font-extrabold text-white">
+                    <ImageIcon className="h-4 w-4 text-fuchsia-300" /> Demo captures — High-resolution post attachments
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Real Chromium screenshots captured after styles, fonts, and assets settle. Ready to copy or attach directly to your launch posts.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleRecapture}
+                    disabled={recapturing}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/[0.05] px-3 py-1.5 text-xs font-bold text-slate-200 transition hover:border-fuchsia-300/40 hover:bg-fuchsia-400/10 hover:text-white disabled:opacity-50"
+                    title="Bypass cache and take fresh screenshots"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${recapturing ? 'animate-spin text-fuchsia-300' : ''}`} />
+                    <span>{recapturing ? 'Capturing...' : 'Re-capture'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Viewport / Mode & Delay Controls */}
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-y border-white/10 py-3">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1">Capture mode:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange('viewport')}
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                      screenshotMode === 'viewport'
+                        ? 'border border-fuchsia-300/40 bg-fuchsia-500/20 text-fuchsia-100 shadow-sm'
+                        : 'border border-white/10 bg-white/[0.02] text-slate-400 hover:border-white/20 hover:text-slate-200'
+                    }`}
+                  >
+                    <Monitor className="h-3.5 w-3.5" />
+                    <span>Hero Viewport</span>
+                    <span className="hidden sm:inline text-[10px] text-fuchsia-300/80 font-normal">(16:9 / Social feed)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange('fullpage')}
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                      screenshotMode === 'fullpage'
+                        ? 'border border-fuchsia-300/40 bg-fuchsia-500/20 text-fuchsia-100 shadow-sm'
+                        : 'border border-white/10 bg-white/[0.02] text-slate-400 hover:border-white/20 hover:text-slate-200'
+                    }`}
+                  >
+                    <Layers className="h-3.5 w-3.5" />
+                    <span>Full Page Canvas</span>
+                    <span className="hidden sm:inline text-[10px] text-fuchsia-300/80 font-normal">(Top-to-bottom)</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2 text-xs">
+                  <Clock className="h-3.5 w-3.5 text-slate-400" />
+                  <span className="text-slate-400">Load wait:</span>
+                  <select
+                    value={screenshotDelay}
+                    onChange={(e) => handleDelayChange(Number(e.target.value))}
+                    className="rounded-lg border border-white/10 bg-[#0d1424] px-2.5 py-1 text-xs font-semibold text-white focus:border-fuchsia-300/40 focus:outline-none"
+                    aria-label="Screenshot settlement delay"
+                  >
+                    <option value={2000}>2s (Standard)</option>
+                    <option value={4000}>4s (Deep load / Animations)</option>
+                    <option value={6000}>6s (Heavy SPAs / Video)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Mockup Previews */}
+              <div className="mt-5 grid gap-6 lg:grid-cols-[1.65fr_1fr]">
+                {/* Desktop Mockup Card */}
+                <figure className="flex flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#090d1a] shadow-xl">
+                  {/* macOS / Browser Header Frame */}
+                  <div className="flex items-center justify-between border-b border-white/10 bg-[#0d1428] px-3.5 py-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
+                    </div>
+                    <div className="flex max-w-[280px] items-center gap-1.5 truncate rounded-full border border-white/10 bg-black/40 px-3 py-0.5 text-[11px] text-slate-300">
+                      <Lock className="h-2.5 w-2.5 text-emerald-400 shrink-0" />
+                      <span className="truncate">{source.site.url.replace(/^https?:\/\//, '')}</span>
+                    </div>
+                    <span className="text-[10px] font-semibold text-slate-400">
+                      {screenshotMode === 'viewport' ? '1440 × 900 · 16:9' : 'Full Page'}
+                    </span>
                   </div>
-                  <figcaption className="mt-2 flex items-center justify-between text-[11px] text-slate-500">
-                    <span>Desktop · full page</span>
-                    <a href={source.site.screenshotDesktopUrl} download="demo-desktop.png" className="font-bold text-fuchsia-200 transition hover:text-white">
-                      Download PNG
-                    </a>
+
+                  {/* Screenshot Canvas */}
+                  <div
+                    className={`relative w-full bg-[#05070f] ${
+                      screenshotMode === 'viewport' ? 'aspect-[16/10] overflow-hidden' : 'max-h-[460px] overflow-y-auto'
+                    }`}
+                  >
+                    {!desktopImgLoaded && (
+                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-[#090e1c] text-slate-400">
+                        <Loader2 className="h-7 w-7 animate-spin text-fuchsia-400" />
+                        <span className="text-xs font-semibold text-slate-200">Capturing desktop screenshot...</span>
+                        <span className="text-[11px] text-slate-500">Waiting for web fonts & assets to settle</span>
+                      </div>
+                    )}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      key={`desktop-${screenshotMode}-${screenshotVersion}`}
+                      src={getScreenshotUrl('desktop')}
+                      alt={`${source.site.title} desktop demo capture`}
+                      className={`w-full transition-opacity duration-300 ${
+                        screenshotMode === 'viewport' ? 'h-full object-cover object-top' : ''
+                      } ${desktopImgLoaded ? 'opacity-100' : 'opacity-0'}`}
+                      loading="lazy"
+                      onLoad={() => setDesktopImgLoaded(true)}
+                    />
+                  </div>
+
+                  {/* Action Bar */}
+                  <figcaption className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 bg-[#0d1428] px-3.5 py-2.5 text-xs">
+                    <div className="flex items-center gap-2">
+                      <Monitor className="h-3.5 w-3.5 text-fuchsia-300" />
+                      <span className="font-semibold text-slate-300">Desktop {screenshotMode === 'viewport' ? 'Hero' : 'Full'} PNG</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => copyImageToClipboard(getScreenshotUrl('desktop'), 'desktop')}
+                        className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition ${
+                          copiedImageKey === 'desktop'
+                            ? 'border-emerald-300/40 bg-emerald-400/10 text-emerald-200'
+                            : 'border-white/10 bg-white/[0.04] text-slate-300 hover:border-cyan-300/30 hover:text-white'
+                        }`}
+                        title="Copy image to clipboard for pasting into LinkedIn/X"
+                      >
+                        {copiedImageKey === 'desktop' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        <span>{copiedImageKey === 'desktop' ? 'Copied image!' : 'Copy image'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => triggerDownload(getScreenshotUrl('desktop', true), `demo-desktop-${screenshotMode}.png`)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-bold text-fuchsia-200 transition hover:border-fuchsia-300/40 hover:bg-fuchsia-400/10 hover:text-white"
+                      >
+                        <Download className="h-3 w-3" />
+                        <span>Download</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setLightboxImage({
+                            url: getScreenshotUrl('desktop'),
+                            title: `${source.site.title} — Desktop Screenshot`,
+                            subtitle: `Captured at 1440×900 (${screenshotMode === 'viewport' ? 'Hero Viewport' : 'Full Page Canvas'})`,
+                          })
+                        }
+                        className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] p-1 text-slate-400 transition hover:border-white/20 hover:text-white"
+                        title="Expand view"
+                      >
+                        <Maximize2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </figcaption>
                 </figure>
-                <figure>
-                  <div className="mx-auto max-h-[420px] max-w-[220px] overflow-auto rounded-xl border border-white/10 bg-black/40">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={source.site.screenshotMobileUrl} alt={`${source.site.title} mobile demo capture`} className="w-full" loading="lazy" />
+
+                {/* Mobile Mockup Card */}
+                <figure className="flex flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#090d1a] shadow-xl">
+                  {/* Phone Bezel Header */}
+                  <div className="flex items-center justify-between border-b border-white/10 bg-[#0d1428] px-3.5 py-2">
+                    <div className="flex items-center gap-1.5">
+                      <Smartphone className="h-3.5 w-3.5 text-fuchsia-300" />
+                      <span className="text-[11px] font-bold text-slate-300">iPhone Mobile</span>
+                    </div>
+                    <div className="h-3.5 w-16 rounded-full border border-white/10 bg-black/60" title="Dynamic Island" />
+                    <span className="text-[10px] font-semibold text-slate-400">390 × 844</span>
                   </div>
-                  <figcaption className="mt-2 flex items-center justify-between text-[11px] text-slate-500">
-                    <span>Mobile · full page</span>
-                    <a href={source.site.screenshotMobileUrl} download="demo-mobile.png" className="font-bold text-fuchsia-200 transition hover:text-white">
-                      Download PNG
-                    </a>
+
+                  {/* Screenshot Canvas */}
+                  <div
+                    className={`relative mx-auto w-full bg-[#05070f] ${
+                      screenshotMode === 'viewport'
+                        ? 'aspect-[9/19] max-w-[280px] overflow-hidden'
+                        : 'max-h-[460px] overflow-y-auto'
+                    }`}
+                  >
+                    {!mobileImgLoaded && (
+                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-[#090e1c] text-slate-400">
+                        <Loader2 className="h-6 w-6 animate-spin text-fuchsia-400" />
+                        <span className="text-xs font-semibold text-slate-200">Capturing mobile view...</span>
+                      </div>
+                    )}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      key={`mobile-${screenshotMode}-${screenshotVersion}`}
+                      src={getScreenshotUrl('mobile')}
+                      alt={`${source.site.title} mobile demo capture`}
+                      className={`w-full transition-opacity duration-300 ${
+                        screenshotMode === 'viewport' ? 'h-full object-cover object-top' : ''
+                      } ${mobileImgLoaded ? 'opacity-100' : 'opacity-0'}`}
+                      loading="lazy"
+                      onLoad={() => setMobileImgLoaded(true)}
+                    />
+                  </div>
+
+                  {/* Phone Bottom Home Bar */}
+                  <div className="border-t border-white/10 bg-[#0d1428] py-1.5">
+                    <div className="mx-auto h-1 w-20 rounded-full bg-white/20" />
+                  </div>
+
+                  {/* Action Bar */}
+                  <figcaption className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 bg-[#0d1428] px-3.5 py-2.5 text-xs">
+                    <span className="font-semibold text-slate-400">390×844 Retina</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => copyImageToClipboard(getScreenshotUrl('mobile'), 'mobile')}
+                        className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition ${
+                          copiedImageKey === 'mobile'
+                            ? 'border-emerald-300/40 bg-emerald-400/10 text-emerald-200'
+                            : 'border-white/10 bg-white/[0.04] text-slate-300 hover:border-cyan-300/30 hover:text-white'
+                        }`}
+                        title="Copy mobile screenshot"
+                      >
+                        {copiedImageKey === 'mobile' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        <span>{copiedImageKey === 'mobile' ? 'Copied!' : 'Copy'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => triggerDownload(getScreenshotUrl('mobile', true), `demo-mobile-${screenshotMode}.png`)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-bold text-fuchsia-200 transition hover:border-fuchsia-300/40 hover:bg-fuchsia-400/10 hover:text-white"
+                      >
+                        <Download className="h-3 w-3" />
+                        <span>Download</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setLightboxImage({
+                            url: getScreenshotUrl('mobile'),
+                            title: `${source.site.title} — Mobile Screenshot`,
+                            subtitle: `Captured at 390×844 (${screenshotMode === 'viewport' ? 'Hero Viewport' : 'Full Page Canvas'})`,
+                          })
+                        }
+                        className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] p-1 text-slate-400 transition hover:border-white/20 hover:text-white"
+                        title="Expand view"
+                      >
+                        <Maximize2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </figcaption>
                 </figure>
               </div>
@@ -653,6 +978,65 @@ export default function PostStudio() {
           </section>
         )}
       </div>
+
+      {/* Lightbox / Zoom Modal */}
+      {lightboxImage && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md sm:p-6"
+          onClick={() => setLightboxImage(null)}
+        >
+          <div
+            className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/20 bg-[#0a0f1d] shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-white/10 bg-[#0d1428] px-5 py-3">
+              <div>
+                <h3 className="text-sm font-bold text-white">{lightboxImage.title}</h3>
+                <p className="text-[11px] text-slate-400">{lightboxImage.subtitle}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => copyImageToClipboard(lightboxImage.url, 'modal')}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-bold text-slate-200 transition hover:border-cyan-300/30 hover:text-white"
+                >
+                  {copiedImageKey === 'modal' ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                  <span>{copiedImageKey === 'modal' ? 'Copied image!' : 'Copy image'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => triggerDownload(lightboxImage.url, 'demo-capture.png')}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-bold text-fuchsia-200 transition hover:border-fuchsia-300/40 hover:text-white"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>Download</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLightboxImage(null)}
+                  className="rounded-lg border border-white/10 bg-white/[0.05] p-1.5 text-slate-400 transition hover:bg-white/10 hover:text-white"
+                  aria-label="Close modal"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Image Body */}
+            <div className="flex-1 overflow-auto bg-[#05070f] p-4 text-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={lightboxImage.url}
+                alt={lightboxImage.title}
+                className="mx-auto max-h-[78vh] w-auto rounded-lg object-contain shadow-lg"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
