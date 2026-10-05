@@ -159,7 +159,7 @@ function PlatformCard({ post }: { post: PlatformPost }) {
   );
 }
 
-export default function PostStudio() {
+export default function PostStudio({ embedded = false }: { embedded?: boolean }) {
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [githubUrl, setGithubUrl] = useState('');
   const [platforms, setPlatforms] = useState<PostPlatform[]>(['linkedin', 'x']);
@@ -336,8 +336,8 @@ export default function PostStudio() {
   const activePost = pack?.posts.find((p) => p.platform === activePlatform) ?? pack?.posts[0];
 
   return (
-    <main className="min-h-screen bg-[#080b16] text-slate-100">
-      <div className="mx-auto max-w-[1100px] px-5 pb-20 sm:px-8">
+    <main className={embedded ? 'text-slate-100' : 'min-h-screen bg-[#080b16] text-slate-100'}>
+      <div className={`mx-auto max-w-[1100px] px-5 pb-20 sm:px-8 ${embedded ? 'pt-[76px]' : ''}`}>
         <nav aria-label="Breadcrumb" className="flex items-center gap-2 pt-6 text-xs text-slate-500">
           <Link href="/" className="inline-flex items-center gap-1 transition hover:text-slate-300">
             <ArrowLeft className="h-3 w-3" /> Home

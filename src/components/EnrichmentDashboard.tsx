@@ -544,6 +544,8 @@ interface EnrichmentDashboardProps {
   initialActorType?: ActorTool;
   initialMapsMode?: 'places' | 'keywords' | 'serp';
   dedicatedTool?: boolean;
+  /** When embedded in the unified light ToolShell, hide the internal sticky nav + mini hero (SiteNavbar + ToolHero replace them). */
+  hideChrome?: boolean;
 }
 
 export default function EnrichmentDashboard({
@@ -551,6 +553,7 @@ export default function EnrichmentDashboard({
   initialActorType = 'web_content',
   initialMapsMode = 'places',
   dedicatedTool = false,
+  hideChrome = false,
 }: EnrichmentDashboardProps) {
   const [activeTab, setActiveTab] = useState<WorkspaceTab>(initialTab);
   const [domainInput, setDomainInput] = useState('');
@@ -3189,7 +3192,8 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
 
   return (
     <div className="min-h-screen text-slate-100 selection:bg-indigo-500 selection:text-white pb-16">
-      {/* Top Navigation — Squarespace-Grade Mega Navigation */}
+      {/* Top Navigation — Squarespace-Grade Mega Navigation (hidden when unified ToolShell provides SiteNavbar) */}
+      {!hideChrome && (
       <header className="border-b border-white/[0.07] bg-[rgba(8,11,24,0.85)] backdrop-blur-2xl sticky top-0 z-50">
         <div className="page-shell h-[62px] flex items-center justify-between gap-4">
           {/* Brand Logo & Tagline */}
@@ -3794,10 +3798,11 @@ ${refined.keyTakeaways?.map((t: string) => `• ${t}`).join('\n')}
           </div>
         )}
       </header>
+      )}
 
       {/* Main shell — consistent gutters everywhere */}
       <div className="page-shell pt-4 sm:pt-6">
-        {dedicatedTool && (
+        {dedicatedTool && !hideChrome && (
           <section className="mt-8 rounded-[28px] border border-white/10 bg-white/[0.035] px-5 py-6 sm:px-7 sm:py-7">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
               <div>
