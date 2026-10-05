@@ -4,7 +4,7 @@ import EnrichmentDashboard from '@/components/EnrichmentDashboard';
 import PostStudio from '@/components/PostStudio';
 import SiteNavbar from '@/components/site/SiteNavbar';
 import SiteFooter from '@/components/site/SiteFooter';
-import { RelatedTools, ToolFaq, ToolHero, ToolSteps, WorkspaceFrame } from '@/components/site/ToolShell';
+import { RelatedTools, ToolFaq, ToolHero, ToolSteps, ToolVisual, WorkspaceFrame } from '@/components/site/ToolShell';
 import { TOOL_ALIASES, getToolBySlug } from '@/lib/site/tools';
 
 const toolConfigs = {
@@ -46,9 +46,20 @@ export default async function ToolPage({ params }: { params: Promise<{ tool: str
 
   const isPostStudio = slug === 'post-generator';
 
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: tool.faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.q,
+      acceptedAnswer: { '@type': 'Answer', text: faq.a },
+    })),
+  };
+
   return (
     <div className="cf-light min-h-screen">
       <SiteNavbar variant="solid" />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <main>
         {/* Cashfree-style hero fills the first viewport — no empty-search-bar feel */}
         <ToolHero tool={tool} showHero={!isPostStudio} />
@@ -73,6 +84,7 @@ export default async function ToolPage({ params }: { params: Promise<{ tool: str
           </WorkspaceFrame>
         )}
 
+        <ToolVisual tool={tool} />
         <ToolSteps tool={tool} />
         <ToolFaq tool={tool} />
         <RelatedTools slug={tool.slug} />

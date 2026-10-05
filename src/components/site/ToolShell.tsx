@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   ArrowRight,
   CheckCircle2,
@@ -16,6 +17,60 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { getCategoryOfTool, getRelatedTools, type ToolEntry } from '@/lib/site/tools';
+
+/** Relatable in-action imagery per tool — real console artwork from the product. */
+export const TOOL_IMAGES: Record<string, { src: string; alt: string; caption: string }> = {
+  'company-enrichment': {
+    src: '/images/domainesearch.png',
+    alt: 'Domain search and intelligence console enriching a company domain',
+    caption: 'Domain search & intelligence console',
+  },
+  'web-crawler': {
+    src: '/images/webinfoharvest.png',
+    alt: 'Categorical web information harvesting funnel turning raw pages into structured signals',
+    caption: 'Categorical content harvesting funnel',
+  },
+  'brand-360': {
+    src: '/images/opportunityhub.png',
+    alt: 'Fused brand dossier view combining web and social signals',
+    caption: 'Fused brand dossier view',
+  },
+  'serp-intelligence': {
+    src: '/images/webinfoharvest.png',
+    alt: 'Multi-surface extraction funnel for organic, paid and AI search signals',
+    caption: 'Multi-surface extraction funnel',
+  },
+  'local-business': {
+    src: '/images/globalresourcecollection.png',
+    alt: 'Global resource collection console with live geo map coverage',
+    caption: 'Global collection with live geo map',
+  },
+  'ad-intelligence': {
+    src: '/images/globalresourcecollection.png',
+    alt: 'Cross-surface campaign collection console for ad intelligence',
+    caption: 'Cross-surface campaign collection',
+  },
+  'product-finder': {
+    src: '/images/resourcerearrang.png',
+    alt: 'Spec matrix enrichment workflow rearranging listings into comparable records',
+    caption: 'Spec matrix enrichment workflow',
+  },
+  'social-intelligence': {
+    src: '/images/resourcerearrang.png',
+    alt: 'Presence enrichment workflow consolidating public social signals',
+    caption: 'Presence enrichment workflow',
+  },
+  'lead-dossiers': {
+    src: '/images/opportunityhub.png',
+    alt: 'Curated account graph of saved lead dossiers with opportunity matching',
+    caption: 'Curated account graph',
+  },
+  'post-generator': {
+    src: '/images/dataconsolidandpkg.png',
+    alt: 'Packaging station preparing finished posts for every platform',
+    caption: 'Packaging station for every platform',
+  },
+};
 
 export const TOOL_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   'company-enrichment': Globe,
@@ -148,6 +203,52 @@ export function WorkspaceFrame({ children }: { children: ReactNode }) {
         <p className="mt-3 text-center text-xs text-[#8a97b3]">
           Runs execute in this console — dossier, matrix and export actions appear here once data arrives.
         </p>
+      </div>
+    </section>
+  );
+}
+
+/** In-action visual band — shows the real console so the page feels fulfilled pre-run. */
+export function ToolVisual({ tool }: { tool: ToolEntry }) {
+  const image = TOOL_IMAGES[tool.slug];
+  if (!image) return null;
+  return (
+    <section className="border-t border-[#e8edf9] bg-[#f6f9ff]">
+      <div className="cf-container cf-section">
+        <div className="grid items-center gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <p className="cf-eyebrow">See it in action</p>
+            <h2 className="cf-h2">A console built for this exact job.</h2>
+            <p className="cf-lead">
+              {tool.name} opens as a focused environment — {tool.detail}
+            </p>
+            <ul className="mt-5 space-y-3">
+              {tool.bullets.map((b) => (
+                <li key={b} className="flex items-start gap-2.5 text-sm leading-6 text-[#1b2b4d]">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#0d9b56]" /> {b}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <figure className="cf-card overflow-hidden">
+            <div className="relative aspect-[16/10] w-full bg-[#0b1b3f]">
+              <Image
+                src={image.src}
+                alt={image.alt}
+                fill
+                sizes="(max-width: 1024px) 100vw, 60vw"
+                className="object-cover"
+                loading="lazy"
+              />
+            </div>
+            <figcaption className="flex items-center justify-between bg-white px-5 py-3.5">
+              <span className="text-[13px] font-bold text-[#0b1b3f]">{image.caption}</span>
+              <span className="rounded-full bg-[#eef3ff] px-2.5 py-1 font-mono text-[10px] font-bold text-[#1f5bff]">
+                {tool.flow}
+              </span>
+            </figcaption>
+          </figure>
+        </div>
       </div>
     </section>
   );

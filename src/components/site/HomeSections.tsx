@@ -2,8 +2,10 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   ArrowRight,
+  ChartAreaIcon,
   CheckCircle2,
   Globe,
   Layers,
@@ -11,7 +13,14 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { TOOL_CATEGORIES } from '@/lib/site/tools';
-import { TOOL_ICONS } from '@/components/site/ToolShell';
+import { TOOL_ICONS, TOOL_IMAGES } from '@/components/site/ToolShell';
+
+const GALLERY = [
+  { key: 'company-enrichment', title: 'Company enrichment', href: '/tools/company-enrichment' },
+  { key: 'product-finder', title: 'Product & supplier finder', href: '/tools/product-finder' },
+  { key: 'web-crawler', title: 'Web crawler', href: '/tools/web-crawler' },
+  { key: 'lead-dossiers', title: 'Lead dossiers', href: '/tools/lead-dossiers' },
+];
 
 /* ---------- Secondary hero (right after the untouched scroll-video briefing) ---------- */
 export function SecondaryHero() {
@@ -449,21 +458,21 @@ export function SplitSections() {
             <div className="cf-card bg-[#0b1b3f] p-6 text-white sm:p-7">
               <div className="flex items-center gap-2.5">
                 <span className="grid h-10 w-10 place-items-center rounded-xl bg-white/10">
-                  <Sparkles className="h-5 w-5 text-[#8fb0ff]" />
+                  <ChartAreaIcon className="h-5 w-5 text-[#8fb0ff]" />
                 </span>
                 <div>
-                  <p className="text-sm font-bold">BYOK intelligence layer</p>
-                  <p className="text-xs text-white/55">7 provider families · local keys</p>
+                  <p className="text-sm font-bold text-gray-800">BYOK intelligence layer</p>
+                  <p className="text-xs text-gray-700">7 provider families · local keys</p>
                 </div>
               </div>
-              <div className="mt-4 flex flex-wrap gap-1.5">
+              <div className="mt-4 flex flex-wrap gap-1.5 text-black">
                 {['Claude', 'Gemini', 'DeepSeek', 'Grok', 'GPT', 'Qwen', 'GLM'].map((t) => (
-                  <span key={t} className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 font-mono text-[11px] text-white/80">
+                  <span key={t} className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 font-mono text-[11px] text-purple-800/80">
                     {t}
                   </span>
                 ))}
               </div>
-              <p className="mt-4 rounded-xl bg-white/5 p-3.5 text-[13px] leading-6 text-white/70">
+              <p className="mt-4 rounded-xl bg-white/5 p-3.5 text-[13px] leading-6 text-black/70">
                 “Summarize this dossier as an executive brief with buyer-intent scoring and three
                 outreach angles.” — generated on demand, never by default.
               </p>
@@ -567,6 +576,140 @@ export function ProofSection() {
   );
 }
 
+/* ---------- Real-console gallery ---------- */
+export function GallerySection() {
+  return (
+    <section className="border-y border-[#e8edf9] bg-white">
+      <div className="cf-container cf-section">
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+          <div className="max-w-2xl">
+            <p className="cf-eyebrow">Real consoles, real runs</p>
+            <h2 className="cf-h2">Designed like mission control. Priced like free.</h2>
+          </div>
+          <Link
+            href="/dashboard"
+            className="inline-flex w-fit items-center gap-1.5 text-sm font-bold text-[#1f5bff] transition hover:text-[#0b1b3f]"
+          >
+            Open the dashboard <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {GALLERY.map((g) => {
+            const image = TOOL_IMAGES[g.key];
+            if (!image) return null;
+            return (
+              <Link key={g.key} href={g.href} className="cf-card cf-card-hover group overflow-hidden">
+                <div className="relative aspect-[16/10] w-full bg-[#0b1b3f]">
+                  <Image
+                    src={image.src}
+                    alt={image.alt}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
+                    className="object-cover transition duration-300 group-hover:scale-[1.03]"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="flex items-center justify-between px-4 py-3.5">
+                  <span className="text-[13px] font-bold text-[#0b1b3f]">{g.title}</span>
+                  <ArrowRight className="h-4 w-4 text-[#b7c3dd] transition group-hover:translate-x-1 group-hover:text-[#1f5bff]" />
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- SEO about copy (~600 words) ---------- */
+export function SeoAbout() {
+  return (
+    <section className="bg-white">
+      <div className="cf-container cf-section">
+        <div className="mx-auto max-w-3xl">
+          <p className="cf-eyebrow">About the platform</p>
+          <h2 className="cf-h2">
+            Free web research workspaces for company enrichment, local discovery, product sourcing
+            and social intelligence
+          </h2>
+          <div className="mt-6 space-y-5 text-[15px] leading-7 text-[#43506b]">
+            <p>
+              Enricher is a free collection of focused web research workspaces that turn the open
+              web into usable business intelligence. Instead of one crowded dashboard, every
+              research job gets its own environment: company enrichment builds a source-aware
+              company profile from a single domain, local business discovery finds and qualifies
+              businesses by keywords and location, the product and supplier finder compares live
+              listings with three-tier B2B pricing, the web crawler extracts readable content and
+              RAG-ready markdown from any public URL, social intelligence inspects public
+              Instagram, LinkedIn and Facebook presence, ad intelligence reviews public Meta Ad
+              Library creatives, SERP intelligence captures Google organic results, paid PPC ads,
+              AI Overviews and People-Also-Ask, Brand 360 fuses web and social signals into a
+              single dossier, lead dossiers curate everything you save, and Post Studio converts a
+              finished project into copy-ready launch posts.
+            </p>
+            <p>
+              The company enrichment workspace is the fastest starting point for account research.
+              Enter any company domain and the engine resolves DNS records, registration signals,
+              SSL posture and network architecture, then crawls contact, about and metadata
+              surfaces to collect emails, phone numbers, addresses and social profiles. A
+              five-pillar categorical harvest normalizes raw website telemetry into registration,
+              network, security, content and traffic intelligence, while technographic detection
+              maps the CMS, frameworks, analytics and marketing tools a company runs on. Every
+              record carries verification badges and status tags, so the resulting dossier is safe
+              to save, export as a printable PDF or structured JSON, or sync forward into
+              HubSpot-style CRM pipelines with its source context intact.
+            </p>
+            <p>
+              For market discovery, the local business workspace searches Google Maps places,
+              keyword-driven listings and geo-grid sweeps, then auto-probes discovered websites for
+              direct contact details. Curated presets cover coffee shops, restaurants, dental
+              clinics, auto repair and software agencies, so a new market can be qualified in
+              minutes. The product and supplier finder works the same way for procurement: define
+              exact hardware or product specifications with the criteria builder or load a
+              category template, compare live listings in a sortable price and discount matrix,
+              then vet verified B2B sellers on wholesale tiers, minimum order quantities, credit
+              terms and logistics radius before ever sending an RFQ.
+            </p>
+            <p>
+              Signal inspection workspaces go deep on one URL, profile or campaign at a time. The
+              web crawler renders public pages into preview, clean markdown, heading hierarchy and
+              raw JSON views, discovers internal sub-pages for deeper crawls, and refines the
+              harvest into an executive briefing you can paste straight into a RAG pipeline. The
+              social intelligence workspace covers public Instagram profiles, LinkedIn companies
+              and Facebook pages — bios, verification badges, follower counts, headcount signals
+              and recent activity — while ad intelligence pulls active Facebook and Instagram
+              creatives with copy, calls-to-action and impression context so any brand&apos;s
+              paid playbook can be studied in the open.
+            </p>
+            <p>
+              Search visibility research belongs to the SERP intelligence workspace, which runs
+              multiple queries in parallel across configurable countries, languages and result
+              depth, capturing organic rankings, paid ads, AI Overviews and People-Also-Ask
+              expansions in dedicated tabs, then chains result domains into verified business
+              leads. Everything a workspace produces can be kept: lead dossiers form a persistent
+              account graph with ratings, remarks, list segments, duplicate merging and one-click
+              CSV and JSON export, so research compounds instead of evaporating between sessions.
+            </p>
+            <p>
+              Enricher is free to start with zero API keys required for the base harvest. Optional
+              AI synthesis follows a bring-your-own-key model supporting frontier families
+              including Claude, Gemini, DeepSeek, Grok, GPT, NVIDIA NIM, Qwen and GLM, with keys
+              stored only in the browser and tokens consumed solely on explicit generation. Work
+              runs through a stealth headless browsing engine with live progress telemetry,
+              queued background jobs and CRM safeguards, and finished work can ship further: Post
+              Studio collects real site intel and demo screenshots from a live URL and GitHub
+              repository, then generates platform-tuned posts for LinkedIn, Instagram, Facebook,
+              YouTube and X. Open the workspace that matches the question — company, market,
+              product, URL or profile — and take a usable, source-aware signal forward.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ---------- FAQ ---------- */
 const HOME_FAQS = [
   {
@@ -590,6 +733,25 @@ const HOME_FAQS = [
     a: 'Yes — Post Studio converts a live site and repo into copy-ready posts for LinkedIn, Instagram, Facebook, YouTube and X.',
   },
 ];
+
+/** JSON-LD structured data for FAQ rich results. */
+export function FaqJsonLd() {
+  const data = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: HOME_FAQS.map((faq) => ({
+      '@type': 'Question',
+      name: faq.q,
+      acceptedAnswer: { '@type': 'Answer', text: faq.a },
+    })),
+  };
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+    />
+  );
+}
 
 export function HomeFaq() {
   return (

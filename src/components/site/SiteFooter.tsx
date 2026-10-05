@@ -90,7 +90,7 @@ export default function SiteFooter() {
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-3 px-4 py-5 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <span>ENRICHERLAKE · focused intelligence workspaces</span>
-          <div className="flex items-center gap-5">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <Link href="/" className="transition hover:text-white">
               Home
             </Link>
@@ -99,6 +99,18 @@ export default function SiteFooter() {
             </Link>
             <Link href="/tools/lead-dossiers" className="transition hover:text-white">
               Saved dossiers
+            </Link>
+            <Link href="/about" className="transition hover:text-white">
+              About
+            </Link>
+            <Link href="/contact" className="transition hover:text-white">
+              Contact
+            </Link>
+            <Link href="/privacy" className="transition hover:text-white">
+              Privacy
+            </Link>
+            <Link href="/terms" className="transition hover:text-white">
+              Terms
             </Link>
           </div>
         </div>

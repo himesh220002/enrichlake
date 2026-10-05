@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight, ArrowUpRight, ChevronRight } from 'lucide-react';
 import SiteNavbar from '@/components/site/SiteNavbar';
 import SiteFooter from '@/components/site/SiteFooter';
 import QuickLaunch from '@/components/site/QuickLaunch';
-import { TOOL_ICONS } from '@/components/site/ToolShell';
+import { TOOL_ICONS, TOOL_IMAGES } from '@/components/site/ToolShell';
 import { TOOL_CATEGORIES } from '@/lib/site/tools';
+
+const DASHBOARD_SHOTS = ['local-business', 'lead-dossiers'];
 
 export const metadata: Metadata = {
   title: 'Dashboard | Enricher',
@@ -95,6 +98,42 @@ export default function DashboardPage() {
                 </div>
               </section>
             ))}
+          </div>
+        </section>
+
+        {/* In-action consoles */}
+        <section className="border-t border-[#e8edf9] bg-[#f6f9ff]">
+          <div className="cf-container cf-section">
+            <p className="cf-eyebrow">Inside the workspaces</p>
+            <h2 className="cf-h2 max-w-2xl">Consoles your team will recognize.</h2>
+            <div className="mt-8 grid gap-3 md:grid-cols-2">
+              {DASHBOARD_SHOTS.map((key) => {
+                const image = TOOL_IMAGES[key];
+                const tool = TOOL_CATEGORIES.flatMap((c) => c.tools).find((t) => t.slug === key);
+                if (!image || !tool) return null;
+                return (
+                  <Link key={key} href={`/tools/${key}`} className="cf-card cf-card-hover group overflow-hidden">
+                    <div className="relative aspect-[16/10] w-full bg-[#0b1b3f]">
+                      <Image
+                        src={image.src}
+                        alt={image.alt}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                        className="object-cover transition duration-300 group-hover:scale-[1.02]"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between px-5 py-4">
+                      <div>
+                        <p className="text-[15px] font-bold text-[#0b1b3f]">{tool.name}</p>
+                        <p className="mt-0.5 text-xs text-[#8a97b3]">{image.caption}</p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-[#b7c3dd] transition group-hover:translate-x-1 group-hover:text-[#1f5bff]" />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </section>
 

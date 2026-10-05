@@ -5,12 +5,15 @@ import SiteNavbar from '@/components/site/SiteNavbar';
 import SiteFooter from '@/components/site/SiteFooter';
 import {
   CategoryTabs,
+  FaqJsonLd,
+  GallerySection,
   HomeFaq,
   HowItWorks,
   MotionStrip,
   ProductStack,
   ProofSection,
   SecondaryHero,
+  SeoAbout,
   SplitSections,
   StatBand,
 } from '@/components/site/HomeSections';
@@ -37,10 +40,13 @@ export default function HomePage() {
         <StatBand />
         <ProductStack />
         <CategoryTabs />
+        <GallerySection />
         <SplitSections />
         <HowItWorks />
         <ProofSection />
+        <SeoAbout />
         <HomeFaq />
+        <FaqJsonLd />
       </main>
 
       <SiteFooter />

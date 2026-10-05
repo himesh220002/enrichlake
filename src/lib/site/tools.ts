@@ -355,5 +355,4 @@ export function getRelatedTools(slug: string, count = 3): ToolEntry[] {
 /** Legacy / alias routes resolve to the canonical tool page. */
 export const TOOL_ALIASES: Record<string, string> = {
   'saved-profiles': 'lead-dossiers',
-  'brand-360': 'brand-360',
 };

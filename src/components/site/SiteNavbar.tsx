@@ -61,6 +61,10 @@ const RESOURCES = [
   { title: 'Lead dossiers', detail: 'Your saved account graph.', href: '/tools/lead-dossiers' },
   { title: 'How it works', detail: 'Home → dashboard → tool, explained.', href: '/#how-it-works' },
   { title: 'Post Studio', detail: 'Launch posts for every platform.', href: '/tools/post-generator' },
+  { title: 'About us', detail: 'What Enricher is and why it exists.', href: '/about' },
+  { title: 'Contact', detail: 'Feedback, bugs and partnerships.', href: '/contact' },
+  { title: 'Privacy', detail: 'How your research data is handled.', href: '/privacy' },
+  { title: 'Terms', detail: 'Fair rules for a shared resource.', href: '/terms' },
 ];
 
 interface SiteNavbarProps {
@@ -194,12 +198,7 @@ export default function SiteNavbar({ variant = 'solid' }: SiteNavbarProps) {
           </nav>
 
           <div className="flex shrink-0 items-center gap-2">
-            <Link
-              href="/dashboard"
-              className={`hidden text-[13px] font-semibold transition sm:block ${solid ? 'text-[#1b2b4d] hover:text-[#1740c2]' : 'text-white/80 hover:text-white'}`}
-            >
-              Open dashboard
-            </Link>
+            
             <Link
               href="/tools/company-enrichment"
               className="inline-flex items-center gap-1.5 rounded-full bg-[#1f5bff] px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_10px_26px_rgba(31,91,255,0.35)] transition hover:-translate-y-0.5 hover:bg-[#1749d6] sm:px-5"
